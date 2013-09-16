@@ -1,0 +1,9 @@
+<j:jelly xmlns:j="jelly:core">
+    <j:if test="${it.hasLink()}">
+        <a href="${it.getUrlName()}">
+            <img width="16" height="16"
+                 title="${it.getDisplayName()}"
+                 src="${rootURL}/plugin/testdroid-run-in-cloud/images/${it.getIconFileName()}"/>
+        </a>
+    </j:if>
+</j:jelly>

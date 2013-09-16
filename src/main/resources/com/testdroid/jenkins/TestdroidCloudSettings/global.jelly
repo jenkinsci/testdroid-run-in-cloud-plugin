@@ -1,0 +1,69 @@
+<j:jelly
+        xmlns:j="jelly:core"
+        xmlns:f="/lib/form">
+    <f:section
+            title="${%Testdroid Run-in-Cloud}">
+        <f:entry
+                field="authorize"/>
+        <f:block>
+            <f:entry
+                    title="${%Email}">
+                <f:textbox name="email" value="${descriptor.getEmail()}"/>
+            </f:entry>
+            <f:entry
+                    title="${%Password}">
+                <f:password name="password" value="${descriptor.getPassword()}"/>
+            </f:entry>
+            <f:block>
+                <f:optionalBlock name="privateInstanceState" title="${%Testdroid Cloud - private instance}"
+                                 checked="${descriptor.getPrivateInstanceState()}">
+                    <f:entry field="cloud" title="${%Testdroid Cloud URL}">
+                        <f:textbox name="cloudUrl" value="${descriptor.getCloudUrl()}"/>
+                    </f:entry>
+                    <f:entry title="${%Accept self-signed certificates}">
+                        <f:checkbox name="noCheckCertificate" checked="${descriptor.getNoCheckCertificate()}"/>
+                        <f:description>
+                            <b>
+                                Security warning! By allowing any certificates, network traffic is vulnerable to
+                                man-in-the-middle attacks.
+                            </b>
+                        </f:description>
+                    </f:entry>
+                </f:optionalBlock>
+            </f:block>
+
+            <f:block>
+                <f:optionalBlock name="isProxy" title="${%Proxy server}"
+                                 checked="${descriptor.getIsProxy()}">
+                    <f:entry field="proxyHostField" title="${%Proxy host}">
+                        <f:textbox name="proxyHost" value="${descriptor.getProxyHost()}"/>
+                    </f:entry>
+                    <f:entry field="proxyPortField" title="${%Proxy port}">
+                        <f:textbox name="proxyPort" value="${descriptor.getProxyPort()}"/>
+                    </f:entry>
+                    <f:entry field="proxyUserField" title="${%Proxy user}">
+                        <f:textbox name="proxyUser" value="${descriptor.getProxyUser()}"/>
+                    </f:entry>
+                    <f:entry field="proxyPasswordField" title="${%Proxy password}">
+                        <f:textbox name="proxyPassword" value="${descriptor.getProxyPassword()}"/>
+                    </f:entry>
+                </f:optionalBlock>
+            </f:block>
+
+            <f:validateButton
+                    title="${%Authorize}"
+                    progress="${%Authorizing...}"
+                    method="authorize"
+                    with="email,password,userManagementUrl,cloudUrl,privateInstanceState,noCheckCertificate,isProxy,proxyHost,proxyPort,proxyUser,proxyPassword"/>
+        </f:block>
+
+        <f:block>
+            <f:entry field="notificationEmailType" title="${%Send email when}">
+                <f:select name="notificationEmailType"/>
+            </f:entry>
+            <f:entry field="notificationEmailField" title="${%Email address(es)}">
+                <f:textbox name="notificationEmail" value="${descriptor.getNotificationEmail()}"/>
+            </f:entry>
+        </f:block>
+    </f:section>
+</j:jelly>

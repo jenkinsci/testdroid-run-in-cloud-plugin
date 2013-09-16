@@ -1,0 +1,98 @@
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+    <style type="text/css">
+        td.setting-name {
+            width: 25%;
+        }
+    </style>
+
+    <j:choose>
+        <j:when test="${descriptor.isAuthenticated()}">
+            <f:entry value="${instance.refreshTestdroidConfig()}"/>
+            <f:entry field="projectId" title="${%Project}">
+                <f:select/>
+            </f:entry>
+            <f:entry field="testRunNameField" title="${%Test run name}">
+                <f:textbox name="testRunName" value="${instance.testRunName}"/>
+            </f:entry>
+            <f:entry field="application" title="${%Application}">
+                <f:textbox name="appPath" value="${instance.appPath}"/>
+            </f:entry>
+            <f:entry field="instrumentation" title="${%Test}">
+                <f:textbox name="testPath" value="${instance.testPath}"
+                           placeholder="Leave empty to use AppCrawler - available only for Android"/>
+            </f:entry>
+            <f:entry title="${%Scheduling}" field="scheduler">
+                <f:select default="PARALLEL"/>
+            </f:entry>
+            <f:entry field="clusterId" title="${%Device group}">
+                <f:select/>
+            </f:entry>
+            <f:entry field="language" title="${%Device language}">
+                <f:select default="en-US"/>
+            </f:entry>
+            <f:entry field="screenshotsDirectoryField" title="${%Screenshots configuration}">
+                <f:textbox name="screenshotsDirectory" value="${instance.screenshotsDirectory}"
+                           placeholder="You can define a custom directory. If empty, screenshots will be fetched from /sdcard/test-screenshots."/>
+            </f:entry>
+            <f:entry field="testRunnerField" title="${%Custom test runner}">
+                <f:textbox name="testRunner" value="${instance.testRunner}"
+                           placeholder="If empty the primary Android test runner class android.test.InstrumentationTestRunner is used"/>
+            </f:entry>
+            <f:entry field="withAnnotationField" title="${%Tests with annotation}">
+                <f:textbox name="withAnnotation" value="${instance.withAnnotation}"/>
+            </f:entry>
+            <f:entry field="withoutAnnotationField" title="${%Tests without annotation}">
+                <f:textbox name="withoutAnnotation" value="${instance.withoutAnnotation}"/>
+            </f:entry>
+            <f:entry field="testCasesSelect" title="${%Use test cases from}">
+                <f:select/>
+            </f:entry>
+            <f:entry field="testCasesValue">
+                <f:textbox name="testCasesValue" value="${instance.testCasesValue}"
+                           placeholder="Leave empty, if you want to run all test cases"/>
+            </f:entry>
+            <j:when test="${descriptor.isAdmin()}">
+                <f:entry field="keyValuePairsField" title="${%Custom Key/Value pairs}">
+                    <f:textbox name="keyValuePairs" value="${instance.keyValuePairs}"
+                               placeholder="For instance: key1:value1;key2:value2"/>
+                </f:entry>
+            </j:when>
+            <f:entry field="notificationEmailType" title="${%Send email when}">
+                <f:select name="notificationEmailType"/>
+            </f:entry>
+            <f:entry field="notificationEmailField" title="${%Email address(es)}">
+                <f:textbox name="notificationEmail" value="${instance.getNotificationEmail()}"/>
+            </f:entry>
+            <f:optionalBlock name="waitForResultsBlock"
+                             title="${%Wait for test finished in Testdroid Cloud and download results}"
+                             checked="${instance.waitForResultsBlock != null}">
+                <f:entry field="hookUrlField" title="${%Hook URL}">
+                    <f:textbox name="hookURL" value="${instance.waitForResultsBlock.hookURL}"/>
+                </f:entry>
+                <f:entry field="resultsPathField" title="${%Path for results}">
+                    <f:textbox name="resultsPath" value="${instance.waitForResultsBlock.resultsPath}"/>
+                </f:entry>
+                <f:entry field="waitForResultsTimeoutField" title="${%Timeout for results}">
+                    <f:textbox name="waitForResultsTimeout"
+                               value="${instance.waitForResultsBlock.waitForResultsTimeout}"/>
+                </f:entry>
+                <f:entry field="forceFinishAfterWaitField"
+                         title="${%Finish test in Testdroid Cloud after 'Timeout for results'}">
+                    <f:checkbox name="forceFinishAfterBreak"
+                                checked="${instance.waitForResultsBlock.forceFinishAfterBreak}"/>
+                </f:entry>
+                <f:entry field="downloadScreenshotsField" title="${%Include screenshots in result}">
+                    <f:checkbox name="downloadScreenshots"
+                                checked="${instance.waitForResultsBlock.downloadScreenshots}"/>
+                </f:entry>
+            </f:optionalBlock>
+
+            <f:entry field="failBuildIfThisStepFailed" title="${%Fail whole build if this step failed}">
+                <f:checkbox name="failBuildIfThisStepFailed" value="${instance.failBuildIfThisTestFailed}"/>
+            </f:entry>
+        </j:when>
+        <j:otherwise>
+            <f:entry title="${%Please authenticate to Testdroid Cloud first}"/>
+        </j:otherwise>
+    </j:choose>
+</j:jelly>
