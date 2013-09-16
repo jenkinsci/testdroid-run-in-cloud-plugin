@@ -1,0 +1,16 @@
+target
+work
+.idea/*
+!.idea/codeStyleSettings.xml
+.externalToolBuilders
+.project
+.classpath
+*.sw*
+*.iml
+.settings
+nbactions.xml
+bin/
+
+.com.apple.timemachine.supported
+
+.DS_Store
