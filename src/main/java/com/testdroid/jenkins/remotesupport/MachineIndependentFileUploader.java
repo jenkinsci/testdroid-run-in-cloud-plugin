@@ -16,24 +16,31 @@ import java.util.logging.Logger;
 
 /**
  * @author Krzysztof Fonal <krzysztof.fonal@bitbar.com>
+ * @author Michał Szpruta <michal.szpruta@bitbar.com>
  */
 public class MachineIndependentFileUploader extends MachineIndependentTask implements FilePath.FileCallable<Boolean> {
 
     private static final Logger LOGGER = Logger.getLogger(MachineIndependentFileUploader.class.getName());
 
-    boolean isApplicationFile;
+    private FILE_TYPE fileType;
 
     BuildListener listener;
 
     long projectId;
 
+    public enum FILE_TYPE {
+        APPLICATION,
+        TEST,
+        DATA
+    }
+
     public MachineIndependentFileUploader(
-            TestdroidCloudSettings.DescriptorImpl descriptor, long projectId, boolean isApplicationFile,
+            TestdroidCloudSettings.DescriptorImpl descriptor, long projectId, FILE_TYPE fileType,
             BuildListener listener) {
         super(descriptor);
 
         this.projectId = projectId;
-        this.isApplicationFile = isApplicationFile;
+        this.fileType = fileType;
         this.listener = listener;
     }
 
@@ -52,10 +59,16 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
                 APIProject project = client.me().getProject(projectId);
 
                 if (file.exists()) {
-                    if (isApplicationFile) {
-                        project.uploadApplication(file, "application/octet-stream");
-                    } else {
-                        project.uploadTest(file, "application/octet-stream");
+                    switch (fileType) {
+                        case APPLICATION:
+                            project.uploadApplication(file, "application/octet-stream");
+                            break;
+                        case TEST:
+                            project.uploadTest(file, "application/octet-stream");
+                            break;
+                        case DATA:
+                            project.uploadData(file, "application/zip");
+                            break;
                     }
                     succeed = true;
                 } else {

@@ -1,7 +1,7 @@
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
     <style type="text/css">
         td.setting-name {
-            width: 25%;
+        width: 25%;
         }
     </style>
 
@@ -20,6 +20,10 @@
             <f:entry field="instrumentation" title="${%Test}">
                 <f:textbox name="testPath" value="${instance.testPath}"
                            placeholder="Leave empty to use AppCrawler - available only for Android"/>
+            </f:entry>
+            <f:entry field="data" title="${%Data}">
+                <f:textbox name="dataPath" value="${instance.dataPath}"
+                           placeholder="Use this field to upload additional data needed for test. The file must be in ZIP format."/>
             </f:entry>
             <f:entry title="${%Scheduling}" field="scheduler">
                 <f:select default="PARALLEL"/>
