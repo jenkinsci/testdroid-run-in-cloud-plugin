@@ -1,2 +1,2 @@
--testdroid-run-in-cloud
-=======================
+Testdroid Run in Cloud Plugin
+=============================
