@@ -45,6 +45,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     private String clusterId;
 
+    private String dataPath;
+
     private boolean failBuildIfThisStepFailed;
 
     private String keyValuePairs;
@@ -80,13 +82,14 @@ public class RunInCloudBuilder extends AbstractBuilder {
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
     public RunInCloudBuilder(
-            String projectId, String appPath, String testPath, String testRunName, String scheduler, String testRunner,
-            String clusterId, String language, String notificationEmail, String screenshotsDirectory,
+            String projectId, String appPath, String testPath, String dataPath, String testRunName, String scheduler,
+            String testRunner, String clusterId, String language, String notificationEmail, String screenshotsDirectory,
             String keyValuePairs, String withAnnotation, String withoutAnnotation, String testCasesSelect,
             String testCasesValue, String notificationEmailType, Boolean failBuildIfThisStepFailed,
             WaitForResultsBlock waitForResultsBlock) {
         this.projectId = projectId;
         this.appPath = appPath;
+        this.dataPath = dataPath;
         this.testPath = testPath;
         this.testRunName = testRunName;
         this.scheduler = scheduler;
@@ -201,6 +204,14 @@ public class RunInCloudBuilder extends AbstractBuilder {
         this.testCasesValue = testCasesValue;
     }
 
+    public String getDataPath() {
+        return dataPath;
+    }
+
+    public void setDataPath(String dataPath) {
+        this.dataPath = dataPath;
+    }
+
     public String getLanguage() {
         if (language == null) {
             language = String.format("%s-%s", Locale.ENGLISH.getLanguage(), Locale.ENGLISH.getCountry());
@@ -259,6 +270,10 @@ public class RunInCloudBuilder extends AbstractBuilder {
         return StringUtils.isNotBlank(testPath);
     }
 
+    public boolean isDataFile() {
+        return StringUtils.isNotBlank(dataPath);
+    }
+
     public String getEditProjectUrl() {
         return TestdroidCloudSettings.descriptor().getCloudUrl() + "/#service/projects/" + getProjectId();
     }
@@ -314,6 +329,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         // rewrite paths to take variables into consideration
         String appPathFinal = applyMacro(build, listener, appPath);
         String testPathFinal = applyMacro(build, listener, testPath);
+        String dataPathFinal = applyMacro(build, listener, dataPath);
         String withAnnotationFinal = applyMacro(build, listener, withAnnotation);
         String testRunnerFinal = applyMacro(build, listener, testRunner);
         String withoutAnnotationFinal = applyMacro(build, listener, withoutAnnotation);
@@ -366,7 +382,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             listener.getLogger().println(String.format(Messages.UPLOADING_NEW_APPLICATION_S(), appPathFinal));
 
             if (!appFile.act(new MachineIndependentFileUploader(TestdroidCloudSettings.descriptor(), project.getId(),
-                    true, listener))) {
+                    MachineIndependentFileUploader.FILE_TYPE.APPLICATION, listener))) {
                 return false;
             }
 
@@ -377,7 +393,16 @@ public class RunInCloudBuilder extends AbstractBuilder {
                         testPathFinal));
 
                 if (!testFile.act(new MachineIndependentFileUploader(TestdroidCloudSettings.descriptor(),
-                        project.getId(), false, listener))) {
+                        project.getId(), MachineIndependentFileUploader.FILE_TYPE.TEST, listener))) {
+                    return false;
+                }
+            }
+
+            if (isDataFile()) {
+                FilePath dataFile = new FilePath(launcher.getChannel(), getAbsolutePath(build, dataPathFinal));
+                listener.getLogger().println(String.format(Messages.UPLOADING_DATA_FILE_S(), dataPathFinal));
+                if (!dataFile.act(new MachineIndependentFileUploader(TestdroidCloudSettings.descriptor(),
+                        project.getId(), MachineIndependentFileUploader.FILE_TYPE.DATA, listener))) {
                     return false;
                 }
             }
