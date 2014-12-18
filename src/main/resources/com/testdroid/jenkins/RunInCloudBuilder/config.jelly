@@ -70,6 +70,11 @@
             <f:optionalBlock name="waitForResultsBlock"
                              title="${%Wait for test finished in Testdroid Cloud and download results}"
                              checked="${instance.waitForResultsBlock != null}">
+                <f:entry name="testRunStateCheckMethod" title="${%Check test run status method}"
+                         field="testRunStateCheckMethod">
+                    <f:select name="testRunStateCheckMethod" default="HOOK_URL"/>
+                </f:entry>
+
                 <f:entry field="hookUrlField" title="${%Hook URL}">
                     <f:textbox name="hookURL" value="${instance.waitForResultsBlock.hookURL}"/>
                 </f:entry>
@@ -89,6 +94,7 @@
                     <f:checkbox name="downloadScreenshots"
                                 checked="${instance.waitForResultsBlock.downloadScreenshots}"/>
                 </f:entry>
+
             </f:optionalBlock>
 
             <f:entry field="failBuildIfThisStepFailed" title="${%Fail whole build if this step failed}">

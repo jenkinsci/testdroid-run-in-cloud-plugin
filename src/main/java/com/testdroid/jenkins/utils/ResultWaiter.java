@@ -20,13 +20,16 @@ public class ResultWaiter {
         return instance;
     }
 
+    public void removeFromWaitList(Long testRunId) {
+        runIdWaitingObjectsMap.remove(testRunId);
+    }
+
     public void putToWaitList(Long testRunId, Object waitingObject) {
         runIdWaitingObjectsMap.put(testRunId, waitingObject);
     }
 
-    public void notifyWaitingObject(Long runId) {
-        Object waitingObject = runIdWaitingObjectsMap.get(runId);
-
+    public void notifyWaitingObject(Long testRunId) {
+        Object waitingObject = runIdWaitingObjectsMap.get(testRunId);
         if (waitingObject != null) {
             synchronized (waitingObject) {
                 waitingObject.notify();
