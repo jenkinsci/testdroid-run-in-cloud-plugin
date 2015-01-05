@@ -6,11 +6,13 @@ import com.testdroid.api.model.*;
 import com.testdroid.api.model.APIProject.Type;
 import com.testdroid.api.model.APITestRunConfig.Mode;
 import com.testdroid.api.model.APITestRunConfig.Scheduler;
+import com.testdroid.jenkins.model.TestRunStateCheckMethod;
 import com.testdroid.jenkins.remotesupport.MachineIndependentFileUploader;
 import com.testdroid.jenkins.remotesupport.MachineIndependentResultsDownloader;
+import com.testdroid.jenkins.scheduler.TestRunFinishCheckScheduler;
+import com.testdroid.jenkins.scheduler.TestRunFinishCheckSchedulerFactory;
 import com.testdroid.jenkins.utils.AndroidLocale;
 import com.testdroid.jenkins.utils.EmailHelper;
-import com.testdroid.jenkins.utils.ResultWaiter;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -23,6 +25,7 @@ import hudson.tasks.Builder;
 import hudson.util.ListBoxModel;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
@@ -412,7 +415,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
             String finalTestRunName = applyMacro(build, listener, testRunName);
             APITestRun testRun = (StringUtils.isBlank(finalTestRunName) || finalTestRunName.trim().startsWith("$")) ?
                     project.run() : project.run(finalTestRunName);
-            ResultWaiter.getInstance().putToWaitList(testRun.getId(), this);
             String cloudLinkPrefix = TestdroidCloudSettings.descriptor().getPrivateInstanceState() ?
                     TestdroidCloudSettings.descriptor().getCloudUrl() : TestdroidCloudSettings.CLOUD_ENDPOINT;
             build.getActions().add(new CloudLink(build, String.format("%s/#service/testrun/%s/%s",
@@ -449,18 +451,17 @@ public class RunInCloudBuilder extends AbstractBuilder {
             final APIProject project, final APITestRun testRun, AbstractBuild<?, ?> build, Launcher launcher,
             BuildListener listener) {
         if (isWaitForResults()) {
+            TestRunFinishCheckScheduler scheduler = TestRunFinishCheckSchedulerFactory.createTestRunFinishScheduler
+                    (waitForResultsBlock.getTestRunStateCheckMethod());
             try {
-                listener.getLogger().println("Waiting for results...");
                 boolean testRunToAbort = false;
+                listener.getLogger().println("Waiting for results...");
+                scheduler.schedule(this, project.getId(), testRun.getId());
                 try {
                     synchronized (this) {
-                        if (waitForResultsBlock.getWaitForResultsTimeout() == null
-                                || waitForResultsBlock.getWaitForResultsTimeout() == 0) {
-                            this.wait();
-                        } else {
-                            this.wait(waitForResultsBlock.getWaitForResultsTimeout() * 1000);
-                        }
+                        wait(waitForResultsBlock.getWaitForResultsTimeout() * 1000);
                     }
+                    scheduler.cancel(project.getId(), testRun.getId());
                     testRun.refresh();
                     if (testRun.getState() == APITestRun.State.FINISHED) {
                         boolean downloadResults = launcher.getChannel().call(
@@ -489,7 +490,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
                     String msg = "Forcing to finish test in cloud";
                     listener.getLogger().println(msg);
                     LOGGER.log(Level.WARNING, msg);
-
                     testRun.abort();
                 }
             } catch (APIException e) {
@@ -500,6 +500,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 listener.getLogger().println(
                         String.format("%s: %s", Messages.ERROR_CONNECTION(), e.getLocalizedMessage()));
                 LOGGER.log(Level.WARNING, Messages.ERROR_CONNECTION(), e);
+            }
+            finally {
+                scheduler.cancel(project.getId(), testRun.getId());
             }
         }
     }
@@ -644,18 +647,19 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
         private Integer waitForResultsTimeout;
 
+        private TestRunStateCheckMethod testRunStateCheckMethod;
+
         @DataBoundConstructor
-        public WaitForResultsBlock(
+        public WaitForResultsBlock(String testRunStateCheckMethod,
                 String hookURL, String waitForResultsTimeout, String resultsPath, boolean downloadScreenshots,
                 boolean forceFinishAfterBreak) {
+            TestRunStateCheckMethod parsedEnum = TestRunStateCheckMethod.valueOf(testRunStateCheckMethod);
+            this.testRunStateCheckMethod = parsedEnum;
             this.hookURL = hookURL;
             this.resultsPath = resultsPath;
             this.downloadScreenshots = downloadScreenshots;
             this.forceFinishAfterBreak = forceFinishAfterBreak;
-            try {
-                this.waitForResultsTimeout = Integer.parseInt(waitForResultsTimeout);
-            } catch (NumberFormatException ignore) {
-            }
+            this.waitForResultsTimeout = NumberUtils.toInt(waitForResultsTimeout);
         }
 
         public String getHookURL() {
@@ -667,6 +671,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
         }
 
         public Integer getWaitForResultsTimeout() {
+            if(waitForResultsTimeout == null){
+                waitForResultsTimeout = 0;
+            }
             return waitForResultsTimeout;
         }
 
@@ -688,6 +695,17 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
         public void setDownloadScreenshots(boolean downloadScreenshots) {
             this.downloadScreenshots = downloadScreenshots;
+        }
+
+        public void setTestRunStateCheckMethod(TestRunStateCheckMethod testRunStateCheckMethod) {
+            this.testRunStateCheckMethod = testRunStateCheckMethod;
+        }
+
+        public TestRunStateCheckMethod getTestRunStateCheckMethod() {
+            if (testRunStateCheckMethod == null) {
+                testRunStateCheckMethod = TestRunStateCheckMethod.HOOK_URL;
+            }
+            return testRunStateCheckMethod;
         }
     }
 
@@ -807,5 +825,15 @@ public class RunInCloudBuilder extends AbstractBuilder {
             }
             return testCases;
         }
+
+        public ListBoxModel doFillTestRunStateCheckMethodItems() {
+            ListBoxModel items = new ListBoxModel();
+            for (TestRunStateCheckMethod method : TestRunStateCheckMethod.values()) {
+                items.add(method.name(), method.name());
+            }
+            return items;
+        }
+
+
     }
 }

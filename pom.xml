@@ -9,7 +9,7 @@
 
     <groupId>testdroid</groupId>
     <artifactId>testdroid-run-in-cloud</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.5-SNAPSHOT</version>
     <packaging>hpi</packaging>
     <name>Testdroid Plugin for CI</name>
 
@@ -103,12 +103,6 @@
             <groupId>com.testdroid</groupId>
             <artifactId>testdroid-api</artifactId>
             <version>2.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
-            <version>2.6</version>
         </dependency>
 
     </dependencies>
