@@ -75,7 +75,8 @@ public class MachineIndependentResultsDownloader extends MachineIndependentTask
                                     .substring(0, resultsPath.length() - File.pathSeparator.length()) : resultsPath,
                             deviceDisplayName.replaceAll(" ", "_"),
                             deviceRun.getId()));
-            if (deviceRun.getInterruptedByState() == null || deviceRun.getTestCaseAllNo() > 0) {
+            if (deviceRun.getRunStatus() != APIDeviceRun.RunStatus.EXCLUDED
+                    && (deviceRun.getInterruptedByState() == null || deviceRun.getTestCaseAllNo() > 0)) {
                 try {
                     resultDir.mkdir();
 
