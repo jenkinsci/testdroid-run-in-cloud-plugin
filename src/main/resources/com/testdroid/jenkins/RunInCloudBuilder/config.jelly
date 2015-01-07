@@ -55,12 +55,14 @@
                 <f:textbox name="testCasesValue" value="${instance.testCasesValue}"
                            placeholder="Leave empty, if you want to run all test cases"/>
             </f:entry>
-            <j:when test="${descriptor.isAdmin()}">
-                <f:entry field="keyValuePairsField" title="${%Custom Key/Value pairs}">
-                    <f:textbox name="keyValuePairs" value="${instance.keyValuePairs}"
-                               placeholder="For instance: key1:value1;key2:value2"/>
-                </f:entry>
-            </j:when>
+            <j:choose>
+                <j:when test="${descriptor.isAdmin()}">
+                    <f:entry field="keyValuePairsField" title="${%Custom Key/Value pairs}">
+                        <f:textbox name="keyValuePairs" value="${instance.keyValuePairs}"
+                                   placeholder="For instance: key1:value1;key2:value2"/>
+                    </f:entry>
+                </j:when>
+            </j:choose>
             <f:entry field="notificationEmailType" title="${%Send email when}">
                 <f:select name="notificationEmailType"/>
             </f:entry>
@@ -72,7 +74,8 @@
                              checked="${instance.waitForResultsBlock != null}">
                 <f:entry name="testRunStateCheckMethod" title="${%Check test run status method}"
                          field="testRunStateCheckMethod">
-                    <f:select name="testRunStateCheckMethod" default="HOOK_URL"/>
+                    <f:select name="testRunStateCheckMethod"
+                              value="${instance.waitForResultsBlock.testRunStateCheckMethod}" default="HOOK_URL"/>
                 </f:entry>
 
                 <f:entry field="hookUrlField" title="${%Hook URL}">
