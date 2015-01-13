@@ -1,0 +1,12 @@
+
+1.0.7
+=====
+
+
+
+1.0.6
+=====
+
+* Fetch only valid test results to workspace
+* Fix wrong display of stored Check test run status method
+
