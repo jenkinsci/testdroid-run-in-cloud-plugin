@@ -6,6 +6,5 @@ package com.testdroid.jenkins.model;
 public enum TestRunStateCheckMethod {
 
     HOOK_URL,
-    API_CALL;
-
+    API_CALL
 }
