@@ -500,8 +500,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 listener.getLogger().println(
                         String.format("%s: %s", Messages.ERROR_CONNECTION(), e.getLocalizedMessage()));
                 LOGGER.log(Level.WARNING, Messages.ERROR_CONNECTION(), e);
-            }
-            finally {
+            } finally {
                 scheduler.cancel(project.getId(), testRun.getId());
             }
         }
@@ -645,12 +644,13 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
         private String resultsPath = "";
 
-        private Integer waitForResultsTimeout;
-
         private TestRunStateCheckMethod testRunStateCheckMethod;
 
+        private Integer waitForResultsTimeout;
+
         @DataBoundConstructor
-        public WaitForResultsBlock(String testRunStateCheckMethod,
+        public WaitForResultsBlock(
+                String testRunStateCheckMethod,
                 String hookURL, String waitForResultsTimeout, String resultsPath, boolean downloadScreenshots,
                 boolean forceFinishAfterBreak) {
             TestRunStateCheckMethod parsedEnum = TestRunStateCheckMethod.valueOf(testRunStateCheckMethod);
@@ -671,7 +671,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         }
 
         public Integer getWaitForResultsTimeout() {
-            if(waitForResultsTimeout == null){
+            if (waitForResultsTimeout == null) {
                 waitForResultsTimeout = 0;
             }
             return waitForResultsTimeout;
@@ -697,15 +697,15 @@ public class RunInCloudBuilder extends AbstractBuilder {
             this.downloadScreenshots = downloadScreenshots;
         }
 
-        public void setTestRunStateCheckMethod(TestRunStateCheckMethod testRunStateCheckMethod) {
-            this.testRunStateCheckMethod = testRunStateCheckMethod;
-        }
-
         public TestRunStateCheckMethod getTestRunStateCheckMethod() {
             if (testRunStateCheckMethod == null) {
                 testRunStateCheckMethod = TestRunStateCheckMethod.HOOK_URL;
             }
             return testRunStateCheckMethod;
+        }
+
+        public void setTestRunStateCheckMethod(TestRunStateCheckMethod testRunStateCheckMethod) {
+            this.testRunStateCheckMethod = testRunStateCheckMethod;
         }
     }
 
@@ -833,7 +833,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
             }
             return items;
         }
-
 
     }
 }
