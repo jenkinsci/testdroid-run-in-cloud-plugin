@@ -1,8 +1,6 @@
-
 1.0.7
 =====
-
-
+* Handle NumberFormatException, when Device group is not chosen
 
 1.0.6
 =====

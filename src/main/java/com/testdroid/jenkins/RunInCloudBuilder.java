@@ -427,17 +427,17 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
             return true;
         } catch (APIException e) {
-            listener.getLogger().println(
-                    String.format("%s: %s", Messages.ERROR_API(), e.getMessage()));
+            listener.getLogger().println(String.format("%s: %s", Messages.ERROR_API(), e.getMessage()));
             LOGGER.log(Level.WARNING, Messages.ERROR_API(), e);
         } catch (IOException e) {
-            listener.getLogger().println(
-                    String.format("%s: %s", Messages.ERROR_CONNECTION(), e.getLocalizedMessage()));
+            listener.getLogger().println(String.format("%s: %s", Messages.ERROR_CONNECTION(), e.getLocalizedMessage()));
             LOGGER.log(Level.WARNING, Messages.ERROR_CONNECTION(), e);
         } catch (InterruptedException e) {
-            listener.getLogger().println(
-                    String.format("%s: %s", Messages.ERROR_TESTDROID(), e.getLocalizedMessage()));
+            listener.getLogger().println(String.format("%s: %s", Messages.ERROR_TESTDROID(), e.getLocalizedMessage()));
             LOGGER.log(Level.WARNING, Messages.ERROR_TESTDROID(), e);
+        } catch (NumberFormatException e) {
+            listener.getLogger().println(Messages.NO_DEVICE_GROUP_CHOSEN());
+            LOGGER.log(Level.WARNING, Messages.NO_DEVICE_GROUP_CHOSEN());
         } finally {
             if (!releaseDone) {
                 plugin.getSemaphore().release();
