@@ -14,6 +14,14 @@
             <f:entry field="testRunNameField" title="${%Test run name}">
                 <f:textbox name="testRunName" value="${instance.testRunName}"/>
             </f:entry>
+            <j:choose>
+                <j:when test="${descriptor.isPaidUser()}">
+                    <f:entry field="testTimeout" title="${%Test timeout}">
+                        <f:textbox name="testTimeout" value="${instance.getTestTimeout()}"
+                                   placeholder="You can set a time-out period (value in seconds) for tests so that if they get stuck for some reason extensive amount of testing time is not lost."/>
+                    </f:entry>
+                </j:when>
+            </j:choose>
             <f:entry field="application" title="${%Application}">
                 <f:textbox name="appPath" value="${instance.appPath}"/>
             </f:entry>
