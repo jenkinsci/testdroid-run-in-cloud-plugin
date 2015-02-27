@@ -1,0 +1,12 @@
+1.0.7
+=====
+* Handle NumberFormatException, when Device group is not chosen
+* Test timeout support
+* API library updated to 2.3 version
+
+1.0.6
+=====
+
+* Fetch only valid test results to workspace
+* Fix wrong display of stored Check test run status method
+

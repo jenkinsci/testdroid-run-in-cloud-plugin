@@ -33,6 +33,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
@@ -43,6 +44,15 @@ public class RunInCloudBuilder extends AbstractBuilder {
     transient private static final Logger LOGGER = Logger.getLogger(RunInCloudBuilder.class.getSimpleName());
 
     transient private static final String POST_HOOK_URL = "/plugin/testdroid-run-in-cloud/api/json/cloud-webhook";
+
+    private static final List<String> PAID_ROLES = new ArrayList<String>() {
+        {
+            add("PRIORITY_SILVER");
+            add("PRIORITY_GOLD");
+            add("PRIORITY_PLATINUM");
+            add("PAID_RUN");
+        }
+    };
 
     private String appPath;
 
@@ -82,6 +92,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     private String withoutAnnotation;
 
+    private String testTimeout;
+
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
     public RunInCloudBuilder(
@@ -89,7 +101,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             String testRunner, String clusterId, String language, String notificationEmail, String screenshotsDirectory,
             String keyValuePairs, String withAnnotation, String withoutAnnotation, String testCasesSelect,
             String testCasesValue, String notificationEmailType, Boolean failBuildIfThisStepFailed,
-            WaitForResultsBlock waitForResultsBlock) {
+            WaitForResultsBlock waitForResultsBlock, String testTimeout) {
         this.projectId = projectId;
         this.appPath = appPath;
         this.dataPath = dataPath;
@@ -109,6 +121,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         this.notificationEmailType = notificationEmailType;
         this.failBuildIfThisStepFailed = failBuildIfThisStepFailed;
         this.waitForResultsBlock = waitForResultsBlock;
+        this.testTimeout = testTimeout;
     }
 
     public String getTestRunName() {
@@ -253,6 +266,14 @@ public class RunInCloudBuilder extends AbstractBuilder {
         this.notificationEmailType = notificationEmailType;
     }
 
+    public String getTestTimeout() {
+        return testTimeout;
+    }
+
+    public void setTestTimeout(String testTimeout) {
+        this.testTimeout = testTimeout;
+    }
+
     public WaitForResultsBlock getWaitForResultsBlock() {
         return waitForResultsBlock;
     }
@@ -372,6 +393,16 @@ public class RunInCloudBuilder extends AbstractBuilder {
             config.setInstrumentationRunner(testRunnerFinal);
             config.setWithoutAnnotation(withoutAnnotationFinal);
             config.setWithAnnotation(withAnnotationFinal);
+            if (getDescriptor().isPaidUser()) {
+                try {
+                    config.setTimeout(Long.parseLong(testTimeout));
+                } catch (NumberFormatException ignored) {
+                    listener.getLogger().println(String.format(Messages.TEST_TIMEOUT_NOT_NUMERIC_VALUE(), testTimeout));
+                }
+            } else {
+                // 10 minutes for free users
+                config.setTimeout(600l);
+            }
             setLimitations(build, listener, config);
             deleteExistingParameters(config);
             createProvidedParameters(config);
@@ -427,17 +458,17 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
             return true;
         } catch (APIException e) {
-            listener.getLogger().println(
-                    String.format("%s: %s", Messages.ERROR_API(), e.getMessage()));
+            listener.getLogger().println(String.format("%s: %s", Messages.ERROR_API(), e.getMessage()));
             LOGGER.log(Level.WARNING, Messages.ERROR_API(), e);
         } catch (IOException e) {
-            listener.getLogger().println(
-                    String.format("%s: %s", Messages.ERROR_CONNECTION(), e.getLocalizedMessage()));
+            listener.getLogger().println(String.format("%s: %s", Messages.ERROR_CONNECTION(), e.getLocalizedMessage()));
             LOGGER.log(Level.WARNING, Messages.ERROR_CONNECTION(), e);
         } catch (InterruptedException e) {
-            listener.getLogger().println(
-                    String.format("%s: %s", Messages.ERROR_TESTDROID(), e.getLocalizedMessage()));
+            listener.getLogger().println(String.format("%s: %s", Messages.ERROR_TESTDROID(), e.getLocalizedMessage()));
             LOGGER.log(Level.WARNING, Messages.ERROR_TESTDROID(), e);
+        } catch (NumberFormatException e) {
+            listener.getLogger().println(Messages.NO_DEVICE_GROUP_CHOSEN());
+            LOGGER.log(Level.WARNING, Messages.NO_DEVICE_GROUP_CHOSEN());
         } finally {
             if (!releaseDone) {
                 plugin.getSemaphore().release();
@@ -751,6 +782,23 @@ public class RunInCloudBuilder extends AbstractBuilder {
                     for (APIRole role : user.getRoles()) {
                         if ("ADMIN".equals(role.getName())) {
                             return !role.isLimited() || role.getUseLimit() > 0;
+                        }
+                    }
+                } catch (APIException e) {
+                    LOGGER.log(Level.WARNING, Messages.ERROR_API());
+                }
+
+            }
+            return false;
+        }
+
+        public boolean isPaidUser() {
+            if (isAuthenticated()) {
+                try {
+                    APIUser user = TestdroidCloudSettings.descriptor().getUser();
+                    for (APIRole role : user.getRoles()) {
+                        if (PAID_ROLES.contains(role.getName())) {
+                            return true;
                         }
                     }
                 } catch (APIException e) {
