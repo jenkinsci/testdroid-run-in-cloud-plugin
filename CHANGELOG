@@ -1,3 +1,7 @@
+1.0.8
+=====
+* Print timeout to Jenkins job console
+
 1.0.7
 =====
 * Handle NumberFormatException, when Device group is not chosen
