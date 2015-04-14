@@ -1,6 +1,7 @@
 1.0.8
 =====
 * Print timeout to Jenkins job console
+* Fix for checking "Finish test in Testdroid Cloud after 'Timeout for results’"
 
 1.0.7
 =====

@@ -739,6 +739,14 @@ public class RunInCloudBuilder extends AbstractBuilder {
         public void setTestRunStateCheckMethod(TestRunStateCheckMethod testRunStateCheckMethod) {
             this.testRunStateCheckMethod = testRunStateCheckMethod;
         }
+
+        public boolean isForceFinishAfterBreak() {
+            return forceFinishAfterBreak;
+        }
+
+        public void setForceFinishAfterBreak(boolean forceFinishAfterBreak) {
+            this.forceFinishAfterBreak = forceFinishAfterBreak;
+        }
     }
 
     @Extension
