@@ -583,6 +583,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         listener.getLogger().println(
                 String.format("%s: %s", Messages.APP_CRAWLER(), config.getMode() == APITestRunConfig.Mode.APP_CRAWLER));
         listener.getLogger().println(String.format("%s: %s", Messages.PRICE(), config.getCreditsPrice()));
+        listener.getLogger().println(String.format("%s: %s", Messages.TIMEOUT(), config.getTimeout()));
     }
 
     private String getAbsolutePath(AbstractBuild<?, ?> build, String path) throws IOException, InterruptedException {
@@ -737,6 +738,14 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
         public void setTestRunStateCheckMethod(TestRunStateCheckMethod testRunStateCheckMethod) {
             this.testRunStateCheckMethod = testRunStateCheckMethod;
+        }
+
+        public boolean isForceFinishAfterBreak() {
+            return forceFinishAfterBreak;
+        }
+
+        public void setForceFinishAfterBreak(boolean forceFinishAfterBreak) {
+            this.forceFinishAfterBreak = forceFinishAfterBreak;
         }
     }
 
