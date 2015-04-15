@@ -518,7 +518,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
                     LOGGER.log(Level.WARNING, e.getMessage(), e);
                 }
                 if (testRunToAbort && waitForResultsBlock.forceFinishAfterBreak) {
-                    String msg = "Forcing to finish test in cloud";
+                    String msg = "Force finish test in Cloud";
                     listener.getLogger().println(msg);
                     LOGGER.log(Level.WARNING, msg);
                     testRun.abort();
