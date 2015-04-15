@@ -454,9 +454,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
             plugin.getSemaphore().release();
             releaseDone = true;
 
-            waitForResults(project, testRun, build, launcher, listener);
+            return waitForResults(project, testRun, build, launcher, listener);
 
-            return true;
         } catch (APIException e) {
             listener.getLogger().println(String.format("%s: %s", Messages.ERROR_API(), e.getMessage()));
             LOGGER.log(Level.WARNING, Messages.ERROR_API(), e);
@@ -478,9 +477,10 @@ public class RunInCloudBuilder extends AbstractBuilder {
         return false;
     }
 
-    private void waitForResults(
+    private boolean waitForResults(
             final APIProject project, final APITestRun testRun, AbstractBuild<?, ?> build, Launcher launcher,
             BuildListener listener) {
+        boolean isDownloadOk = true;
         if (isWaitForResults()) {
             TestRunFinishCheckScheduler scheduler = TestRunFinishCheckSchedulerFactory.createTestRunFinishScheduler
                     (waitForResultsBlock.getTestRunStateCheckMethod());
@@ -495,17 +495,18 @@ public class RunInCloudBuilder extends AbstractBuilder {
                     scheduler.cancel(project.getId(), testRun.getId());
                     testRun.refresh();
                     if (testRun.getState() == APITestRun.State.FINISHED) {
-                        boolean downloadResults = launcher.getChannel().call(
+                        isDownloadOk = launcher.getChannel().call(
                                 new MachineIndependentResultsDownloader(TestdroidCloudSettings.descriptor(), listener,
                                         project.getId(), testRun.getId(), evaluateResultsPath(build),
                                         waitForResultsBlock.isDownloadScreenshots()));
 
-                        if (!downloadResults) {
+                        if (!isDownloadOk) {
                             listener.getLogger().println(Messages.DOWNLOAD_RESULTS_FAILED());
                             LOGGER.log(Level.WARNING, Messages.DOWNLOAD_RESULTS_FAILED());
                         }
                     } else {
                         testRunToAbort = true;
+                        isDownloadOk = false;
                         String msg = String.format(Messages.DOWNLOAD_RESULTS_FAILED_WITH_REASON_S(),
                                 "Test run is not finished yet!");
                         listener.getLogger().println(msg);
@@ -535,6 +536,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 scheduler.cancel(project.getId(), testRun.getId());
             }
         }
+        return isDownloadOk;
     }
 
     private void setLimitations(AbstractBuild<?, ?> build, final BuildListener listener, APITestRunConfig config)
