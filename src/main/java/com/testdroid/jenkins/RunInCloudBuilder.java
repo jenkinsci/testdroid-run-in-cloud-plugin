@@ -507,7 +507,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
                     } else {
                         testRunToAbort = true;
                         String msg = String.format(Messages.DOWNLOAD_RESULTS_FAILED_WITH_REASON_S(),
-                                "Test run is not finished yet! Forcing to finish test in cloud");
+                                "Test run is not finished yet!");
                         listener.getLogger().println(msg);
                         LOGGER.log(Level.WARNING, msg);
                     }
