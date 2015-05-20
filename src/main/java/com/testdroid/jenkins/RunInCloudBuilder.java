@@ -298,10 +298,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
         return StringUtils.isNotBlank(dataPath);
     }
 
-    public String getEditProjectUrl() {
-        return TestdroidCloudSettings.descriptor().getCloudUrl() + "/#service/projects/" + getProjectId();
-    }
-
     private boolean verifyParameters(BuildListener listener) {
         boolean result = true;
         if (StringUtils.isBlank(appPath)) {
@@ -358,6 +354,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         String testRunnerFinal = applyMacro(build, listener, testRunner);
         String withoutAnnotationFinal = applyMacro(build, listener, withoutAnnotation);
 
+        TestdroidCloudSettings.DescriptorImpl descriptor = TestdroidCloudSettings.descriptor();
         TestdroidCloudSettings plugin = TestdroidCloudSettings.getInstance();
         boolean releaseDone = false;
 
@@ -368,7 +365,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             if (!verifyParameters(listener)) {
                 return false;
             }
-            APIUser user = TestdroidCloudSettings.descriptor().getUser();
+            APIUser user = descriptor.getUser();
 
             final APIProject project = user.getProject(Long.parseLong(this.projectId.trim()));
             if (project == null) {
@@ -415,7 +412,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
             listener.getLogger().println(String.format(Messages.UPLOADING_NEW_APPLICATION_S(), appPathFinal));
 
-            if (!appFile.act(new MachineIndependentFileUploader(TestdroidCloudSettings.descriptor(), project.getId(),
+            if (!appFile.act(new MachineIndependentFileUploader(descriptor, project.getId(),
                     MachineIndependentFileUploader.FILE_TYPE.APPLICATION, listener))) {
                 return false;
             }
@@ -426,8 +423,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 listener.getLogger().println(String.format(Messages.UPLOADING_NEW_INSTRUMENTATION_S(),
                         testPathFinal));
 
-                if (!testFile.act(new MachineIndependentFileUploader(TestdroidCloudSettings.descriptor(),
-                        project.getId(), MachineIndependentFileUploader.FILE_TYPE.TEST, listener))) {
+                if (!testFile.act(new MachineIndependentFileUploader(descriptor, project.getId(),
+                        MachineIndependentFileUploader.FILE_TYPE.TEST, listener))) {
                     return false;
                 }
             }
@@ -435,8 +432,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
             if (isDataFile()) {
                 FilePath dataFile = new FilePath(launcher.getChannel(), getAbsolutePath(build, dataPathFinal));
                 listener.getLogger().println(String.format(Messages.UPLOADING_DATA_FILE_S(), dataPathFinal));
-                if (!dataFile.act(new MachineIndependentFileUploader(TestdroidCloudSettings.descriptor(),
-                        project.getId(), MachineIndependentFileUploader.FILE_TYPE.DATA, listener))) {
+                if (!dataFile.act(new MachineIndependentFileUploader(descriptor, project.getId(),
+                        MachineIndependentFileUploader.FILE_TYPE.DATA, listener))) {
                     return false;
                 }
             }
@@ -446,8 +443,11 @@ public class RunInCloudBuilder extends AbstractBuilder {
             String finalTestRunName = applyMacro(build, listener, testRunName);
             APITestRun testRun = (StringUtils.isBlank(finalTestRunName) || finalTestRunName.trim().startsWith("$")) ?
                     project.run() : project.run(finalTestRunName);
-            String cloudLinkPrefix = TestdroidCloudSettings.descriptor().getPrivateInstanceState() ?
-                    TestdroidCloudSettings.descriptor().getCloudUrl() : TestdroidCloudSettings.CLOUD_ENDPOINT;
+
+            String cloudLinkPrefix = descriptor.getPrivateInstanceState() ?
+                    StringUtils.isNotBlank(descriptor.getNewCloudUrl()) ?
+                            descriptor.getNewCloudUrl() : descriptor
+                            .getCloudUrl() : TestdroidCloudSettings.CLOUD_ENDPOINT;
             build.getActions().add(new CloudLink(build, String.format("%s/#service/testrun/%s/%s",
                     cloudLinkPrefix, testRun.getProjectId(), testRun.getId())));
 
