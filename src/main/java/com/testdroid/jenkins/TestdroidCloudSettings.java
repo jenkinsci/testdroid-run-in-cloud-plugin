@@ -79,6 +79,8 @@ public class TestdroidCloudSettings extends Plugin implements Describable<Testdr
 
         private String cloudUrl;
 
+        private String newCloudUrl;
+
         private String email;
 
         private boolean isProxy;
@@ -243,6 +245,16 @@ public class TestdroidCloudSettings extends Plugin implements Describable<Testdr
         @Exported
         public void setCloudUrl(String cloudUrl) {
             this.cloudUrl = cloudUrl;
+        }
+
+        @Exported
+        public String getNewCloudUrl() {
+            return newCloudUrl;
+        }
+
+        @Exported
+        public void setNewCloudUrl(String newCloudUrl) {
+            this.newCloudUrl = newCloudUrl;
         }
 
         @Exported
