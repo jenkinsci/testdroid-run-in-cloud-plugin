@@ -395,6 +395,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
                     config.setTimeout(Long.parseLong(testTimeout));
                 } catch (NumberFormatException ignored) {
                     listener.getLogger().println(String.format(Messages.TEST_TIMEOUT_NOT_NUMERIC_VALUE(), testTimeout));
+                    config.setTimeout(600l);
                 }
             } else {
                 // 10 minutes for free users
