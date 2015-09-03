@@ -9,7 +9,8 @@ work
 *.iml
 .settings
 nbactions.xml
-bin/
+bin/*
+!bin/*.hpi
 
 .com.apple.timemachine.supported
 
