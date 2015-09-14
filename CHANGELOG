@@ -2,6 +2,7 @@
 =====
 * Fail job when time limit for result wait have been met
 * Added link to new UI
+* Fix for concurrent jobs in the same project
 
 1.0.8
 =====
