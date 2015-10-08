@@ -18,7 +18,7 @@ import java.util.logging.Logger;
  * @author Krzysztof Fonal <krzysztof.fonal@bitbar.com>
  * @author Michał Szpruta <michal.szpruta@bitbar.com>
  */
-public class MachineIndependentFileUploader extends MachineIndependentTask implements FilePath.FileCallable<Boolean> {
+public class MachineIndependentFileUploader extends MachineIndependentTask implements FilePath.FileCallable<Long> {
 
     private static final Logger LOGGER = Logger.getLogger(MachineIndependentFileUploader.class.getName());
 
@@ -45,8 +45,8 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
     }
 
     @Override
-    public Boolean invoke(File file, VirtualChannel vc) throws IOException, InterruptedException {
-        boolean succeed = false;
+    public Long invoke(File file, VirtualChannel vc) throws IOException, InterruptedException {
+        Long result = null;
         int attempts = 3;
         do {
             try {
@@ -61,20 +61,19 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
                 if (file.exists()) {
                     switch (fileType) {
                         case APPLICATION:
-                            project.uploadApplication(file, "application/octet-stream");
+                            result = project.uploadApplication(file, "application/octet-stream").getId();
                             break;
                         case TEST:
-                            project.uploadTest(file, "application/octet-stream");
+                            result = project.uploadTest(file, "application/octet-stream").getId();
                             break;
                         case DATA:
-                            project.uploadData(file, "application/zip");
+                            result = project.uploadData(file, "application/zip").getId();
                             break;
                     }
-                    succeed = true;
                 } else {
                     listener.getLogger().println(String.format("%s: %s", Messages.ERROR_FILE_NOT_FOUND(),
                             file.getAbsolutePath()));
-                    return false;
+                    return null;
                 }
             } catch (Exception ex) {
                 String message = String.format("Cannot upload file %s%s", file.getAbsolutePath(), attempts > 1 ?
@@ -86,8 +85,8 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
                 } catch (InterruptedException ignore) {
                 }
             }
-        } while (!succeed && --attempts > 0);
+        } while (result == null && --attempts > 0);
 
-        return succeed;
+        return result;
     }
 }

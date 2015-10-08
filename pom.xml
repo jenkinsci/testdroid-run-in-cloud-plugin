@@ -9,7 +9,7 @@
 
     <groupId>testdroid</groupId>
     <artifactId>testdroid-run-in-cloud</artifactId>
-    <version>1.0.8</version>
+    <version>1.0.9</version>
     <packaging>hpi</packaging>
     <name>Testdroid Plugin for CI</name>
 
@@ -102,7 +102,7 @@
         <dependency>
             <groupId>com.testdroid</groupId>
             <artifactId>testdroid-api</artifactId>
-            <version>2.3</version>
+            <version>2.9</version>
         </dependency>
 
     </dependencies>
