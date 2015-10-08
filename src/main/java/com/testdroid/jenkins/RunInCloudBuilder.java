@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
@@ -298,10 +299,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
         return StringUtils.isNotBlank(dataPath);
     }
 
-    public String getEditProjectUrl() {
-        return TestdroidCloudSettings.descriptor().getCloudUrl() + "/#service/projects/" + getProjectId();
-    }
-
     private boolean verifyParameters(BuildListener listener) {
         boolean result = true;
         if (StringUtils.isBlank(appPath)) {
@@ -358,6 +355,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         String testRunnerFinal = applyMacro(build, listener, testRunner);
         String withoutAnnotationFinal = applyMacro(build, listener, withoutAnnotation);
 
+        TestdroidCloudSettings.DescriptorImpl descriptor = TestdroidCloudSettings.descriptor();
         TestdroidCloudSettings plugin = TestdroidCloudSettings.getInstance();
         boolean releaseDone = false;
 
@@ -368,7 +366,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             if (!verifyParameters(listener)) {
                 return false;
             }
-            APIUser user = TestdroidCloudSettings.descriptor().getUser();
+            APIUser user = descriptor.getUser();
 
             final APIProject project = user.getProject(Long.parseLong(this.projectId.trim()));
             if (project == null) {
@@ -398,6 +396,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
                     config.setTimeout(Long.parseLong(testTimeout));
                 } catch (NumberFormatException ignored) {
                     listener.getLogger().println(String.format(Messages.TEST_TIMEOUT_NOT_NUMERIC_VALUE(), testTimeout));
+                    config.setTimeout(600l);
                 }
             } else {
                 // 10 minutes for free users
@@ -415,8 +414,11 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
             listener.getLogger().println(String.format(Messages.UPLOADING_NEW_APPLICATION_S(), appPathFinal));
 
-            if (!appFile.act(new MachineIndependentFileUploader(TestdroidCloudSettings.descriptor(), project.getId(),
-                    MachineIndependentFileUploader.FILE_TYPE.APPLICATION, listener))) {
+            Long testFileId = null;
+            Long dataFileId = null;
+            Long appFileId = appFile.act(new MachineIndependentFileUploader(descriptor, project.getId(),
+                    MachineIndependentFileUploader.FILE_TYPE.APPLICATION, listener));
+            if (appFileId == null) {
                 return false;
             }
 
@@ -426,8 +428,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 listener.getLogger().println(String.format(Messages.UPLOADING_NEW_INSTRUMENTATION_S(),
                         testPathFinal));
 
-                if (!testFile.act(new MachineIndependentFileUploader(TestdroidCloudSettings.descriptor(),
-                        project.getId(), MachineIndependentFileUploader.FILE_TYPE.TEST, listener))) {
+                testFileId = testFile.act(new MachineIndependentFileUploader(descriptor, project.getId(),
+                        MachineIndependentFileUploader.FILE_TYPE.TEST, listener));
+                if (testFileId == null) {
                     return false;
                 }
             }
@@ -435,8 +438,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
             if (isDataFile()) {
                 FilePath dataFile = new FilePath(launcher.getChannel(), getAbsolutePath(build, dataPathFinal));
                 listener.getLogger().println(String.format(Messages.UPLOADING_DATA_FILE_S(), dataPathFinal));
-                if (!dataFile.act(new MachineIndependentFileUploader(TestdroidCloudSettings.descriptor(),
-                        project.getId(), MachineIndependentFileUploader.FILE_TYPE.DATA, listener))) {
+                dataFileId = dataFile.act(new MachineIndependentFileUploader(descriptor, project.getId(),
+                        MachineIndependentFileUploader.FILE_TYPE.DATA, listener));
+                if (dataFileId == null) {
                     return false;
                 }
             }
@@ -444,19 +448,22 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
             // run project with proper name set in jenkins if it's set
             String finalTestRunName = applyMacro(build, listener, testRunName);
-            APITestRun testRun = (StringUtils.isBlank(finalTestRunName) || finalTestRunName.trim().startsWith("$")) ?
-                    project.run() : project.run(finalTestRunName);
-            String cloudLinkPrefix = TestdroidCloudSettings.descriptor().getPrivateInstanceState() ?
-                    TestdroidCloudSettings.descriptor().getCloudUrl() : TestdroidCloudSettings.CLOUD_ENDPOINT;
+            finalTestRunName = StringUtils.isBlank(finalTestRunName) || finalTestRunName.trim().startsWith("$") ?
+                    null : finalTestRunName;
+            APITestRun testRun = project.runWithConfig(finalTestRunName, null, config, appFileId, testFileId,
+                    dataFileId);
+            String cloudLinkPrefix = descriptor.getPrivateInstanceState() ?
+                    StringUtils.isNotBlank(descriptor.getNewCloudUrl()) ?
+                            descriptor.getNewCloudUrl() : descriptor
+                            .getCloudUrl() : TestdroidCloudSettings.CLOUD_ENDPOINT;
             build.getActions().add(new CloudLink(build, String.format("%s/#service/testrun/%s/%s",
                     cloudLinkPrefix, testRun.getProjectId(), testRun.getId())));
 
             plugin.getSemaphore().release();
             releaseDone = true;
 
-            waitForResults(project, testRun, build, launcher, listener);
+            return waitForResults(project, testRun, build, launcher, listener);
 
-            return true;
         } catch (APIException e) {
             listener.getLogger().println(String.format("%s: %s", Messages.ERROR_API(), e.getMessage()));
             LOGGER.log(Level.WARNING, Messages.ERROR_API(), e);
@@ -478,9 +485,10 @@ public class RunInCloudBuilder extends AbstractBuilder {
         return false;
     }
 
-    private void waitForResults(
+    private boolean waitForResults(
             final APIProject project, final APITestRun testRun, AbstractBuild<?, ?> build, Launcher launcher,
             BuildListener listener) {
+        boolean isDownloadOk = true;
         if (isWaitForResults()) {
             TestRunFinishCheckScheduler scheduler = TestRunFinishCheckSchedulerFactory.createTestRunFinishScheduler
                     (waitForResultsBlock.getTestRunStateCheckMethod());
@@ -495,19 +503,20 @@ public class RunInCloudBuilder extends AbstractBuilder {
                     scheduler.cancel(project.getId(), testRun.getId());
                     testRun.refresh();
                     if (testRun.getState() == APITestRun.State.FINISHED) {
-                        boolean downloadResults = launcher.getChannel().call(
+                        isDownloadOk = launcher.getChannel().call(
                                 new MachineIndependentResultsDownloader(TestdroidCloudSettings.descriptor(), listener,
                                         project.getId(), testRun.getId(), evaluateResultsPath(build),
                                         waitForResultsBlock.isDownloadScreenshots()));
 
-                        if (!downloadResults) {
+                        if (!isDownloadOk) {
                             listener.getLogger().println(Messages.DOWNLOAD_RESULTS_FAILED());
                             LOGGER.log(Level.WARNING, Messages.DOWNLOAD_RESULTS_FAILED());
                         }
                     } else {
                         testRunToAbort = true;
+                        isDownloadOk = false;
                         String msg = String.format(Messages.DOWNLOAD_RESULTS_FAILED_WITH_REASON_S(),
-                                "Test run is not finished yet! Forcing to finish test in cloud");
+                                "Test run is not finished yet!");
                         listener.getLogger().println(msg);
                         LOGGER.log(Level.WARNING, msg);
                     }
@@ -518,7 +527,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
                     LOGGER.log(Level.WARNING, e.getMessage(), e);
                 }
                 if (testRunToAbort && waitForResultsBlock.forceFinishAfterBreak) {
-                    String msg = "Forcing to finish test in cloud";
+                    String msg = "Force finish test in Cloud";
                     listener.getLogger().println(msg);
                     LOGGER.log(Level.WARNING, msg);
                     testRun.abort();
@@ -535,6 +544,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 scheduler.cancel(project.getId(), testRun.getId());
             }
         }
+        return isDownloadOk;
     }
 
     private void setLimitations(AbstractBuild<?, ?> build, final BuildListener listener, APITestRunConfig config)
@@ -785,29 +795,34 @@ public class RunInCloudBuilder extends AbstractBuilder {
         }
 
         public boolean isAdmin() {
+            boolean result = false;
             if (isAuthenticated()) {
                 try {
+                    Date now = new Date();
                     APIUser user = TestdroidCloudSettings.descriptor().getUser();
                     for (APIRole role : user.getRoles()) {
-                        if ("ADMIN".equals(role.getName())) {
-                            return !role.isLimited() || role.getUseLimit() > 0;
+                        if ("ADMIN".equals(role.getName())
+                                && (role.getExpireTime() == null || role.getExpireTime().after(now))) {
+                            result = true;
                         }
                     }
                 } catch (APIException e) {
                     LOGGER.log(Level.WARNING, Messages.ERROR_API());
                 }
-
             }
-            return false;
+            return result;
         }
 
         public boolean isPaidUser() {
+            boolean result = false;
             if (isAuthenticated()) {
                 try {
+                    Date now = new Date();
                     APIUser user = TestdroidCloudSettings.descriptor().getUser();
                     for (APIRole role : user.getRoles()) {
-                        if (PAID_ROLES.contains(role.getName())) {
-                            return true;
+                        if (PAID_ROLES.contains(role.getName())
+                                && (role.getExpireTime() == null || role.getExpireTime().after(now))) {
+                            result = true;
                         }
                     }
                 } catch (APIException e) {
@@ -815,7 +830,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 }
 
             }
-            return false;
+            return result;
         }
 
         public ListBoxModel doFillProjectIdItems() {

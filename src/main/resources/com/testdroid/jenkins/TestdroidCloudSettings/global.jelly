@@ -20,6 +20,9 @@
                     <f:entry field="cloud" title="${%Testdroid Cloud URL}">
                         <f:textbox name="cloudUrl" value="${descriptor.getCloudUrl()}"/>
                     </f:entry>
+                    <f:entry field="cloudNewUI" title="${%Testdroid Cloud UI URL}">
+                        <f:textbox name="newCloudUrl" value="${descriptor.getNewCloudUrl()}"/>
+                    </f:entry>
                     <f:entry title="${%Accept self-signed certificates}">
                         <f:checkbox name="noCheckCertificate" checked="${descriptor.getNoCheckCertificate()}"/>
                         <f:description>
