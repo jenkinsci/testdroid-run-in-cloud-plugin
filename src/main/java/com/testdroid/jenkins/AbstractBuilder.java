@@ -1,3 +1,4 @@
+
 package com.testdroid.jenkins;
 
 import hudson.EnvVars;
@@ -10,6 +11,17 @@ import hudson.tasks.Builder;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+/**
+ * Testdroid Run in Cloud plugin
+ *
+ * https://git@github.com/bitbar/testdroid-run-in-cloud
+ *
+ * Usage:
+ * @TODO
+ *
+ * @author info@bitbar.com
+ */
 
 public class AbstractBuilder extends Builder {
 
