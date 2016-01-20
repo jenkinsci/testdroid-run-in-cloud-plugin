@@ -3,7 +3,14 @@ package com.testdroid.jenkins.scheduler;
 import com.testdroid.jenkins.model.TestRunStateCheckMethod;
 
 /**
- * @author Damian Sniezek <damian.sniezek@bitbar.com>
+ * Testdroid Run in Cloud plugin
+ *
+ * https://git@github.com/bitbar/testdroid-run-in-cloud
+ *
+ * Usage:
+ * @TODO
+ *
+ * @author info@bitbar.com
  */
 public class TestRunFinishCheckSchedulerFactory {
 

@@ -26,6 +26,17 @@ import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Testdroid Run in Cloud plugin
+ *
+ * https://git@github.com/bitbar/testdroid-run-in-cloud
+ *
+ * Usage:
+ * @TODO
+ *
+ * @author info@bitbar.com
+ */
+
 @ExportedBean(defaultVisibility = 1)
 public class TestdroidCloudSettings extends Plugin implements Describable<TestdroidCloudSettings>, Saveable,
         ModelObject {

@@ -11,7 +11,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * @author Michał Szpruta <michal.szpruta@bitbar.com>
+ * Testdroid Run in Cloud plugin
+ *
+ * https://git@github.com/bitbar/testdroid-run-in-cloud
+ *
+ * Usage:
+ * @TODO
+ *
+ * @author info@bitbar.com
  */
 public class TestdroidApiUtil {
 

@@ -4,7 +4,14 @@ import hudson.model.AbstractBuild;
 import hudson.model.BuildBadgeAction;
 
 /**
- * @author Michał Szpruta <michal.szpruta@bitbar.com>
+ * Testdroid Run in Cloud plugin
+ *
+ * https://git@github.com/bitbar/testdroid-run-in-cloud
+ *
+ * Usage:
+ * @TODO
+ *
+ * @author info@bitbar.com
  */
 public class CloudLink implements BuildBadgeAction {
 
