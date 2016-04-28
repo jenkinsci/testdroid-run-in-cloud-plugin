@@ -16,10 +16,7 @@ import com.testdroid.jenkins.utils.EmailHelper;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.BuildListener;
-import hudson.model.Hudson;
+import hudson.model.*;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.ListBoxModel;
@@ -456,8 +453,13 @@ public class RunInCloudBuilder extends AbstractBuilder {
                     StringUtils.isNotBlank(descriptor.getNewCloudUrl()) ?
                             descriptor.getNewCloudUrl() : descriptor
                             .getCloudUrl() : TestdroidCloudSettings.CLOUD_ENDPOINT;
-            build.getActions().add(new CloudLink(build, String.format("%s/#service/testrun/%s/%s",
-                    cloudLinkPrefix, testRun.getProjectId(), testRun.getId())));
+            String cloudLink = String.format("%s/#service/testrun/%s/%s", cloudLinkPrefix, testRun.getProjectId(),
+                    testRun.getId());
+            build.getActions().add(new CloudLink(build, cloudLink));
+
+            RunInCloudEnvInject variable = new RunInCloudEnvInject("CLOUD_LINK", cloudLink);
+            build.addAction(variable);
+
 
             plugin.getSemaphore().release();
             releaseDone = true;
