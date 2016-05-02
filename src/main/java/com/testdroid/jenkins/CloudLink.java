@@ -30,7 +30,7 @@ public class CloudLink implements BuildBadgeAction {
 
     @Override
     public String getIconFileName() {
-        return "cloud.gif";
+        return "/plugin/testdroid-run-in-cloud/images/cloud.gif";
     }
 
     @Override
