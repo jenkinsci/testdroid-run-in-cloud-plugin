@@ -375,7 +375,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
             APITestRunConfig config = project.getTestRunConfig();
             if (!isFullTest()) {
-                config.setMode(APITestRunConfig.Mode.APP_CRAWLER);
+                config.setMode(project.getType() == Type.ANDROID ? Mode.APP_CRAWLER : Mode.IOS_CRAWLER);
             } else {
                 config.setMode(projectTypeToConfigMode(project.getType()));
             }
@@ -592,8 +592,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
         listener.getLogger().println(
                 String.format("%s: %s", Messages.LOCALE(), config.getDeviceLanguageCode()));
         listener.getLogger().println(String.format("%s: %s", Messages.SCHEDULER(), config.getScheduler()));
-        listener.getLogger().println(
-                String.format("%s: %s", Messages.APP_CRAWLER(), config.getMode() == APITestRunConfig.Mode.APP_CRAWLER));
+        listener.getLogger().println(String.format("%s: %s", Messages.APP_CRAWLER(),
+                config.getMode() == Mode.APP_CRAWLER || config.getMode() == Mode.IOS_CRAWLER));
         listener.getLogger().println(String.format("%s: %s", Messages.PRICE(), config.getCreditsPrice()));
         listener.getLogger().println(String.format("%s: %s", Messages.TIMEOUT(), config.getTimeout()));
     }
