@@ -26,8 +26,7 @@
                 <f:textbox name="appPath" value="${instance.appPath}"/>
             </f:entry>
             <f:entry field="instrumentation" title="${%Test}">
-                <f:textbox name="testPath" value="${instance.testPath}"
-                           placeholder="Leave empty to use AppCrawler - available only for Android"/>
+                <f:textbox name="testPath" value="${instance.testPath}" placeholder="Leave empty to use AppCrawler"/>
             </f:entry>
             <f:entry field="data" title="${%Data}">
                 <f:textbox name="dataPath" value="${instance.dataPath}"

@@ -1,3 +1,25 @@
+1.0.14
+======
+* Fixed wrong tips for AppCrawler
+
+1.0.13
+======
+* Support for iOS AppCrawler
+
+1.0.12
+======
+* Readme update
+
+1.0.11
+======
+* Turn off doclint for Javadoc
+
+1.0.10
+======
+* More documentation
+* Fixing See detailed results side panel icon, adding CLOUD_LINK environment variable to Jenkins job
+* Adding CLOUD_LINK environment variable to Jenkins job
+
 1.0.9
 =====
 * Fail job when time limit for result wait have been met
