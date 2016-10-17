@@ -24,6 +24,7 @@
         <maven-release-plugin.version>2.5.3</maven-release-plugin.version>
         <maven-javadoc-plugin.version>2.10.3</maven-javadoc-plugin.version>
         <intranet.repo>http://nexus/content/repositories</intranet.repo>
+        <testdroid.api.version>2.29-SNAPSHOT</testdroid.api.version>
     </properties>
     <url>https://wiki.jenkins-ci.org/display/JENKINS/Testdroid+Run+In+Cloud+Plugin</url>
     <scm>
@@ -31,7 +32,7 @@
       <developerConnection>scm:git:ssh://github.com/jenkinsci/testdroid-run-in-cloud-plugin.git</developerConnection>
       <url>https://github.com/jenkinsci/testdroid-run-in-cloud-plugin</url>
       <tag>HEAD</tag>
-  </scm>
+    </scm>
 
     <licenses>
       <license>
@@ -139,7 +140,7 @@
         <dependency>
             <groupId>com.testdroid</groupId>
             <artifactId>testdroid-api</artifactId>
-            <version>2.9</version>
+            <version>${testdroid.api.version}</version>
         </dependency>
 
     </dependencies>
