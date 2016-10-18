@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 /**
  * Testdroid Run in Cloud plugin
  *
- * https://git@github.com/bitbar/testdroid-run-in-cloud
+ * https://git@github.com/jenkinsci/testdroid-run-in-cloud
  *
  * Usage:
  * @TODO
