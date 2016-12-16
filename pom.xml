@@ -28,8 +28,8 @@
     </properties>
     <url>https://wiki.jenkins-ci.org/display/JENKINS/Bitbar+Testing+Run+In+Cloud+Plugin</url>
     <scm>
-      <connection>scm:git:ssh://github.com/jenkinsci/testdroid-run-in-cloud-plugin.git</connection>
-      <developerConnection>scm:git:ssh://github.com/jenkinsci/testdroid-run-in-cloud-plugin.git</developerConnection>
+      <connection>scm:git:git@github.com/jenkinsci/testdroid-run-in-cloud-plugin.git</connection>
+      <developerConnection>scm:git:git@github.com/jenkinsci/testdroid-run-in-cloud-plugin.git</developerConnection>
       <url>https://github.com/jenkinsci/testdroid-run-in-cloud-plugin</url>
       <tag>HEAD</tag>
     </scm>
