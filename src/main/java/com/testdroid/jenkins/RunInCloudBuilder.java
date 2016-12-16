@@ -376,10 +376,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             APITestRunConfig config = project.getTestRunConfig();
             if (!isFullTest()) {
                 config.setMode(project.getType() == Type.ANDROID ? Mode.APP_CRAWLER : Mode.IOS_CRAWLER);
-            } else {
-                config.setMode(projectTypeToConfigMode(project.getType()));
             }
-
             config.setDeviceLanguageCode(this.language);
             config.setScheduler(Scheduler.valueOf(this.scheduler));
             config.setUsedDeviceGroupId(Long.parseLong(this.clusterId));
@@ -614,11 +611,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
     @Override
     public DescriptorImpl getDescriptor() {
         return (DescriptorImpl) super.getDescriptor();
-    }
-
-    private Mode projectTypeToConfigMode(Type type) {
-        return APITestRunConfig.Mode
-                .valueOf(type.toString().replace(Type.ANDROID.toString(), Mode.FULL_RUN.toString()));
     }
 
     private void updateUserEmailNotifications(APIUser user, APIProject project) {
