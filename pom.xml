@@ -24,7 +24,7 @@
         <maven-release-plugin.version>2.5.3</maven-release-plugin.version>
         <maven-javadoc-plugin.version>2.10.3</maven-javadoc-plugin.version>
         <intranet.repo>http://nexus/content/repositories</intranet.repo>
-        <testdroid.api.version>2.28</testdroid.api.version>
+        <testdroid.api.version>2.32</testdroid.api.version>
     </properties>
     <url>https://wiki.jenkins-ci.org/display/JENKINS/Bitbar+Testing+Run+In+Cloud+Plugin</url>
     <scm>
