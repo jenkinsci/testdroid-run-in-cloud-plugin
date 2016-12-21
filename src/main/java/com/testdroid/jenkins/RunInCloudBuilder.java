@@ -1,5 +1,6 @@
 package com.testdroid.jenkins;
 
+import com.testdroid.api.APIDeviceGroupQueryBuilder;
 import com.testdroid.api.APIException;
 import com.testdroid.api.APIQueryBuilder;
 import com.testdroid.api.model.*;
@@ -854,7 +855,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             ListBoxModel deviceGroups = new ListBoxModel();
             try {
                 APIUser user = TestdroidCloudSettings.descriptor().getUser();
-                List<APIDeviceGroup> list = user.getDeviceGroupsResource(new APIQueryBuilder()
+                List<APIDeviceGroup> list = user.getDeviceGroupsResource(new APIDeviceGroupQueryBuilder().withPublic()
                         .limit(Integer.MAX_VALUE)).getEntity().getData();
                 for (APIDeviceGroup deviceGroup : list) {
                     deviceGroups.add(String.format("%s (%d device(s))", deviceGroup.getDisplayName(),
