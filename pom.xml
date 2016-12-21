@@ -23,6 +23,7 @@
     <properties>
         <maven-release-plugin.version>2.5.3</maven-release-plugin.version>
         <maven-javadoc-plugin.version>2.10.3</maven-javadoc-plugin.version>
+        <maven-compiler-plugin.version>2.3.2</maven-compiler-plugin.version>
         <intranet.repo>http://nexus/content/repositories</intranet.repo>
         <testdroid.api.version>2.32</testdroid.api.version>
     </properties>
@@ -90,7 +91,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.3.2</version>
+                <version>${maven-compiler-plugin.version}</version>
                 <configuration>
                     <source>1.6</source>
                     <target>1.6</target>
