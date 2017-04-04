@@ -25,7 +25,8 @@
         <maven-javadoc-plugin.version>2.10.3</maven-javadoc-plugin.version>
         <maven-compiler-plugin.version>2.3.2</maven-compiler-plugin.version>
         <intranet.repo>http://nexus/content/repositories</intranet.repo>
-        <testdroid.api.version>2.32</testdroid.api.version>
+        <testdroid.api.version>2.38</testdroid.api.version>
+        <jdk.version>1.8</jdk.version>
     </properties>
     <url>https://wiki.jenkins-ci.org/display/JENKINS/Bitbar+Testing+Run+In+Cloud+Plugin</url>
     <scm>
@@ -93,8 +94,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven-compiler-plugin.version}</version>
                 <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
+                    <source>${jdk.version}</source>
+                    <target>${jdk.version}</target>
                 </configuration>
             </plugin>
             <plugin>

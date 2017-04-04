@@ -4,8 +4,6 @@ import com.testdroid.api.APIDeviceGroupQueryBuilder;
 import com.testdroid.api.APIException;
 import com.testdroid.api.APIQueryBuilder;
 import com.testdroid.api.model.*;
-import com.testdroid.api.model.APIProject.Type;
-import com.testdroid.api.model.APITestRunConfig.Mode;
 import com.testdroid.api.model.APITestRunConfig.Scheduler;
 import com.testdroid.jenkins.model.TestRunStateCheckMethod;
 import com.testdroid.jenkins.remotesupport.MachineIndependentFileUploader;
@@ -375,9 +373,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             updateUserEmailNotifications(user, project);
 
             APITestRunConfig config = project.getTestRunConfig();
-            if (!isFullTest()) {
-                config.setMode(project.getType() == Type.ANDROID ? Mode.APP_CRAWLER : Mode.IOS_CRAWLER);
-            }
+            config.setAppCrawlerRun(!isFullTest());
             config.setDeviceLanguageCode(this.language);
             config.setScheduler(Scheduler.valueOf(this.scheduler));
             config.setUsedDeviceGroupId(Long.parseLong(this.clusterId));
@@ -587,11 +583,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
     private void printTestJob(APIProject project, APITestRunConfig config, BuildListener listener) {
         listener.getLogger().println(Messages.TEST_RUN_CONFIGURATION());
         listener.getLogger().println(String.format("%s: %s", Messages.PROJECT(), project.getName()));
-        listener.getLogger().println(
-                String.format("%s: %s", Messages.LOCALE(), config.getDeviceLanguageCode()));
+        listener.getLogger().println(String.format("%s: %s", Messages.LOCALE(), config.getDeviceLanguageCode()));
         listener.getLogger().println(String.format("%s: %s", Messages.SCHEDULER(), config.getScheduler()));
-        listener.getLogger().println(String.format("%s: %s", Messages.APP_CRAWLER(),
-                config.getMode() == Mode.APP_CRAWLER || config.getMode() == Mode.IOS_CRAWLER));
+        listener.getLogger().println(String.format("%s: %s", Messages.APP_CRAWLER(), config.getAppCrawlerRun()));
         listener.getLogger().println(String.format("%s: %s", Messages.PRICE(), config.getCreditsPrice()));
         listener.getLogger().println(String.format("%s: %s", Messages.TIMEOUT(), config.getTimeout()));
     }
