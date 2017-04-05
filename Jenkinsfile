@@ -1,0 +1,2 @@
+buildPlugin(failFast: false)
+
