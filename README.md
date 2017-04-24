@@ -1,3 +1,8 @@
+<p align="center">
+  <a href="https://www.ej-technologies.com/products/jprofiler/overview.html"><img src="https://img.shields.io/badge/Java%20profiler-jprofiler-blue.svg" alt="Java profiler"></a>
+  <a href="https://raw.githubusercontent.com/jenkinsci/testdroid-run-in-cloud-plugin/master/LICENSE"><img src="https://img.shields.io/crates/l/rustc-serialize.svg" alt="License"></a>
+</p>
+
 # Testdroid Run in Cloud Plugin
 
 ## About plugin
