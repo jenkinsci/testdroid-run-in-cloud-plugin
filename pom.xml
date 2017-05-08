@@ -25,7 +25,7 @@
         <maven-javadoc-plugin.version>2.10.3</maven-javadoc-plugin.version>
         <maven-compiler-plugin.version>2.3.2</maven-compiler-plugin.version>
         <intranet.repo>http://nexus/content/repositories</intranet.repo>
-        <testdroid.api.version>2.38</testdroid.api.version>
+        <testdroid.api.version>2.39</testdroid.api.version>
         <jdk.version>1.8</jdk.version>
     </properties>
     <url>https://wiki.jenkins-ci.org/display/JENKINS/Bitbar+Testing+Run+In+Cloud+Plugin</url>
@@ -82,7 +82,7 @@
 
     <!-- Build-step for bytecode enhancing openJPA entities -->
     <build>
-        <finalName>${artifactId}-${version}</finalName>
+        <finalName>${project.artifactId}-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

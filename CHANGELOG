@@ -1,3 +1,22 @@
+1.0.20
+======
+* Getting all results in single zip file per device session
+
+1.0.19
+======
+* Add jprofiler info to README.md
+
+1.0.18
+======
+* Compatibility with new API client
+* Added JenkinsFile
+
+1.0.17
+======
+* APITestRunConfig.Mode should be passed only for AppCrowler
+* Update testdroid-api version to 2.32
+* Enable free device groups
+
 1.0.16
 ======
 * Updated repository url

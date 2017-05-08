@@ -3,8 +3,7 @@ package com.testdroid.jenkins.remotesupport;
 import com.testdroid.api.APIClient;
 import com.testdroid.api.APIException;
 import com.testdroid.api.APIQueryBuilder;
-import com.testdroid.api.model.APIDeviceRun;
-import com.testdroid.api.model.APIDeviceSessionDataAvailability;
+import com.testdroid.api.model.APIDeviceSession;
 import com.testdroid.api.model.APIScreenshot;
 import com.testdroid.api.model.APITestRun;
 import com.testdroid.jenkins.Messages;
@@ -71,38 +70,22 @@ public class MachineIndependentResultsDownloader extends MachineIndependentTask
         boolean success = false; //if we are able to download results from at least one device then whole method
         // should return true, false only when results was not available at all, other case just warn in logs
 
-        APIDeviceSessionDataAvailability dataAvailability;
         String deviceDisplayName;
-        for (APIDeviceRun deviceRun : testRun.getDeviceRunsResource(new APIQueryBuilder().limit(Integer.MAX_VALUE))
-                .getEntity().getData()) {
-            deviceDisplayName = deviceRun.getDevice().getDisplayName();
+        for (APIDeviceSession deviceSession : testRun.getDeviceSessionsResource(new APIQueryBuilder().limit(Integer
+                .MAX_VALUE)).getEntity().getData()) {
+            deviceDisplayName = deviceSession.getDevice().getDisplayName();
 
             //create directory with results for this device
             File resultDir = new File(String
                     .format("%s/testdroid_result-%s-%d", resultsPath.endsWith(File.pathSeparator) ? resultsPath
                                     .substring(0, resultsPath.length() - File.pathSeparator.length()) : resultsPath,
-                            deviceDisplayName.replaceAll(" ", "_"), deviceRun.getId()));
-            if (deviceRun.getRunStatus() != APIDeviceRun.RunStatus.EXCLUDED) {
-                dataAvailability = deviceRun.getDataAvailability();
-                if (dataAvailability.isLogs() && download(deviceRun
-                        .getLogs(), resultDir, "devicelog.log", deviceDisplayName)) {
-                    success = true;
-                }
-                if (download(deviceRun.getJunitXml(), resultDir, "TEST-all.xml", deviceDisplayName)) {
-                    success = true;
-                }
-                if (dataAvailability.isPerformance() && download(deviceRun
-                        .getPerformanceData(), resultDir, "performance.txt", deviceDisplayName)) {
-                    success = true;
-                }
-                if (dataAvailability.isResultsDataZip() && download(deviceRun
-                        .getResultDataZip(), resultDir, "results.zip", deviceDisplayName)) {
-                    success = true;
-                }
+                            deviceDisplayName.replaceAll(" ", "_"), deviceSession.getId()));
+            if (deviceSession.getState() != APIDeviceSession.State.EXCLUDED) {
+                success = download(deviceSession.getOutputFiles(), resultDir, "results.zip", deviceDisplayName);
                 //optionally download screenshots
-                if (downloadScreenshots && dataAvailability.isScreenshots()) {
+                if (downloadScreenshots) {
                     resultDir = new File(resultDir, "screenshots");
-                    for (APIScreenshot screenshot : deviceRun.getScreenshotsResource(new APIQueryBuilder()
+                    for (APIScreenshot screenshot : deviceSession.getScreenshotsResource(new APIQueryBuilder()
                             .limit(Integer.MAX_VALUE)).getEntity().getData()) {
                         download(screenshot.getContent(), resultDir, screenshot.getOriginalName(), deviceDisplayName);
                     }
