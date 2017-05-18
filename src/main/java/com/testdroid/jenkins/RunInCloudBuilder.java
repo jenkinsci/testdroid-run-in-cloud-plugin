@@ -305,10 +305,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
             listener.getLogger().println(Messages.EMPTY_PROJECT() + "\n");
             result = false;
         }
-        if (isFullTest() && StringUtils.isBlank(testPath)) {
-            listener.getLogger().println(Messages.ERROR_INSTRUMENTATION_PATH());
-            result = false;
-        }
         return result;
     }
 
