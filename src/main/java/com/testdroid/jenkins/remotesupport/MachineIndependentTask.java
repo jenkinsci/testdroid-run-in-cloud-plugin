@@ -39,6 +39,7 @@ public class MachineIndependentTask implements Serializable {
     public MachineIndependentTask(TestdroidCloudSettings.DescriptorImpl descriptor) {
         this.user = descriptor.getEmail();
         this.password = descriptor.getPassword();
+        this.noCheckCertificate = descriptor.getNoCheckCertificate();
         this.cloudUrl = descriptor.getCloudUrl();
         this.privateInstance = descriptor.getPrivateInstanceState();
         this.isProxy = descriptor.getIsProxy();
