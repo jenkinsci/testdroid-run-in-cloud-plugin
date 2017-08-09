@@ -8,7 +8,7 @@
 
     <groupId>testdroid</groupId>
     <artifactId>testdroid-run-in-cloud</artifactId>
-    <version>1.0.21</version>
+    <version>1.0.22-SNAPSHOT</version>
     <packaging>hpi</packaging>
     <name>Testdroid Plugin for CI</name>
 
@@ -33,7 +33,7 @@
         <connection>scm:git:git@github.com:jenkinsci/testdroid-run-in-cloud-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:jenkinsci/testdroid-run-in-cloud-plugin.git</developerConnection>
         <url>git@github.com:jenkinsci/testdroid-run-in-cloud-plugin.git</url>
-      <tag>testdroid-run-in-cloud-1.0.21</tag>
+      <tag>HEAD</tag>
     </scm>
 
     <distributionManagement>
