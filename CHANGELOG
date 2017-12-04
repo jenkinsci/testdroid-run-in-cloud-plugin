@@ -1,3 +1,11 @@
+1.0.22
+======
+* Removed admin property check for key value pairs
+
+1.0.21
+======
+* Included noCheckCertificate to get its value in the MachineIndependentTask
+
 1.0.20
 ======
 * Getting all results in single zip file per device session
