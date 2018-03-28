@@ -17,14 +17,11 @@ public class AndroidLocale {
     public static final Locale[] LOCALES;
 
     static {
-        SortedSet<Locale> languages = new TreeSet<Locale>(new Comparator<Locale>() {
-            @Override
-            public int compare(Locale o1, Locale o2) {
-                if (o1.getDisplayLanguage().trim().compareTo(o2.getDisplayLanguage().trim()) == 0) {
-                    return o1.getDisplayCountry().trim().compareTo(o2.getDisplayCountry().trim());
-                } else {
-                    return o1.getDisplayLanguage().trim().compareTo(o2.getDisplayLanguage().trim());
-                }
+        SortedSet<Locale> languages = new TreeSet<>((o1, o2) -> {
+            if (o1.getDisplayLanguage().trim().compareTo(o2.getDisplayLanguage().trim()) == 0) {
+                return o1.getDisplayCountry().trim().compareTo(o2.getDisplayCountry().trim());
+            } else {
+                return o1.getDisplayLanguage().trim().compareTo(o2.getDisplayLanguage().trim());
             }
         });
         Collections.addAll(languages,

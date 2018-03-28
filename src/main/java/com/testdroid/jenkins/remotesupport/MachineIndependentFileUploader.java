@@ -10,19 +10,18 @@ import hudson.model.BuildListener;
 import hudson.remoting.VirtualChannel;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Testdroid Run in Cloud plugin
- *
+ * <p>
  * https://git@github.com/jenkinsci/testdroid-run-in-cloud
- *
+ * <p>
  * Usage:
- * @TODO
  *
  * @author info@bitbar.com
+ * @TODO
  */
 public class MachineIndependentFileUploader extends MachineIndependentTask implements FilePath.FileCallable<Long> {
 
@@ -30,9 +29,9 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
 
     private FILE_TYPE fileType;
 
-    BuildListener listener;
+    private BuildListener listener;
 
-    long projectId;
+    private long projectId;
 
     public enum FILE_TYPE {
         APPLICATION,
@@ -51,7 +50,7 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
     }
 
     @Override
-    public Long invoke(File file, VirtualChannel vc) throws IOException, InterruptedException {
+    public Long invoke(File file, VirtualChannel vc) {
         Long result = null;
         int attempts = 3;
         do {

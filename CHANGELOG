@@ -1,3 +1,7 @@
+1.0.23
+======
+* Double check for Custom Key/Value pairs - removed admin property check
+
 1.0.22
 ======
 * Removed admin property check for key value pairs

@@ -383,11 +383,11 @@ public class RunInCloudBuilder extends AbstractBuilder {
                     config.setTimeout(Long.parseLong(testTimeout));
                 } catch (NumberFormatException ignored) {
                     listener.getLogger().println(String.format(Messages.TEST_TIMEOUT_NOT_NUMERIC_VALUE(), testTimeout));
-                    config.setTimeout(600l);
+                    config.setTimeout(600L);
                 }
             } else {
                 // 10 minutes for free users
-                config.setTimeout(600l);
+                config.setTimeout(600L);
             }
             setLimitations(build, listener, config);
             deleteExistingParameters(config);
@@ -539,8 +539,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         return isDownloadOk;
     }
 
-    private void setLimitations(AbstractBuild<?, ?> build, final BuildListener listener, APITestRunConfig config)
-            throws APIException {
+    private void setLimitations(AbstractBuild<?, ?> build, final BuildListener listener, APITestRunConfig config) {
         if (StringUtils.isNotBlank(testCasesValue)) {
             config.setLimitationType(APITestRunConfig.LimitationType.valueOf(testCasesSelect));
             config.setLimitationValue(applyMacro(build, listener, testCasesValue));
@@ -551,25 +550,21 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
 
     private void deleteExistingParameters(APITestRunConfig config) throws APIException {
-        if (getDescriptor().isAdmin()) {
-            List<APITestRunParameter> parameters = config
-                    .getParameters(new APIQueryBuilder().limit(Integer.MAX_VALUE)).getEntity().getData();
-            for (APITestRunParameter parameter : parameters) {
-                config.deleteParameter(parameter.getId());
-            }
+        List<APITestRunParameter> parameters = config
+                .getParameters(new APIQueryBuilder().limit(Integer.MAX_VALUE)).getEntity().getData();
+        for (APITestRunParameter parameter : parameters) {
+            config.deleteParameter(parameter.getId());
         }
     }
 
     private void createProvidedParameters(APITestRunConfig config) throws APIException {
-        if (getDescriptor().isAdmin()) {
-            if (keyValuePairs != null) {
-                String[] splitKeyValuePairs = keyValuePairs.split(";");
-                for (String splitKeyValuePair : splitKeyValuePairs) {
-                    if (StringUtils.isNotBlank(splitKeyValuePair)) {
-                        String[] splitKeyValue = splitKeyValuePair.split(":");
-                        if (splitKeyValue.length == 2) {
-                            config.createParameter(splitKeyValue[0], splitKeyValue[1]);
-                        }
+        if (keyValuePairs != null) {
+            String[] splitKeyValuePairs = keyValuePairs.split(";");
+            for (String splitKeyValuePair : splitKeyValuePairs) {
+                if (StringUtils.isNotBlank(splitKeyValuePair)) {
+                    String[] splitKeyValue = splitKeyValuePair.split(":");
+                    if (splitKeyValue.length == 2) {
+                        config.createParameter(splitKeyValue[0], splitKeyValue[1]);
                     }
                 }
             }
@@ -680,8 +675,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 String testRunStateCheckMethod,
                 String hookURL, String waitForResultsTimeout, String resultsPath, boolean downloadScreenshots,
                 boolean forceFinishAfterBreak) {
-            TestRunStateCheckMethod parsedEnum = TestRunStateCheckMethod.valueOf(testRunStateCheckMethod);
-            this.testRunStateCheckMethod = parsedEnum;
+            this.testRunStateCheckMethod = TestRunStateCheckMethod.valueOf(testRunStateCheckMethod);
             this.hookURL = hookURL;
             this.resultsPath = resultsPath;
             this.downloadScreenshots = downloadScreenshots;
@@ -777,25 +771,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 LOGGER.log(Level.WARNING, Messages.ERROR_API());
                 return false;
             }
-        }
-
-        public boolean isAdmin() {
-            boolean result = false;
-            if (isAuthenticated()) {
-                try {
-                    Date now = new Date();
-                    APIUser user = TestdroidCloudSettings.descriptor().getUser();
-                    for (APIRole role : user.getRoles()) {
-                        if ("ADMIN".equals(role.getName())
-                                && (role.getExpireTime() == null || role.getExpireTime().after(now))) {
-                            result = true;
-                        }
-                    }
-                } catch (APIException e) {
-                    LOGGER.log(Level.WARNING, Messages.ERROR_API());
-                }
-            }
-            return result;
         }
 
         public boolean isPaidUser() {

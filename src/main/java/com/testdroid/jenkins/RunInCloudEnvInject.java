@@ -18,21 +18,25 @@ public class RunInCloudEnvInject implements EnvironmentContributingAction {
         this.value = value;
     }
 
-    @Override public void buildEnvVars(AbstractBuild<?, ?> abstractBuild, EnvVars envVars) {
+    @Override
+    public void buildEnvVars(AbstractBuild<?, ?> abstractBuild, EnvVars envVars) {
         if (envVars != null && key != null && value != null) {
             envVars.put(key, value);
         }
     }
 
-    @Override public String getIconFileName() {
+    @Override
+    public String getIconFileName() {
         return null;
     }
 
-    @Override public String getDisplayName() {
+    @Override
+    public String getDisplayName() {
         return "RunInCloudBuilderEnvInjectionAction";
     }
 
-    @Override public String getUrlName() {
+    @Override
+    public String getUrlName() {
         return null;
     }
 }
