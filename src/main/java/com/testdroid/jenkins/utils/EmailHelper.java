@@ -11,20 +11,20 @@ import java.util.logging.Logger;
 
 /**
  * Testdroid Run in Cloud plugin
- *
+ * <p>
  * https://git@github.com/jenkinsci/testdroid-run-in-cloud
- *
+ * <p>
  * Usage:
- * @TODO
  *
  * @author info@bitbar.com
+ * @TODO
  */
 public class EmailHelper {
 
     transient private static final Logger LOGGER = Logger.getLogger(EmailHelper.class.getSimpleName());
 
     public static List<String> getEmailAddresses(String email) {
-        ArrayList<String> result = new ArrayList<String>();
+        ArrayList<String> result = new ArrayList<>();
         if (StringUtils.isNotBlank(email)) {
             String[] emails = email.split(",");
 

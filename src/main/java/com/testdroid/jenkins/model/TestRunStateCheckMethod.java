@@ -11,7 +11,6 @@ package com.testdroid.jenkins.model;
  * @author info@bitbar.com
  */
 public enum TestRunStateCheckMethod {
-
     HOOK_URL,
     API_CALL
 }

@@ -37,7 +37,7 @@ import java.util.logging.Logger;
  * @author info@bitbar.com
  */
 
-@ExportedBean(defaultVisibility = 1)
+@ExportedBean()
 public class TestdroidCloudSettings extends Plugin implements Describable<TestdroidCloudSettings>, Saveable,
         ModelObject {
 
@@ -45,9 +45,9 @@ public class TestdroidCloudSettings extends Plugin implements Describable<Testdr
 
     private static final Logger LOGGER = Logger.getLogger(TestdroidCloudSettings.class.getName());
 
-    public static DescriptorImpl DESCRIPTOR;
+    private static DescriptorImpl DESCRIPTOR;
 
-    transient Semaphore semaphore = new Semaphore(1);
+    private transient Semaphore semaphore = new Semaphore(1);
 
     public TestdroidCloudSettings() {
         super();

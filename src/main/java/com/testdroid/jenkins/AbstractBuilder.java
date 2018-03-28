@@ -33,9 +33,7 @@ public class AbstractBuilder extends Builder {
             envVars.putAll(build.getEnvironment(listener));
             envVars.putAll(build.getBuildVariables());
             return Util.replaceMacro(macro, envVars);
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Failed to apply macro " + macro, e);
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             LOGGER.log(Level.SEVERE, "Failed to apply macro " + macro, e);
         }
         return macro;

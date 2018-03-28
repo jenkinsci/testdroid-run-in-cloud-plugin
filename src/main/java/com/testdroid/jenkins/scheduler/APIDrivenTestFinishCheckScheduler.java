@@ -25,20 +25,18 @@ import java.util.logging.Logger;
  */
 public class APIDrivenTestFinishCheckScheduler implements TestRunFinishCheckScheduler {
 
-    public static final Logger LOGGER = Logger.getLogger(APIDrivenTestFinishCheckScheduler.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(APIDrivenTestFinishCheckScheduler.class.getName());
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     private ScheduledFuture<?> taskHandle;
 
     public void schedule(final Object object, final Long projectId, final Long testRunId) {
-        final Runnable beeper = new Runnable() {
-            public void run() {
-                LOGGER.info(Messages.CHECK_FOR_TESTRUN_STATE(testRunId));
-                if (checkResult(projectId, testRunId)) {
-                    synchronized (object) {
-                        object.notify();
-                    }
+        final Runnable beeper = () -> {
+            LOGGER.info(Messages.CHECK_FOR_TESTRUN_STATE(testRunId));
+            if (checkResult(projectId, testRunId)) {
+                synchronized (object) {
+                    object.notify();
                 }
             }
         };
