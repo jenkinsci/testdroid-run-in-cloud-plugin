@@ -117,8 +117,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
         this.notificationEmail = notificationEmail;
         this.notificationEmailType = notificationEmailType;
         this.failBuildIfThisStepFailed = failBuildIfThisStepFailed;
-        this.waitForResultsBlock = waitForResultsBlock;
         this.testTimeout = testTimeout;
+        this.waitForResultsBlock = waitForResultsBlock;
     }
 
     public String getTestRunName() {
@@ -295,7 +295,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         return StringUtils.isNotBlank(dataPath);
     }
 
-    private boolean verifyParameters(BuildListener listener) {
+    private boolean verifyParameters(TaskListener listener) {
         boolean result = true;
         if (StringUtils.isBlank(appPath)) {
             listener.getLogger().println(Messages.ERROR_APP_PATH() + "\n");
@@ -319,26 +319,51 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 null;
     }
 
-    private String evaluateResultsPath(AbstractBuild<?, ?> build) {
-        return isWaitForResults() ?
-                StringUtils.isNotBlank(waitForResultsBlock.getResultsPath()) ? waitForResultsBlock.getResultsPath()
-                        : build.getWorkspace().getRemote() :
-                null;
+    private String evaluateResultsPath(FilePath workspace) {
+        if (isWaitForResults()) {
+            String resultsPath = waitForResultsBlock.getResultsPath();
+            if (StringUtils.isNotBlank(resultsPath)) {
+                try {
+                    return getAbsolutePath(workspace, resultsPath);
+                } catch (Exception exception) {
+                    LOGGER.log(Level.WARNING, "Couldn't get absolute path for results. Using workspace...");
+                }
+            }
+
+            return workspace.getRemote();
+        }
+
+        return null;
     }
 
+    /**
+     * Perform build step, as required by AbstractBuilder
+     */
     @Override
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) {
+        return completeRun(build, build.getWorkspace(), launcher, listener);
+    }
+
+    /**
+     * Wrapper around runTest to be used elsewhere, and sensibly log steps of the build procedure
+     */
+    public boolean completeRun(Run<?, ?> build, FilePath workspace, Launcher launcher, final TaskListener listener) {
         listener.getLogger().println(Messages.RUN_TEST_IN_CLOUD_STARTED());
-        boolean result = runTest(build, launcher, listener);
+
+        boolean result = runTest(build, workspace, launcher, listener);
         if (result) {
             listener.getLogger().println(Messages.RUN_TEST_IN_CLOUD_SUCCEEDED());
         } else {
             listener.getLogger().println(Messages.RUN_TEST_IN_CLOUD_FAILED());
         }
+
         return result || !failBuildIfThisStepFailed;
     }
 
-    private boolean runTest(AbstractBuild<?, ?> build, Launcher launcher, final BuildListener listener) {
+    /**
+     * Actually run tests against the Bitbar Cloud, and perhaps wait for results
+     */
+    private boolean runTest(Run<?, ?> build, FilePath workspace, Launcher launcher, final TaskListener listener) {
         // rewrite paths to take variables into consideration
         String appPathFinal = applyMacro(build, listener, appPath);
         String testPathFinal = applyMacro(build, listener, testPath);
@@ -389,6 +414,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 // 10 minutes for free users
                 config.setTimeout(600L);
             }
+
             setLimitations(build, listener, config);
             deleteExistingParameters(config);
             createProvidedParameters(config);
@@ -397,7 +423,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             printTestJob(project, config, listener);
             getDescriptor().save();
 
-            final FilePath appFile = new FilePath(launcher.getChannel(), getAbsolutePath(build, appPathFinal));
+            final FilePath appFile = new FilePath(launcher.getChannel(), getAbsolutePath(workspace, appPathFinal));
 
             listener.getLogger().println(String.format(Messages.UPLOADING_NEW_APPLICATION_S(), appPathFinal));
 
@@ -410,7 +436,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             }
 
             if (isFullTest()) {
-                FilePath testFile = new FilePath(launcher.getChannel(), getAbsolutePath(build, testPathFinal));
+                FilePath testFile = new FilePath(launcher.getChannel(), getAbsolutePath(workspace, testPathFinal));
 
                 listener.getLogger().println(String.format(Messages.UPLOADING_NEW_INSTRUMENTATION_S(),
                         testPathFinal));
@@ -423,7 +449,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             }
 
             if (isDataFile()) {
-                FilePath dataFile = new FilePath(launcher.getChannel(), getAbsolutePath(build, dataPathFinal));
+                FilePath dataFile = new FilePath(launcher.getChannel(), getAbsolutePath(workspace, dataPathFinal));
                 listener.getLogger().println(String.format(Messages.UPLOADING_DATA_FILE_S(), dataPathFinal));
                 dataFileId = dataFile.act(new MachineIndependentFileUploader(descriptor, project.getId(),
                         MachineIndependentFileUploader.FILE_TYPE.DATA, listener));
@@ -454,7 +480,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             plugin.getSemaphore().release();
             releaseDone = true;
 
-            return waitForResults(project, testRun, build, launcher, listener);
+            return waitForResults(project, testRun, workspace, launcher, listener);
 
         } catch (APIException e) {
             listener.getLogger().println(String.format("%s: %s", Messages.ERROR_API(), e.getMessage()));
@@ -478,8 +504,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
 
     private boolean waitForResults(
-            final APIProject project, final APITestRun testRun, AbstractBuild<?, ?> build, Launcher launcher,
-            BuildListener listener) {
+            final APIProject project, final APITestRun testRun, FilePath workspace, Launcher launcher,
+            TaskListener listener) {
         boolean isDownloadOk = true;
         if (isWaitForResults()) {
             TestRunFinishCheckScheduler scheduler = TestRunFinishCheckSchedulerFactory.createTestRunFinishScheduler
@@ -497,7 +523,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
                     if (testRun.getState() == APITestRun.State.FINISHED) {
                         isDownloadOk = launcher.getChannel().call(
                                 new MachineIndependentResultsDownloader(TestdroidCloudSettings.descriptor(), listener,
-                                        project.getId(), testRun.getId(), evaluateResultsPath(build),
+                                        project.getId(), testRun.getId(), evaluateResultsPath(workspace),
                                         waitForResultsBlock.isDownloadScreenshots()));
 
                         if (!isDownloadOk) {
@@ -539,7 +565,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         return isDownloadOk;
     }
 
-    private void setLimitations(AbstractBuild<?, ?> build, final BuildListener listener, APITestRunConfig config) {
+    private void setLimitations(Run<?, ?> build, final TaskListener listener, APITestRunConfig config) {
         if (StringUtils.isNotBlank(testCasesValue)) {
             config.setLimitationType(APITestRunConfig.LimitationType.valueOf(testCasesSelect));
             config.setLimitationValue(applyMacro(build, listener, testCasesValue));
@@ -571,7 +597,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         }
     }
 
-    private void printTestJob(APIProject project, APITestRunConfig config, BuildListener listener) {
+    private void printTestJob(APIProject project, APITestRunConfig config, TaskListener listener) {
         listener.getLogger().println(Messages.TEST_RUN_CONFIGURATION());
         listener.getLogger().println(String.format("%s: %s", Messages.PROJECT(), project.getName()));
         listener.getLogger().println(String.format("%s: %s", Messages.LOCALE(), config.getDeviceLanguageCode()));
@@ -581,7 +607,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         listener.getLogger().println(String.format("%s: %s", Messages.TIMEOUT(), config.getTimeout()));
     }
 
-    private String getAbsolutePath(AbstractBuild<?, ?> build, String path) throws IOException, InterruptedException {
+    private String getAbsolutePath(FilePath workspace, String path) throws IOException, InterruptedException {
         if (StringUtils.isBlank(path)) {
             return "";
         }
@@ -589,7 +615,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         if (trimmed.startsWith(File.separator)) { // absolute
             return trimmed;
         } else {
-            URI workspaceURI = build.getWorkspace().toURI();
+            URI workspaceURI = workspace.toURI();
             return workspaceURI.getPath() + trimmed;
         }
     }
@@ -654,88 +680,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
             }
         }
         return false;
-    }
-
-    public static class WaitForResultsBlock {
-
-        private boolean downloadScreenshots;
-
-        private boolean forceFinishAfterBreak;
-
-        private String hookURL = "";
-
-        private String resultsPath = "";
-
-        private TestRunStateCheckMethod testRunStateCheckMethod;
-
-        private Integer waitForResultsTimeout;
-
-        @DataBoundConstructor
-        public WaitForResultsBlock(
-                String testRunStateCheckMethod,
-                String hookURL, String waitForResultsTimeout, String resultsPath, boolean downloadScreenshots,
-                boolean forceFinishAfterBreak) {
-            this.testRunStateCheckMethod = TestRunStateCheckMethod.valueOf(testRunStateCheckMethod);
-            this.hookURL = hookURL;
-            this.resultsPath = resultsPath;
-            this.downloadScreenshots = downloadScreenshots;
-            this.forceFinishAfterBreak = forceFinishAfterBreak;
-            this.waitForResultsTimeout = NumberUtils.toInt(waitForResultsTimeout);
-        }
-
-        public String getHookURL() {
-            return hookURL;
-        }
-
-        public void setHookURL(String hookURL) {
-            this.hookURL = hookURL;
-        }
-
-        public Integer getWaitForResultsTimeout() {
-            if (waitForResultsTimeout == null) {
-                waitForResultsTimeout = 0;
-            }
-            return waitForResultsTimeout;
-        }
-
-        public void setWaitForResultsTimeout(Integer waitForResultsTimeout) {
-            this.waitForResultsTimeout = waitForResultsTimeout;
-        }
-
-        public String getResultsPath() {
-            return resultsPath;
-        }
-
-        public void setResultsPath(String resultsPath) {
-            this.resultsPath = resultsPath;
-        }
-
-        public boolean isDownloadScreenshots() {
-            return downloadScreenshots;
-        }
-
-        public void setDownloadScreenshots(boolean downloadScreenshots) {
-            this.downloadScreenshots = downloadScreenshots;
-        }
-
-        public TestRunStateCheckMethod getTestRunStateCheckMethod() {
-            if (testRunStateCheckMethod == null) {
-                testRunStateCheckMethod = TestRunStateCheckMethod.HOOK_URL;
-            }
-            return testRunStateCheckMethod;
-        }
-
-        public void setTestRunStateCheckMethod(TestRunStateCheckMethod testRunStateCheckMethod) {
-            this.testRunStateCheckMethod = testRunStateCheckMethod;
-        }
-
-        public boolean isForceFinishAfterBreak() {
-            return forceFinishAfterBreak;
-        }
-
-        public void setForceFinishAfterBreak(boolean forceFinishAfterBreak) {
-            this.forceFinishAfterBreak = forceFinishAfterBreak;
-        }
     }
 
     @Extension

@@ -1,6 +1,7 @@
 package com.testdroid.jenkins;
 
 import hudson.model.AbstractBuild;
+import hudson.model.Run;
 import hudson.model.BuildBadgeAction;
 
 /**
@@ -15,11 +16,11 @@ import hudson.model.BuildBadgeAction;
  */
 public class CloudLink implements BuildBadgeAction {
 
-    public final AbstractBuild<?, ?> owner;
+    public final Run<?, ?> owner;
 
     private String cloudLink;
 
-    public CloudLink(AbstractBuild<?, ?> owner, String cloudLink) {
+    public CloudLink(Run<?, ?> owner, String cloudLink) {
         this.owner = owner;
         this.cloudLink = cloudLink;
     }

@@ -9,10 +9,11 @@ import com.testdroid.api.model.APITestRun;
 import com.testdroid.jenkins.Messages;
 import com.testdroid.jenkins.TestdroidCloudSettings;
 import com.testdroid.jenkins.utils.TestdroidApiUtil;
-import hudson.model.BuildListener;
+import hudson.model.TaskListener;
 import hudson.remoting.Callable;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.jenkinsci.remoting.RoleChecker;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -38,7 +39,7 @@ public class MachineIndependentResultsDownloader extends MachineIndependentTask
 
     private boolean downloadScreenshots;
 
-    private BuildListener listener;
+    private TaskListener listener;
 
     private long projectId;
 
@@ -47,7 +48,7 @@ public class MachineIndependentResultsDownloader extends MachineIndependentTask
     private long testRunId;
 
     public MachineIndependentResultsDownloader(
-            TestdroidCloudSettings.DescriptorImpl descriptor, BuildListener listener, long projectId, long testRunId,
+            TestdroidCloudSettings.DescriptorImpl descriptor, TaskListener listener, long projectId, long testRunId,
             String resultsPath, boolean downloadScreenshots) {
         super(descriptor);
 
@@ -56,6 +57,13 @@ public class MachineIndependentResultsDownloader extends MachineIndependentTask
         this.resultsPath = resultsPath;
         this.downloadScreenshots = downloadScreenshots;
         this.listener = listener;
+    }
+
+    @Override
+    public void checkRoles(RoleChecker checker) throws SecurityException {
+        // no specific role needed, which is somewhat dubious, but I can't think of any attack vector that involves this.
+        // it would have been simpler if the setMaximumBytecodeLevel only controlled the local setting,
+        // not the remote setting
     }
 
     @Override
