@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 public class TestdroidCloudSettings extends Plugin implements Describable<TestdroidCloudSettings>, Saveable,
         ModelObject {
 
-    public static final String CLOUD_ENDPOINT = "https://cloud.testdroid.com";
+    public static final String CLOUD_ENDPOINT = "https://cloud.bitbar.com";
 
     private static final Logger LOGGER = Logger.getLogger(TestdroidCloudSettings.class.getName());
 

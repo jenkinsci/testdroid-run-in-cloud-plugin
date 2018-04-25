@@ -12,7 +12,7 @@ import java.util.logging.Logger;
 
 public class TestdroidApiUtil {
 
-    private static final String CLOUD_ENDPOINT = "https://cloud.testdroid.com";
+    private static final String CLOUD_ENDPOINT = "https://cloud.bitbar.com";
 
     private static final Logger LOGGER = Logger.getLogger(TestdroidApiUtil.class.getName());
 
