@@ -16,14 +16,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Testdroid Run in Cloud plugin
- * <p>
- * https://git@github.com/jenkinsci/testdroid-run-in-cloud
- * <p>
- * Usage:
- *
- * @author info@bitbar.com
- * @TODO
+ * Utility for uploading files to the cloud before a run starts
  */
 public class MachineIndependentFileUploader extends MachineIndependentTask implements FilePath.FileCallable<Long> {
 

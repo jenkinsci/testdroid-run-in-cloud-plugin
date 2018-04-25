@@ -12,7 +12,7 @@
     <artifactId>testdroid-run-in-cloud</artifactId>
     <version>1.0.23-SNAPSHOT</version>
     <packaging>hpi</packaging>
-    <name>Testdroid Plugin for CI</name>
+    <name>Bitbar Run-in-Cloud Plugin</name>
 
     <developers>
       <developer>

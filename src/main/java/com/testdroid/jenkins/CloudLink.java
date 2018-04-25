@@ -4,16 +4,6 @@ import hudson.model.AbstractBuild;
 import hudson.model.Run;
 import hudson.model.BuildBadgeAction;
 
-/**
- * Testdroid Run in Cloud plugin
- *
- * https://git@github.com/jenkinsci/testdroid-run-in-cloud
- *
- * Usage:
- * @TODO
- *
- * @author info@bitbar.com
- */
 public class CloudLink implements BuildBadgeAction {
 
     public final Run<?, ?> owner;
@@ -36,7 +26,7 @@ public class CloudLink implements BuildBadgeAction {
 
     @Override
     public String getDisplayName() {
-        return "See detailed results in Testdroid Cloud";
+        return "See detailed results in Bitbar Cloud";
     }
 
     @Override

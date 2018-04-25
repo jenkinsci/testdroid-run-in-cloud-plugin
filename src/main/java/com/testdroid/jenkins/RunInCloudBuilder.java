@@ -361,7 +361,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
 
     /**
-     * Actually run tests against the Bitbar Cloud, and perhaps wait for results
+     * Actually run tests against Bitbar Cloud, and perhaps wait for results
      */
     private boolean runTest(Run<?, ?> build, FilePath workspace, Launcher launcher, final TaskListener listener) {
         // rewrite paths to take variables into consideration

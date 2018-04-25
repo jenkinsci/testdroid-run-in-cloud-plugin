@@ -351,7 +351,7 @@ public class PipelineCloudStep extends AbstractStepImpl {
 
         @Override
         public String getDisplayName() {
-            return "Start a run in the Bitbar Cloud";
+            return "Start a run in Bitbar Cloud";
         }
     }
 

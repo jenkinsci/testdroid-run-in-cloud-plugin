@@ -27,14 +27,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Testdroid Run in Cloud plugin
- *
- * https://git@github.com/jenkinsci/testdroid-run-in-cloud
- *
- * Usage:
- * @TODO
- *
- * @author info@bitbar.com
+ * Class for maintaining the plugin-wide configurations that the user enters
+ * in the Jenkins config page. (Bitbar Cloud authorize, etc.)
  */
 
 @ExportedBean()

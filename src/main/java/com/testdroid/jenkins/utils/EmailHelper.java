@@ -9,16 +9,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * Testdroid Run in Cloud plugin
- * <p>
- * https://git@github.com/jenkinsci/testdroid-run-in-cloud
- * <p>
- * Usage:
- *
- * @author info@bitbar.com
- * @TODO
- */
 public class EmailHelper {
 
     transient private static final Logger LOGGER = Logger.getLogger(EmailHelper.class.getSimpleName());

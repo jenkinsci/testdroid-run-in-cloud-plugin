@@ -3,16 +3,6 @@ package com.testdroid.jenkins.utils;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Testdroid Run in Cloud plugin
- *
- * https://git@github.com/jenkinsci/testdroid-run-in-cloud
- *
- * Usage:
- * @TODO
- *
- * @author info@bitbar.com
- */
 public class ResultWaiter {
 
     private static ResultWaiter instance;
