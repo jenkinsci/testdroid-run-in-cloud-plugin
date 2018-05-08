@@ -32,23 +32,14 @@ public class HookUrlResultWaiter extends Plugin implements ModelObject {
 
     private static final Logger LOGGER = Logger.getLogger(HookUrlResultWaiter.class.getName());
 
-    private Map<Long, Object> runIdWaitingObjectsMap;
-
-    private static HookUrlResultWaiter getInstance() {
-        return Jenkins.getActiveInstance().getPlugin(HookUrlResultWaiter.class);
-    }
+    private static final Map<Long, Object> runIdWaitingObjectsMap = new HashMap<>();
 
     static void removeFromWaitList(Long testRunId) {
-        getInstance().runIdWaitingObjectsMap.remove(testRunId);
+        runIdWaitingObjectsMap.remove(testRunId);
     }
 
     static void addToWaitList(Long testRunId, Object waitingObject) {
-        getInstance().runIdWaitingObjectsMap.put(testRunId, waitingObject);
-    }
-
-    public HookUrlResultWaiter() {
-        super();
-        this.runIdWaitingObjectsMap = new HashMap<>();
+        runIdWaitingObjectsMap.put(testRunId, waitingObject);
     }
 
     private void notifyWaitingObject(Long testRunId) {
@@ -85,6 +76,8 @@ public class HookUrlResultWaiter extends Plugin implements ModelObject {
             LOGGER.log(Level.INFO, String.format("%s received a REST request to the JSON endpoint.", plugin.getDisplayName()));
             if (req.getMethod().toLowerCase().equals("post") && req.hasParameter("testRunId")) {
                 plugin.notifyWaitingObject(Long.parseLong(req.getParameter("testRunId")));
+            } else {
+                LOGGER.log(Level.INFO, String.format("%s: the request did not contain the parameter 'testRunId'. Ignoring.", plugin.getDisplayName()));
             }
         }
     }

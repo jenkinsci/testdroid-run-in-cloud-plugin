@@ -100,7 +100,6 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
         public void save() {
             this.password = Secret.fromString(this.password).getEncryptedValue();
             this.proxyPassword = Secret.fromString(this.proxyPassword).getEncryptedValue();
-            TestdroidApiUtil.clean();
             super.save();
         }
 
@@ -130,7 +129,7 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
             this.proxyPassword = proxyPassword;
 
             try {
-                TestdroidApiUtil.tryValidateConfig(this);
+                new TestdroidApiUtil(this).tryValidateConfig();
                 return FormValidation.ok(Messages.AUTHORIZATION_OK());
             } catch (APIException e) {
                 this.password = null;

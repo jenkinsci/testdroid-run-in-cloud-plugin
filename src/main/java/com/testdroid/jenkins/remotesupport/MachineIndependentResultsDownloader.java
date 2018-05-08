@@ -59,7 +59,7 @@ public class MachineIndependentResultsDownloader extends MachineIndependentTask
 
     @Override
     public Boolean call() throws APIException {
-        APIClient client = TestdroidApiUtil.getInstance(new TestdroidCloudSettings.DescriptorImpl(this)).getTestdroidAPIClient();
+        APIClient client = new TestdroidApiUtil(new TestdroidCloudSettings.DescriptorImpl(this)).getTestdroidAPIClient();
         APITestRun testRun = client.me().getProject(projectId).getTestRun(testRunId);
 
         boolean success = false; //if we are able to download results from at least one device then whole method

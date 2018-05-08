@@ -2,8 +2,6 @@ package com.testdroid.jenkins;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
-import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.testdroid.api.APIDeviceGroupQueryBuilder;
 import com.testdroid.api.APIException;
 import com.testdroid.api.APIQueryBuilder;
@@ -21,10 +19,10 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.*;
-import hudson.slaves.Cloud;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.ListBoxModel;
+import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -46,15 +44,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
     transient private static final String POST_HOOK_URL = "/plugin/testdroid-run-in-cloud/api/json/cloud-webhook";
 
     transient private static final Semaphore semaphore = new Semaphore(1);
-
-    private static final List<String> PAID_ROLES = new ArrayList<String>() {
-        {
-            add("PRIORITY_SILVER");
-            add("PRIORITY_GOLD");
-            add("PRIORITY_PLATINUM");
-            add("PAID_RUN");
-        }
-    };
 
     private String appPath;
 
@@ -316,10 +305,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     private boolean verifyParameters(TaskListener listener) {
         boolean result = true;
-        if (StringUtils.isBlank(appPath)) {
-            listener.getLogger().println(Messages.ERROR_APP_PATH() + "\n");
-            result = false;
-        }
+
         if (StringUtils.isBlank(projectId)) {
             listener.getLogger().println(Messages.EMPTY_PROJECT() + "\n");
             result = false;
@@ -334,7 +320,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
     private String evaluateHookUrl() {
         return isWaitForResults() ?
                 StringUtils.isNotBlank(waitForResultsBlock.getHookURL()) ? waitForResultsBlock.getHookURL()
-                        : String.format("%s%s", Hudson.getInstance().getRootUrl(), POST_HOOK_URL) :
+                        : String.format("%s%s", Jenkins.getInstance().getRootUrl(), POST_HOOK_URL) :
                 null;
     }
 
@@ -391,6 +377,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         String testRunnerFinal = applyMacro(build, listener, testRunner);
         String withoutAnnotationFinal = applyMacro(build, listener, withoutAnnotation);
 
+        // override default cloud settings if specified on build level (applies to credentials and cloud URL)
         TestdroidCloudSettings.DescriptorImpl cloudSettings = new TestdroidCloudSettings.DescriptorImpl();
         if (StringUtils.isNotBlank(this.credentialsId)) {
             StandardUsernamePasswordCredentials credentials = CredentialsProvider.findCredentialById(this.credentialsId, StandardUsernamePasswordCredentials.class, build, Collections.emptyList());
@@ -404,6 +391,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
             } else {
                 listener.getLogger().println(String.format("Couldn't find the credentials '%s'", this.credentialsId));
             }
+        } else if (StringUtils.isNotBlank(this.cloudUrl)) {
+            listener.getLogger().println(String.format("Cloud URL '%s' was specified but no credentials. Using default URL '%s'", this.cloudUrl, cloudSettings.getActiveCloudUrl()));
         }
 
         boolean releaseDone = false;
@@ -411,10 +400,14 @@ public class RunInCloudBuilder extends AbstractBuilder {
         try {
             // make part update and run project "transactional"
             // so that a different job can't overwrite project settings just after the first one set it
+            // TODO: is this still needed..?
             RunInCloudBuilder.semaphore.acquire();
 
-            TestdroidApiUtil.tryValidateConfig(cloudSettings);
-            TestdroidApiUtil api = TestdroidApiUtil.getInstance(cloudSettings);
+            TestdroidApiUtil api = new TestdroidApiUtil(cloudSettings);
+            if (!api.isAuthenticated()) {
+                listener.getLogger().println("Couldn't connect to the cloud!");
+                return false;
+            }
 
             if (!verifyParameters(listener)) {
                 return false;
@@ -440,16 +433,18 @@ public class RunInCloudBuilder extends AbstractBuilder {
             config.setInstrumentationRunner(testRunnerFinal);
             config.setWithoutAnnotation(withoutAnnotationFinal);
             config.setWithAnnotation(withAnnotationFinal);
-            if (getDescriptor().isPaidUser()) {
+
+            // default test timeout is 10 minutes
+            config.setTimeout(600L);
+            if (TestdroidApiUtil.isPaidUser(user)) {
                 try {
-                    config.setTimeout(Long.parseLong(testTimeout));
+                    long runTimeout = Long.parseLong(testTimeout);
+                    config.setTimeout(runTimeout);
                 } catch (NumberFormatException ignored) {
                     listener.getLogger().println(String.format(Messages.TEST_TIMEOUT_NOT_NUMERIC_VALUE(), testTimeout));
-                    config.setTimeout(600L);
                 }
             } else {
-                // 10 minutes for free users
-                config.setTimeout(600L);
+                listener.getLogger().println(String.format(Messages.FREE_USERS_MAX_10_MINS(), user.getEmail()));
             }
 
             setLimitations(build, listener, config);
@@ -457,18 +452,23 @@ public class RunInCloudBuilder extends AbstractBuilder {
             createProvidedParameters(config);
 
             config.update();
-            printTestJob(project, config, listener);
+            printTestJob(project, config, cloudSettings, listener);
             getDescriptor().save();
-
-            final FilePath appFile = new FilePath(launcher.getChannel(), getAbsolutePath(workspace, appPathFinal));
-
-            listener.getLogger().println(String.format(Messages.UPLOADING_NEW_APPLICATION_S(), appPathFinal));
 
             Long testFileId = null;
             Long dataFileId = null;
-            Long appFileId = appFile.act(new MachineIndependentFileUploader(cloudSettings, project.getId(), MachineIndependentFileUploader.FILE_TYPE.APPLICATION, listener));
-            if (appFileId == null) {
-                return false;
+            Long appFileId = null;
+
+            if (StringUtils.isNotBlank(this.appPath)) {
+                final FilePath appFile = new FilePath(launcher.getChannel(), getAbsolutePath(workspace, appPathFinal));
+                listener.getLogger().println(String.format(Messages.UPLOADING_NEW_APPLICATION_S(), appPathFinal));
+
+                appFileId = appFile.act(new MachineIndependentFileUploader(cloudSettings, project.getId(), MachineIndependentFileUploader.FILE_TYPE.APPLICATION, listener));
+                if (appFileId == null) {
+                    return false;
+                }
+            } else {
+                listener.getLogger().println("App path was blank. Using latest app in project.");
             }
 
             if (isFullTest()) {
@@ -491,16 +491,19 @@ public class RunInCloudBuilder extends AbstractBuilder {
                     return false;
                 }
             }
+
             listener.getLogger().println(Messages.RUNNING_TESTS());
 
             // run project with proper name set in jenkins if it's set
             String finalTestRunName = applyMacro(build, listener, testRunName);
-            finalTestRunName = StringUtils.isBlank(finalTestRunName) || finalTestRunName.trim().startsWith("$") ?
-                    null : finalTestRunName;
-            APITestRun testRun = project.runWithConfig(finalTestRunName, null, config, appFileId, testFileId, dataFileId);
-            String cloudLink = String.format("%s/#service/testrun/%s/%s", cloudSettings.getActiveCloudUrl(), testRun.getProjectId(), testRun.getId());
-            build.getActions().add(new CloudLink(build, cloudLink));
+            finalTestRunName = StringUtils.isBlank(finalTestRunName) || finalTestRunName.trim().startsWith("$") ? null : finalTestRunName;
 
+            // start the test run itself
+            APITestRun testRun = project.runWithConfig(finalTestRunName, null, config, appFileId, testFileId, dataFileId);
+
+            // add the Bitbar Cloud link to the left-hand-side menu in Jenkins
+            String cloudLink = String.format("%s/#service/testrun/%s/%s", cloudSettings.getActiveCloudUrl(), testRun.getProjectId(), testRun.getId());
+            build.addAction(new CloudLink(build, cloudLink));
             RunInCloudEnvInject variable = new RunInCloudEnvInject("CLOUD_LINK", cloudLink);
             build.addAction(variable);
 
@@ -622,8 +625,10 @@ public class RunInCloudBuilder extends AbstractBuilder {
         }
     }
 
-    private void printTestJob(APIProject project, APITestRunConfig config, TaskListener listener) {
+    private void printTestJob(APIProject project, APITestRunConfig config, TestdroidCloudSettings.DescriptorImpl cloudSettings, TaskListener listener) {
         listener.getLogger().println(Messages.TEST_RUN_CONFIGURATION());
+        listener.getLogger().println(String.format("%s: %s", Messages.CLOUD_URL(), cloudSettings.getActiveCloudUrl()));
+        listener.getLogger().println(String.format("%s: %s", Messages.USER_EMAIL(), cloudSettings.getEmail()));
         listener.getLogger().println(String.format("%s: %s", Messages.PROJECT(), project.getName()));
         listener.getLogger().println(String.format("%s: %s", Messages.LOCALE(), config.getDeviceLanguageCode()));
         listener.getLogger().println(String.format("%s: %s", Messages.SCHEDULER(), config.getScheduler()));
@@ -719,9 +724,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
             super(RunInCloudBuilder.class);
             load();
 
-            // cloud settings load the base settings when it's loading
+            // cloud settings load the shared global settings when it's created
             cloudSettings = new TestdroidCloudSettings.DescriptorImpl();
-            api = TestdroidApiUtil.getInstance(new TestdroidCloudSettings.DescriptorImpl());
+            api = new TestdroidApiUtil(cloudSettings);
         }
 
         @Override
@@ -741,32 +746,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         }
 
         public boolean isAuthenticated() {
-            try {
-                return api.getUser() != null;
-            } catch (APIException e) {
-                LOGGER.log(Level.WARNING, Messages.ERROR_API());
-                return false;
-            }
-        }
-
-        public boolean isPaidUser() {
-            boolean result = false;
-            if (isAuthenticated()) {
-                try {
-                    Date now = new Date();
-                    APIUser user = api.getUser();
-                    for (APIRole role : user.getRoles()) {
-                        if (PAID_ROLES.contains(role.getName())
-                                && (role.getExpireTime() == null || role.getExpireTime().after(now))) {
-                            result = true;
-                        }
-                    }
-                } catch (APIException e) {
-                    LOGGER.log(Level.WARNING, Messages.ERROR_API());
-                }
-
-            }
-            return result;
+            return api.isAuthenticated();
         }
 
         public ListBoxModel doFillProjectIdItems() {

@@ -54,7 +54,7 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
         int attempts = 3;
         do {
             try {
-                APIClient client = TestdroidApiUtil.getInstance(new TestdroidCloudSettings.DescriptorImpl(this)).getTestdroidAPIClient();
+                APIClient client = new TestdroidApiUtil(new TestdroidCloudSettings.DescriptorImpl(this)).getTestdroidAPIClient();
                 APIProject project = client.me().getProject(projectId);
 
                 if (file.exists()) {
