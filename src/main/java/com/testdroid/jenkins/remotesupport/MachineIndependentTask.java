@@ -4,38 +4,48 @@ import com.testdroid.jenkins.TestdroidCloudSettings;
 
 import java.io.Serializable;
 
+/**
+ * Testdroid Run in Cloud plugin
+ *
+ * https://git@github.com/jenkinsci/testdroid-run-in-cloud
+ *
+ * Usage:
+ * @TODO
+ *
+ * @author info@bitbar.com
+ */
 public class MachineIndependentTask implements Serializable {
 
-    String cloudUrl;
+    public String cloudUrl;
 
-    boolean isProxy;
+    public boolean isProxy;
 
-    boolean noCheckCertificate;
+    public boolean noCheckCertificate;
 
-    String password;
+    public String password;
 
-    boolean privateInstance;
+    public boolean privateInstance;
 
-    String proxyHost;
+    public String proxyHost;
 
-    String proxyPassword;
+    public String proxyPassword;
 
-    Integer proxyPort;
+    public Integer proxyPort;
 
-    String proxyUser;
+    public String proxyUser;
 
-    String user;
+    public String user;
 
-    public MachineIndependentTask(TestdroidCloudSettings.DescriptorImpl descriptor) {
-        this.user = descriptor.getEmail();
-        this.password = descriptor.getPassword();
-        this.noCheckCertificate = descriptor.getNoCheckCertificate();
-        this.cloudUrl = descriptor.getCloudUrl();
-        this.privateInstance = descriptor.getPrivateInstanceState();
-        this.isProxy = descriptor.getIsProxy();
-        this.proxyHost = descriptor.getProxyHost();
-        this.proxyPort = descriptor.getProxyPort();
-        this.proxyUser = descriptor.getProxyUser();
-        this.proxyPassword = descriptor.getProxyPassword();
+    public MachineIndependentTask(TestdroidCloudSettings.DescriptorImpl settings) {
+        this.user = settings.getEmail();
+        this.password = settings.getPassword();
+        this.noCheckCertificate = settings.getNoCheckCertificate();
+        this.cloudUrl = settings.getActiveCloudUrl();
+        this.privateInstance = settings.getPrivateInstanceState();
+        this.isProxy = settings.getIsProxy();
+        this.proxyHost = settings.getProxyHost();
+        this.proxyPort = settings.getProxyPort();
+        this.proxyUser = settings.getProxyUser();
+        this.proxyPassword = settings.getProxyPassword();
     }
 }

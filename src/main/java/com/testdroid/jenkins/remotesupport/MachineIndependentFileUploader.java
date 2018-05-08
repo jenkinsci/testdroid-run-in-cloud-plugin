@@ -6,7 +6,6 @@ import com.testdroid.jenkins.Messages;
 import com.testdroid.jenkins.TestdroidCloudSettings;
 import com.testdroid.jenkins.utils.TestdroidApiUtil;
 import hudson.FilePath;
-import hudson.model.BuildListener;
 import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
 import org.jenkinsci.remoting.RoleChecker;
@@ -34,11 +33,9 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
         DATA
     }
 
-    public MachineIndependentFileUploader(
-            TestdroidCloudSettings.DescriptorImpl descriptor, long projectId, FILE_TYPE fileType,
+    public MachineIndependentFileUploader(TestdroidCloudSettings.DescriptorImpl settings, long projectId, FILE_TYPE fileType,
             TaskListener listener) {
-        super(descriptor);
-
+        super(settings);
         this.projectId = projectId;
         this.fileType = fileType;
         this.listener = listener;
@@ -57,12 +54,7 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
         int attempts = 3;
         do {
             try {
-                if (!TestdroidApiUtil.isInitialized()) {
-                    TestdroidApiUtil.init(user, password, cloudUrl, privateInstance,
-                            noCheckCertificate, isProxy, proxyHost, proxyPort, proxyUser,
-                            proxyPassword);
-                }
-                APIClient client = TestdroidApiUtil.getInstance().getTestdroidAPIClient();
+                APIClient client = TestdroidApiUtil.getInstance(new TestdroidCloudSettings.DescriptorImpl(this)).getTestdroidAPIClient();
                 APIProject project = client.me().getProject(projectId);
 
                 if (file.exists()) {

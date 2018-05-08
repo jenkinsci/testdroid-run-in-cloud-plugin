@@ -1,49 +1,21 @@
 package com.testdroid.jenkins;
 
-import com.testdroid.api.APIDeviceGroupQueryBuilder;
-import com.testdroid.api.APIException;
-import com.testdroid.api.APIQueryBuilder;
 import com.testdroid.api.model.*;
 import com.testdroid.api.model.APITestRunConfig.Scheduler;
-import com.testdroid.jenkins.model.TestRunStateCheckMethod;
-import com.testdroid.jenkins.remotesupport.MachineIndependentFileUploader;
-import com.testdroid.jenkins.remotesupport.MachineIndependentResultsDownloader;
-import com.testdroid.jenkins.scheduler.TestRunFinishCheckScheduler;
-import com.testdroid.jenkins.scheduler.TestRunFinishCheckSchedulerFactory;
-import com.testdroid.jenkins.utils.AndroidLocale;
-import com.testdroid.jenkins.utils.EmailHelper;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.*;
-import hudson.tasks.BuildStepDescriptor;
-import hudson.tasks.Builder;
-import hudson.util.ListBoxModel;
-import net.sf.json.JSONObject;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.jenkinsci.plugins.workflow.steps.AbstractStepDescriptorImpl;
 import org.jenkinsci.plugins.workflow.steps.AbstractStepImpl;
 import com.google.inject.Inject;
 
-import org.jenkinsci.plugins.workflow.steps.AbstractStepDescriptorImpl;
-import org.jenkinsci.plugins.workflow.steps.AbstractStepImpl;
 import org.jenkinsci.plugins.workflow.steps.AbstractSynchronousNonBlockingStepExecution;
 import org.jenkinsci.plugins.workflow.steps.StepContextParameter;
 
-import javax.annotation.Nonnull;
-import java.io.File;
-import java.io.IOException;
-import java.io.Serializable;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 import java.util.Locale;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -85,6 +57,8 @@ public class PipelineCloudStep extends AbstractStepImpl {
     private String withAnnotation;
     private String withoutAnnotation;
     private String testTimeout;
+    private String credentialsId;
+    private String cloudUrl;
 
     // these variables are used to create a WaitForResultsBlock
     private boolean waitForResults;
@@ -188,6 +162,16 @@ public class PipelineCloudStep extends AbstractStepImpl {
     }
 
     @DataBoundSetter
+    public void setCredentialsId(String credentialsId) {
+        this.credentialsId = credentialsId;
+    }
+
+    @DataBoundSetter
+    public void setCloudUrl(String cloudUrl) {
+        this.cloudUrl = cloudUrl;
+    }
+
+    @DataBoundSetter
     public void setFailBuildIfThisStepFailed(boolean failBuildIfThisStepFailed) {
         this.failBuildIfThisStepFailed = failBuildIfThisStepFailed;
     }
@@ -228,59 +212,59 @@ public class PipelineCloudStep extends AbstractStepImpl {
     }
 
 
-    public String getTestRunName() {
+    private String getTestRunName() {
         return testRunName;
     }
 
-    public String getAppPath() {
+    private String getAppPath() {
         return appPath;
     }
 
-    public String getTestPath() {
+    private String getTestPath() {
         return testPath;
     }
 
-    public String getProjectId() {
+    private String getProjectId() {
         return projectId;
     }
 
-    public String getDeviceGroupId() {
+    private String getDeviceGroupId() {
         return deviceGroupId;
     }
 
-    public String getTestRunner() {
+    private String getTestRunner() {
         return testRunner;
     }
 
-    public String getScreenshotsDirectory() {
+    private String getScreenshotsDirectory() {
         return screenshotsDirectory;
     }
 
-    public String getKeyValuePairs() {
+    private String getKeyValuePairs() {
         return keyValuePairs;
     }
 
-    public String getWithAnnotation() {
+    private String getWithAnnotation() {
         return withAnnotation;
     }
 
-    public String getWithoutAnnotation() {
+    private String getWithoutAnnotation() {
         return withoutAnnotation;
     }
 
-    public String getTestCasesSelect() {
+    private String getTestCasesSelect() {
         return testCasesSelect;
     }
 
-    public String getTestCasesValue() {
+    private String getTestCasesValue() {
         return testCasesValue;
     }
 
-    public String getDataPath() {
+    private String getDataPath() {
         return dataPath;
     }
 
-    public String getLanguage() {
+    private String getLanguage() {
         if (language == null) {
             language = String.format("%s-%s", Locale.ENGLISH.getLanguage(), Locale.ENGLISH.getCountry());
         }
@@ -294,47 +278,55 @@ public class PipelineCloudStep extends AbstractStepImpl {
         return scheduler;
     }
 
-    public String getNotificationEmail() {
+    private String getNotificationEmail() {
         return notificationEmail;
     }
 
-    public String getNotificationEmailType() {
+    private String getNotificationEmailType() {
         return notificationEmailType;
     }
 
-    public boolean isFailBuildIfThisStepFailed() {
+    private boolean isFailBuildIfThisStepFailed() {
         return failBuildIfThisStepFailed;
     }
 
-    public String getTestTimeout() {
+    private String getTestTimeout() {
         return testTimeout;
     }
 
-    public boolean isWaitForResults() {
+    private String getCredentialsId() {
+        return credentialsId;
+    }
+
+    public String getCloudUrl() {
+        return cloudUrl;
+    }
+
+    private boolean isWaitForResults() {
         return waitForResults;
     }
 
-    public String getTestRunStateCheckMethod() {
+    private String getTestRunStateCheckMethod() {
         return testRunStateCheckMethod;
     }
 
-    public String getHookURL() {
+    private String getHookURL() {
         return hookURL;
     }
 
-    public String getWaitForResultsTimeout() {
+    private String getWaitForResultsTimeout() {
         return waitForResultsTimeout;
     }
 
-    public String getResultsPath() {
+    private String getResultsPath() {
         return resultsPath;
     }
 
-    public boolean isDownloadScreenshots() {
+    private boolean isDownloadScreenshots() {
         return downloadScreenshots;
     }
 
-    public boolean isForceFinishAfterBreak() {
+    private boolean isForceFinishAfterBreak() {
         return forceFinishAfterBreak;
     }
 
@@ -409,7 +401,9 @@ public class PipelineCloudStep extends AbstractStepImpl {
                     step.getNotificationEmailType(),
                     step.isFailBuildIfThisStepFailed(),
                     waitForResultsBlock,
-                    step.getTestTimeout()
+                    step.getTestTimeout(),
+                    step.getCredentialsId(),
+                    step.getCloudUrl()
             );
 
             if(!builder.completeRun(run, workspace, launcher, listener)) {

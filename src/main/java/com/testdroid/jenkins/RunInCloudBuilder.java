@@ -1,5 +1,9 @@
 package com.testdroid.jenkins;
 
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.testdroid.api.APIDeviceGroupQueryBuilder;
 import com.testdroid.api.APIException;
 import com.testdroid.api.APIQueryBuilder;
@@ -12,16 +16,17 @@ import com.testdroid.jenkins.scheduler.TestRunFinishCheckScheduler;
 import com.testdroid.jenkins.scheduler.TestRunFinishCheckSchedulerFactory;
 import com.testdroid.jenkins.utils.AndroidLocale;
 import com.testdroid.jenkins.utils.EmailHelper;
+import com.testdroid.jenkins.utils.TestdroidApiUtil;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.*;
+import hudson.slaves.Cloud;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.ListBoxModel;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
@@ -29,10 +34,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
+import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,6 +44,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
     transient private static final Logger LOGGER = Logger.getLogger(RunInCloudBuilder.class.getSimpleName());
 
     transient private static final String POST_HOOK_URL = "/plugin/testdroid-run-in-cloud/api/json/cloud-webhook";
+
+    transient private static final Semaphore semaphore = new Semaphore(1);
 
     private static final List<String> PAID_ROLES = new ArrayList<String>() {
         {
@@ -91,6 +96,10 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     private String testTimeout;
 
+    private String credentialsId;
+
+    private String cloudUrl;
+
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
     public RunInCloudBuilder(
@@ -98,7 +107,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             String testRunner, String clusterId, String language, String notificationEmail, String screenshotsDirectory,
             String keyValuePairs, String withAnnotation, String withoutAnnotation, String testCasesSelect,
             String testCasesValue, String notificationEmailType, Boolean failBuildIfThisStepFailed,
-            WaitForResultsBlock waitForResultsBlock, String testTimeout) {
+            WaitForResultsBlock waitForResultsBlock, String testTimeout, String credentialsId, String cloudUrl) {
         this.projectId = projectId;
         this.appPath = appPath;
         this.dataPath = dataPath;
@@ -118,6 +127,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
         this.notificationEmailType = notificationEmailType;
         this.failBuildIfThisStepFailed = failBuildIfThisStepFailed;
         this.testTimeout = testTimeout;
+        this.credentialsId = credentialsId;
+        this.cloudUrl = cloudUrl;
         this.waitForResultsBlock = waitForResultsBlock;
     }
 
@@ -271,6 +282,14 @@ public class RunInCloudBuilder extends AbstractBuilder {
         this.testTimeout = testTimeout;
     }
 
+    public String getCredentialsId() {
+        return credentialsId;
+    }
+
+    public void setCredentialsId(String credentialsId) {
+        this.credentialsId = credentialsId;
+    }
+
     public WaitForResultsBlock getWaitForResultsBlock() {
         return waitForResultsBlock;
     }
@@ -372,18 +391,36 @@ public class RunInCloudBuilder extends AbstractBuilder {
         String testRunnerFinal = applyMacro(build, listener, testRunner);
         String withoutAnnotationFinal = applyMacro(build, listener, withoutAnnotation);
 
-        TestdroidCloudSettings.DescriptorImpl descriptor = TestdroidCloudSettings.descriptor();
-        TestdroidCloudSettings plugin = TestdroidCloudSettings.getInstance();
+        TestdroidCloudSettings.DescriptorImpl cloudSettings = new TestdroidCloudSettings.DescriptorImpl();
+        if (StringUtils.isNotBlank(this.credentialsId)) {
+            StandardUsernamePasswordCredentials credentials = CredentialsProvider.findCredentialById(this.credentialsId, StandardUsernamePasswordCredentials.class, build, Collections.emptyList());
+            if (credentials != null) {
+                listener.getLogger().println("Using login details from the credentials manager, which overrides basic username/password specified in settings.");
+                if (StringUtils.isNotBlank(this.cloudUrl)) {
+                    cloudSettings = new TestdroidCloudSettings.DescriptorImpl(this.cloudUrl, credentials.getUsername(), credentials.getPassword().getPlainText());
+                } else {
+                    cloudSettings = new TestdroidCloudSettings.DescriptorImpl(credentials.getUsername(), credentials.getPassword().getPlainText());
+                }
+            } else {
+                listener.getLogger().println(String.format("Couldn't find the credentials '%s'", this.credentialsId));
+            }
+        }
+
         boolean releaseDone = false;
 
         try {
             // make part update and run project "transactional"
-            plugin.getSemaphore().acquire();
+            // so that a different job can't overwrite project settings just after the first one set it
+            RunInCloudBuilder.semaphore.acquire();
+
+            TestdroidApiUtil.tryValidateConfig(cloudSettings);
+            TestdroidApiUtil api = TestdroidApiUtil.getInstance(cloudSettings);
 
             if (!verifyParameters(listener)) {
                 return false;
             }
-            APIUser user = descriptor.getUser();
+
+            APIUser user = api.getUser();
 
             final APIProject project = user.getProject(Long.parseLong(this.projectId.trim()));
             if (project == null) {
@@ -391,7 +428,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 return false;
             }
 
-            updateUserEmailNotifications(user, project);
+            updateUserEmailNotifications(cloudSettings, user, project);
 
             APITestRunConfig config = project.getTestRunConfig();
             config.setAppCrawlerRun(!isFullTest());
@@ -429,8 +466,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
             Long testFileId = null;
             Long dataFileId = null;
-            Long appFileId = appFile.act(new MachineIndependentFileUploader(descriptor, project.getId(),
-                    MachineIndependentFileUploader.FILE_TYPE.APPLICATION, listener));
+            Long appFileId = appFile.act(new MachineIndependentFileUploader(cloudSettings, project.getId(), MachineIndependentFileUploader.FILE_TYPE.APPLICATION, listener));
             if (appFileId == null) {
                 return false;
             }
@@ -441,8 +477,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 listener.getLogger().println(String.format(Messages.UPLOADING_NEW_INSTRUMENTATION_S(),
                         testPathFinal));
 
-                testFileId = testFile.act(new MachineIndependentFileUploader(descriptor, project.getId(),
-                        MachineIndependentFileUploader.FILE_TYPE.TEST, listener));
+                testFileId = testFile.act(new MachineIndependentFileUploader(cloudSettings, project.getId(), MachineIndependentFileUploader.FILE_TYPE.TEST, listener));
                 if (testFileId == null) {
                     return false;
                 }
@@ -451,8 +486,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             if (isDataFile()) {
                 FilePath dataFile = new FilePath(launcher.getChannel(), getAbsolutePath(workspace, dataPathFinal));
                 listener.getLogger().println(String.format(Messages.UPLOADING_DATA_FILE_S(), dataPathFinal));
-                dataFileId = dataFile.act(new MachineIndependentFileUploader(descriptor, project.getId(),
-                        MachineIndependentFileUploader.FILE_TYPE.DATA, listener));
+                dataFileId = dataFile.act(new MachineIndependentFileUploader(cloudSettings, project.getId(), MachineIndependentFileUploader.FILE_TYPE.DATA, listener));
                 if (dataFileId == null) {
                     return false;
                 }
@@ -463,24 +497,17 @@ public class RunInCloudBuilder extends AbstractBuilder {
             String finalTestRunName = applyMacro(build, listener, testRunName);
             finalTestRunName = StringUtils.isBlank(finalTestRunName) || finalTestRunName.trim().startsWith("$") ?
                     null : finalTestRunName;
-            APITestRun testRun = project.runWithConfig(finalTestRunName, null, config, appFileId, testFileId,
-                    dataFileId);
-            String cloudLinkPrefix = descriptor.getPrivateInstanceState() ?
-                    StringUtils.isNotBlank(descriptor.getNewCloudUrl()) ?
-                            descriptor.getNewCloudUrl() : descriptor
-                            .getCloudUrl() : TestdroidCloudSettings.CLOUD_ENDPOINT;
-            String cloudLink = String.format("%s/#service/testrun/%s/%s", cloudLinkPrefix, testRun.getProjectId(),
-                    testRun.getId());
+            APITestRun testRun = project.runWithConfig(finalTestRunName, null, config, appFileId, testFileId, dataFileId);
+            String cloudLink = String.format("%s/#service/testrun/%s/%s", cloudSettings.getActiveCloudUrl(), testRun.getProjectId(), testRun.getId());
             build.getActions().add(new CloudLink(build, cloudLink));
 
             RunInCloudEnvInject variable = new RunInCloudEnvInject("CLOUD_LINK", cloudLink);
             build.addAction(variable);
 
-
-            plugin.getSemaphore().release();
+            RunInCloudBuilder.semaphore.release();
             releaseDone = true;
 
-            return waitForResults(project, testRun, workspace, launcher, listener);
+            return waitForResults(user, project, testRun, workspace, launcher, listener, cloudSettings);
 
         } catch (APIException e) {
             listener.getLogger().println(String.format("%s: %s", Messages.ERROR_API(), e.getMessage()));
@@ -496,24 +523,22 @@ public class RunInCloudBuilder extends AbstractBuilder {
             LOGGER.log(Level.WARNING, Messages.NO_DEVICE_GROUP_CHOSEN());
         } finally {
             if (!releaseDone) {
-                plugin.getSemaphore().release();
+                RunInCloudBuilder.semaphore.release();
             }
         }
 
         return false;
     }
 
-    private boolean waitForResults(
-            final APIProject project, final APITestRun testRun, FilePath workspace, Launcher launcher,
-            TaskListener listener) {
+    private boolean waitForResults(final APIUser user, final APIProject project, final APITestRun testRun, FilePath workspace,
+            Launcher launcher, TaskListener listener, TestdroidCloudSettings.DescriptorImpl cloudSettings) {
         boolean isDownloadOk = true;
         if (isWaitForResults()) {
-            TestRunFinishCheckScheduler scheduler = TestRunFinishCheckSchedulerFactory.createTestRunFinishScheduler
-                    (waitForResultsBlock.getTestRunStateCheckMethod());
+            TestRunFinishCheckScheduler scheduler = TestRunFinishCheckSchedulerFactory.createTestRunFinishScheduler(waitForResultsBlock.getTestRunStateCheckMethod());
             try {
                 boolean testRunToAbort = false;
                 listener.getLogger().println("Waiting for results...");
-                scheduler.schedule(this, project.getId(), testRun.getId());
+                scheduler.schedule(this, user, project.getId(), testRun.getId());
                 try {
                     synchronized (this) {
                         wait(waitForResultsBlock.getWaitForResultsTimeout() * 1000);
@@ -522,9 +547,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
                     testRun.refresh();
                     if (testRun.getState() == APITestRun.State.FINISHED) {
                         isDownloadOk = launcher.getChannel().call(
-                                new MachineIndependentResultsDownloader(TestdroidCloudSettings.descriptor(), listener,
-                                        project.getId(), testRun.getId(), evaluateResultsPath(workspace),
-                                        waitForResultsBlock.isDownloadScreenshots()));
+                                new MachineIndependentResultsDownloader(
+                                        cloudSettings, listener, project.getId(), testRun.getId(),
+                                        evaluateResultsPath(workspace), waitForResultsBlock.isDownloadScreenshots()));
 
                         if (!isDownloadOk) {
                             listener.getLogger().println(Messages.DOWNLOAD_RESULTS_FAILED());
@@ -625,13 +650,12 @@ public class RunInCloudBuilder extends AbstractBuilder {
         return (DescriptorImpl) super.getDescriptor();
     }
 
-    private void updateUserEmailNotifications(APIUser user, APIProject project) {
+    private void updateUserEmailNotifications(TestdroidCloudSettings.DescriptorImpl settings, APIUser user, APIProject project) {
+
         try {
             //set emails per user
-            APINotificationEmail.Type neType = APINotificationEmail.Type.valueOf(TestdroidCloudSettings.descriptor()
-                    .getNotificationEmailType());
-            List<String> emailAddressesToSet = EmailHelper.getEmailAddresses(TestdroidCloudSettings.descriptor()
-                    .getNotificationEmail());
+            APINotificationEmail.Type neType = APINotificationEmail.Type.valueOf(settings.getNotificationEmailType());
+            List<String> emailAddressesToSet = EmailHelper.getEmailAddresses(settings.getNotificationEmail());
             List<APINotificationEmail> currentEmails = user.getNotificationEmails().getEntity().getData();
             //remove exceeded emails and update type of existed ones
             for (APINotificationEmail email : currentEmails) {
@@ -687,9 +711,17 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
         private static final long serialVersionUID = 1L;
 
+        private TestdroidCloudSettings.DescriptorImpl cloudSettings;
+
+        private TestdroidApiUtil api;
+
         public DescriptorImpl() {
             super(RunInCloudBuilder.class);
             load();
+
+            // cloud settings load the base settings when it's loading
+            cloudSettings = new TestdroidCloudSettings.DescriptorImpl();
+            api = TestdroidApiUtil.getInstance(new TestdroidCloudSettings.DescriptorImpl());
         }
 
         @Override
@@ -710,7 +742,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
         public boolean isAuthenticated() {
             try {
-                return TestdroidCloudSettings.descriptor().getUser() != null;
+                return api.getUser() != null;
             } catch (APIException e) {
                 LOGGER.log(Level.WARNING, Messages.ERROR_API());
                 return false;
@@ -722,7 +754,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             if (isAuthenticated()) {
                 try {
                     Date now = new Date();
-                    APIUser user = TestdroidCloudSettings.descriptor().getUser();
+                    APIUser user = api.getUser();
                     for (APIRole role : user.getRoles()) {
                         if (PAID_ROLES.contains(role.getName())
                                 && (role.getExpireTime() == null || role.getExpireTime().after(now))) {
@@ -740,7 +772,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         public ListBoxModel doFillProjectIdItems() {
             ListBoxModel projects = new ListBoxModel();
             try {
-                APIUser user = TestdroidCloudSettings.descriptor().getUser();
+                APIUser user = api.getUser();
                 List<APIProject> list = user.getProjectsResource(new APIQueryBuilder().limit(Integer.MAX_VALUE))
                         .getEntity().getData();
                 for (APIProject project : list) {
@@ -763,7 +795,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         public ListBoxModel doFillClusterIdItems() {
             ListBoxModel deviceGroups = new ListBoxModel();
             try {
-                APIUser user = TestdroidCloudSettings.descriptor().getUser();
+                APIUser user = api.getUser();
                 List<APIDeviceGroup> list = user.getDeviceGroupsResource(new APIDeviceGroupQueryBuilder().withPublic()
                         .limit(Integer.MAX_VALUE)).getEntity().getData();
                 for (APIDeviceGroup deviceGroup : list) {
@@ -789,7 +821,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         }
 
         public ListBoxModel doFillNotificationEmailTypeItems() {
-            return TestdroidCloudSettings.descriptor().doFillNotificationEmailTypeItems();
+            return cloudSettings.doFillNotificationEmailTypeItems();
         }
 
         public ListBoxModel doFillTestCasesSelectItems() {

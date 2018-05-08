@@ -4,7 +4,6 @@ import com.testdroid.api.APIException;
 import com.testdroid.api.model.APITestRun;
 import com.testdroid.api.model.APIUser;
 import com.testdroid.jenkins.Messages;
-import com.testdroid.jenkins.TestdroidCloudSettings;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -21,10 +20,10 @@ public class APIDrivenTestFinishCheckScheduler implements TestRunFinishCheckSche
 
     private ScheduledFuture<?> taskHandle;
 
-    public void schedule(final Object object, final Long projectId, final Long testRunId) {
+    public void schedule(final Object object, APIUser user, final Long projectId, final Long testRunId) {
         final Runnable beeper = () -> {
             LOGGER.info(Messages.CHECK_FOR_TESTRUN_STATE(testRunId));
-            if (checkResult(projectId, testRunId)) {
+            if (checkResult(user, projectId, testRunId)) {
                 synchronized (object) {
                     object.notify();
                 }
@@ -39,10 +38,9 @@ public class APIDrivenTestFinishCheckScheduler implements TestRunFinishCheckSche
         }
     }
 
-    private boolean checkResult(final Long projectId, final Long testRunId) {
+    private boolean checkResult(APIUser user, final Long projectId, final Long testRunId) {
         boolean result = false;
         try {
-            APIUser user = TestdroidCloudSettings.descriptor().getUser();
             APITestRun testRun = user.getProject(projectId).getTestRun(testRunId);
             if (testRun.getState() == APITestRun.State.FINISHED) {
                 result = true;

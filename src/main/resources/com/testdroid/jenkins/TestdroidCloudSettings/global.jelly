@@ -54,7 +54,7 @@
             </f:block>
 
             <f:validateButton
-                    title="${%Authorize}"
+                    title="${%Authorize &amp; Save}"
                     progress="${%Authorizing...}"
                     method="authorize"
                     with="email,password,userManagementUrl,cloudUrl,privateInstanceState,noCheckCertificate,isProxy,proxyHost,proxyPort,proxyUser,proxyPassword"/>

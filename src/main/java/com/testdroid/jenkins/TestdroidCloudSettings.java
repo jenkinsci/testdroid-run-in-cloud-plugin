@@ -1,115 +1,94 @@
 package com.testdroid.jenkins;
 
-import com.testdroid.api.APIClient;
 import com.testdroid.api.APIException;
 import com.testdroid.api.model.APINotificationEmail;
-import com.testdroid.api.model.APIUser;
-import com.testdroid.jenkins.utils.ResultWaiter;
+import com.testdroid.jenkins.remotesupport.MachineIndependentTask;
 import com.testdroid.jenkins.utils.TestdroidApiUtil;
 import hudson.Extension;
-import hudson.Plugin;
 import hudson.model.*;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
+import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.StaplerResponse;
-import org.kohsuke.stapler.export.Exported;
-import org.kohsuke.stapler.export.ExportedBean;
 
-import javax.servlet.ServletException;
-import java.io.IOException;
-import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * Class for maintaining the plugin-wide configurations that the user enters
- * in the Jenkins config page. (Bitbar Cloud authorize, etc.)
- */
+public class TestdroidCloudSettings implements Describable<TestdroidCloudSettings> {
 
-@ExportedBean()
-public class TestdroidCloudSettings extends Plugin implements Describable<TestdroidCloudSettings>, Saveable,
-        ModelObject {
-
-    public static final String CLOUD_ENDPOINT = "https://cloud.bitbar.com";
-
-    private static final Logger LOGGER = Logger.getLogger(TestdroidCloudSettings.class.getName());
-
-    private static DescriptorImpl DESCRIPTOR;
-
-    private transient Semaphore semaphore = new Semaphore(1);
-
-    public TestdroidCloudSettings() {
-        super();
-    }
-
-    /**
-     * Returns the instance of this plugin.
-     *
-     * @return TestdroidCloudSettings instance
-     */
-    public static TestdroidCloudSettings getInstance() {
-        return Hudson.getInstance().getPlugin(TestdroidCloudSettings.class);
-
-    }
-
-    public static DescriptorImpl descriptor() {
-        return Hudson.getInstance().getDescriptorByType(TestdroidCloudSettings.DescriptorImpl.class);
-    }
-
-    public Api getApi() {
-        return new TestdroidRunInCloudApi(this);
-    }
-
-    public Semaphore getSemaphore() {
-        return semaphore;
-    }
+    private static final Logger LOGGER = Logger.getLogger(DescriptorImpl.class.getName());
 
     @Override
     public Descriptor<TestdroidCloudSettings> getDescriptor() {
-        return DESCRIPTOR;
-    }
-
-    @Override
-    public String getDisplayName() {
-        return Messages.PLUGIN_NAME();
+        return Jenkins.getActiveInstance().getDescriptorByType(DescriptorImpl.class);
     }
 
     @Extension
     public static class DescriptorImpl extends Descriptor<TestdroidCloudSettings> {
 
-        private String cloudUrl;
+        private static final String DEFAULT_CLOUD_URL = "https://cloud.bitbar.com";
 
-        private String newCloudUrl;
+        String cloudUrl;
 
-        private String email;
+        String newCloudUrl;
 
-        private boolean isProxy;
+        String email;
 
-        private boolean noCheckCertificate;
+        String password;
 
-        private String notificationEmail = "";
+        boolean isProxy;
 
-        private String notificationEmailType = String.valueOf(APINotificationEmail.Type.ALWAYS);
+        boolean noCheckCertificate;
 
-        private String password;
+        String notificationEmail = "";
 
-        private boolean privateInstanceState;
+        String notificationEmailType = String.valueOf(APINotificationEmail.Type.ALWAYS);
 
-        private String proxyHost;
+        boolean privateInstanceState;
 
-        private String proxyPassword;
+        String proxyHost;
 
-        private Integer proxyPort;
+        String proxyPassword;
 
-        private String proxyUser;
+        Integer proxyPort;
+
+        String proxyUser;
 
         public DescriptorImpl() {
+            super();
             load();
+        }
+
+        DescriptorImpl(String email, String password) {
+            this();
+            this.email = email;
+            this.password = password;
+        }
+
+        DescriptorImpl(String cloudUrl, String email, String password) {
+            this(email, password);
+            this.cloudUrl = cloudUrl;
+        }
+
+        /**
+         * Recreate a CloudSettings object from a serialized task.
+         * Note: this is not a full set of params, which is ok... mostly
+         */
+        public DescriptorImpl(MachineIndependentTask task) {
+            this.cloudUrl = task.cloudUrl;
+            this.email = task.user;
+            this.password = task.password;
+            this.isProxy = task.isProxy;
+            this.noCheckCertificate = task.noCheckCertificate;
+            this.privateInstanceState = task.privateInstance;
+            this.proxyHost = task.proxyHost;
+            this.proxyPassword = task.proxyPassword;
+            this.proxyPort = task.proxyPort;
+            this.proxyUser = task.proxyUser;
         }
 
         @Override
@@ -133,73 +112,34 @@ public class TestdroidCloudSettings extends Plugin implements Describable<Testdr
             return true;
         }
 
-        private APIClient getTestdroidAPIClient() {
-            return TestdroidApiUtil.isInitialized()
-                    ? TestdroidApiUtil.getInstance().getTestdroidAPIClient()
-                    : TestdroidApiUtil.init(
-                    email, getPassword(), cloudUrl, privateInstanceState,
-                    noCheckCertificate, isProxy, proxyHost, proxyPort,
-                    proxyUser, getProxyPassword()).getTestdroidAPIClient();
-        }
-
-        public APIUser getUser() throws APIException {
-            APIUser user;
-
-            try {
-                user = getTestdroidAPIClient().me();
-            } catch (APIException e) {
-                LOGGER.log(Level.INFO, "ApiException occurred during get user from client. Client will be recreated");
-                //if sth happen to cached client(probably problem with refreshing access token) client is recreated
-                TestdroidApiUtil.clean();
-                user = getTestdroidAPIClient().me();
-            }
-
-            return user;
-        }
-
-        @Exported
         public FormValidation doAuthorize(
                 @QueryParameter String email, @QueryParameter String password, @QueryParameter String cloudUrl,
                 @QueryParameter boolean privateInstanceState, @QueryParameter boolean noCheckCertificate,
                 @QueryParameter boolean isProxy, @QueryParameter String proxyHost, @QueryParameter Integer proxyPort,
                 @QueryParameter String proxyUser, @QueryParameter String proxyPassword) {
 
-            FormValidation validation = null;
-            TestdroidApiUtil.clean();
+            this.email = email;
+            this.password = password;
+            this.cloudUrl = cloudUrl;
+            this.privateInstanceState = privateInstanceState;
+            this.noCheckCertificate = noCheckCertificate;
+            this.isProxy = isProxy;
+            this.proxyHost = proxyHost;
+            this.proxyPort = proxyPort;
+            this.proxyUser = proxyUser;
+            this.proxyPassword = proxyPassword;
 
             try {
-                this.email = email;
-                this.password = password;
-                this.cloudUrl = cloudUrl;
-                this.noCheckCertificate = noCheckCertificate;
-                this.isProxy = isProxy;
-                this.privateInstanceState = privateInstanceState;
-
-                if (isProxy) {
-                    this.proxyHost = proxyHost;
-                    this.proxyPort = proxyPort;
-                    this.proxyUser = proxyUser;
-                    this.proxyPassword = proxyPassword;
-                }
-
-                APIUser user = getTestdroidAPIClient().me();
-
-                save();
-
-                if (user != null) {
-                    validation = FormValidation.ok(Messages.AUTHORIZATION_OK());
-                }
+                TestdroidApiUtil.tryValidateConfig(this);
+                return FormValidation.ok(Messages.AUTHORIZATION_OK());
             } catch (APIException e) {
-                validation = FormValidation.error(e.getLocalizedMessage());
                 this.password = null;
                 load();
                 LOGGER.log(Level.WARNING, Messages.ERROR_API());
+                return FormValidation.error(e.getLocalizedMessage());
             }
-
-            return validation;
         }
 
-        @Exported
         public ListBoxModel doFillNotificationEmailTypeItems() {
             ListBoxModel emailNotificationTypes = new ListBoxModel();
 
@@ -209,12 +149,31 @@ public class TestdroidCloudSettings extends Plugin implements Describable<Testdr
             return emailNotificationTypes;
         }
 
-        @Exported
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+
+            if (!(obj instanceof DescriptorImpl)) {
+                return false;
+            }
+
+            DescriptorImpl other = (DescriptorImpl) obj;
+            boolean stringParamsMatch = StringUtils.equals(cloudUrl, other.cloudUrl) && StringUtils.equals(newCloudUrl, other.newCloudUrl) &&
+                    StringUtils.equals(email, other.email) && StringUtils.equals(password, other.password) &&
+                    StringUtils.equals(notificationEmail, other.notificationEmail) && StringUtils.equals(notificationEmailType, other.notificationEmailType) &&
+                    StringUtils.equals(proxyHost, other.proxyHost) && StringUtils.equals(proxyPassword, other.proxyPassword) &&
+                    StringUtils.equals(proxyUser, other.proxyUser);
+
+            return stringParamsMatch && isProxy == other.isProxy && proxyPort == other.proxyPort && noCheckCertificate == other.noCheckCertificate && privateInstanceState == other.privateInstanceState;
+        }
+
         public String getEmail() {
             return email;
         }
 
-        @Exported
+
         public void setEmail(String email) {
             this.email = email;
         }
@@ -222,92 +181,98 @@ public class TestdroidCloudSettings extends Plugin implements Describable<Testdr
         /**
          * Returns password in decrypted form
          */
-        @Exported
+
         public String getPassword() {
             return Secret.fromString(this.password).getPlainText();
         }
 
-        @Exported
+
         public void setPassword(String password) {
             this.password = password;
         }
 
-        @Exported
+
         public boolean getPrivateInstanceState() {
             return privateInstanceState;
         }
 
-        @Exported
+
         public void setPrivateInstanceState(boolean privateInstanceState) {
             this.privateInstanceState = privateInstanceState;
         }
 
-        @Exported
-        public String getCloudUrl() {
-            return StringUtils.isBlank(cloudUrl) ? CLOUD_ENDPOINT : cloudUrl;
+        /**
+         * Get the cloud URL that should be used by this config.
+         */
+        public String getActiveCloudUrl() {
+            if (privateInstanceState && StringUtils.isNotBlank(newCloudUrl)) {
+                return newCloudUrl;
+            }
+            return getCloudUrl();
         }
 
-        @Exported
+        public String getCloudUrl() {
+            return StringUtils.isBlank(cloudUrl) ? DEFAULT_CLOUD_URL : cloudUrl;
+        }
+
         public void setCloudUrl(String cloudUrl) {
             this.cloudUrl = cloudUrl;
         }
 
-        @Exported
         public String getNewCloudUrl() {
             return newCloudUrl;
         }
 
-        @Exported
         public void setNewCloudUrl(String newCloudUrl) {
             this.newCloudUrl = newCloudUrl;
         }
 
-        @Exported
+
         public Boolean getNoCheckCertificate() {
             return noCheckCertificate;
         }
 
-        @Exported
+
         public void setNoCheckCertificate(Boolean noCheckCertificate) {
             this.noCheckCertificate = noCheckCertificate;
         }
 
-        @Exported
+
         public Boolean getIsProxy() {
             return isProxy;
         }
 
-        @Exported
+
         public void setIsProxy(Boolean isProxy) {
             this.isProxy = isProxy;
         }
 
-        @Exported
+
         public String getProxyHost() {
             return proxyHost;
         }
 
-        @Exported
+
         public void setProxyHost(String proxyHost) {
             this.proxyHost = proxyHost;
         }
 
-        @Exported
+
         public Integer getProxyPort() {
             return proxyPort;
         }
 
-        @Exported
+
         public void setProxyPort(Integer proxyPort) {
             this.proxyPort = proxyPort;
         }
 
-        @Exported
+
         public String getProxyUser() {
             return proxyUser;
         }
 
-        @Exported
+
         public void setProxyUser(String proxyUser) {
             this.proxyUser = proxyUser;
         }
@@ -315,49 +280,33 @@ public class TestdroidCloudSettings extends Plugin implements Describable<Testdr
         /**
          * Returns proxy password in decrypted form
          */
-        @Exported
         public String getProxyPassword() {
             return Secret.fromString(this.proxyPassword).getPlainText();
         }
 
-        @Exported
+
         public void setProxyPassword(String proxyPassword) {
             this.proxyPassword = proxyPassword;
         }
 
-        @Exported
+
         public String getNotificationEmail() {
             return notificationEmail;
         }
 
-        @Exported
+
         public void setNotificationEmail(String notificationEmail) {
             this.notificationEmail = notificationEmail;
         }
 
-        @Exported
+
         public String getNotificationEmailType() {
             return notificationEmailType;
         }
 
-        @Exported
+
         public void setNotificationEmailType(String notificationEmailType) {
             this.notificationEmailType = notificationEmailType;
-        }
-    }
-
-    public class TestdroidRunInCloudApi extends Api {
-
-        public TestdroidRunInCloudApi(TestdroidCloudSettings thisPlugin) {
-            super(thisPlugin);
-        }
-
-        @Override
-        public void doJson(StaplerRequest req, StaplerResponse resp) throws IOException, ServletException {
-            LOGGER.log(Level.INFO, "rest call");
-            if (req.getMethod().toLowerCase().equals("post")) {
-                ResultWaiter.getInstance().notifyWaitingObject(Long.parseLong(req.getParameter("testRunId")));
-            }
         }
     }
 }

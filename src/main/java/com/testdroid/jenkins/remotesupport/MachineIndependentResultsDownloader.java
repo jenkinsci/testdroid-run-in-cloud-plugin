@@ -40,11 +40,9 @@ public class MachineIndependentResultsDownloader extends MachineIndependentTask
 
     private long testRunId;
 
-    public MachineIndependentResultsDownloader(
-            TestdroidCloudSettings.DescriptorImpl descriptor, TaskListener listener, long projectId, long testRunId,
+    public MachineIndependentResultsDownloader(TestdroidCloudSettings.DescriptorImpl settings, TaskListener listener, long projectId, long testRunId,
             String resultsPath, boolean downloadScreenshots) {
-        super(descriptor);
-
+        super(settings);
         this.projectId = projectId;
         this.testRunId = testRunId;
         this.resultsPath = resultsPath;
@@ -61,13 +59,9 @@ public class MachineIndependentResultsDownloader extends MachineIndependentTask
 
     @Override
     public Boolean call() throws APIException {
-        if (!TestdroidApiUtil.isInitialized()) {
-            TestdroidApiUtil.init(user, password, cloudUrl, privateInstance,
-                    noCheckCertificate, isProxy, proxyHost, proxyPort, proxyUser,
-                    proxyPassword);
-        }
-        APIClient client = TestdroidApiUtil.getInstance().getTestdroidAPIClient();
+        APIClient client = TestdroidApiUtil.getInstance(new TestdroidCloudSettings.DescriptorImpl(this)).getTestdroidAPIClient();
         APITestRun testRun = client.me().getProject(projectId).getTestRun(testRunId);
+
         boolean success = false; //if we are able to download results from at least one device then whole method
         // should return true, false only when results was not available at all, other case just warn in logs
 
