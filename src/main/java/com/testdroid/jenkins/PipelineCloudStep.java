@@ -351,7 +351,7 @@ public class PipelineCloudStep extends AbstractStepImpl {
     }
 
 
-    public static final class CloudStepExecution extends AbstractSynchronousNonBlockingStepExecution<Void> {
+    public static final class CloudStepExecution extends AbstractSynchronousNonBlockingStepExecution<Boolean> {
 
         private static final long serialVersionUID = 1;
 
@@ -371,7 +371,7 @@ public class PipelineCloudStep extends AbstractStepImpl {
         private transient FilePath workspace;
 
         @Override
-        protected Void run() throws Exception {
+        protected Boolean run() throws Exception {
             WaitForResultsBlock waitForResultsBlock = null;
             if (step.isWaitForResults()) {
                 waitForResultsBlock = new WaitForResultsBlock(
@@ -409,11 +409,7 @@ public class PipelineCloudStep extends AbstractStepImpl {
                     step.getCloudUrl()
             );
 
-            if(!builder.completeRun(run, workspace, launcher, listener)) {
-                throw new Exception("runInTests Jenkins run failed!");
-            }
-
-            return null;
+            return builder.completeRun(run, workspace, launcher, listener);
         }
     }
 }
