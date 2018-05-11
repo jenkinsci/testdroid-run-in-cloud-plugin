@@ -40,16 +40,22 @@ public class TestdroidApiUtil {
 
     public APIClient getTestdroidAPIClient() {
         if (client == null) {
+            String cloudURL = settings.getActiveCloudUrl();
+            String email = settings.getEmail();
+            String password = settings.getPassword();
+            boolean dontCheckCert = settings.getNoCheckCertificate();
+
             if (settings.getIsProxy()) {
                 HttpHost proxy = settings.getProxyPort() != null ?
                         new HttpHost(settings.getProxyHost(), settings.getProxyPort(), "http") :
                         new HttpHost(settings.getProxyHost());
 
                 client = StringUtils.isBlank(settings.getProxyUser()) ?
-                        new DefaultAPIClient(settings.getActiveCloudUrl(), settings.getEmail(), settings.getPassword(), proxy, settings.getNoCheckCertificate()) :
-                        new DefaultAPIClient(settings.getActiveCloudUrl(), settings.getEmail(), settings.getPassword(), proxy, settings.getProxyUser(), settings.getProxyPassword(), settings.getNoCheckCertificate());
+                        new DefaultAPIClient(cloudURL, email, password, proxy, dontCheckCert) :
+                        new DefaultAPIClient(cloudURL, email, password, proxy,
+                                settings.getProxyUser(), settings.getProxyPassword(), dontCheckCert);
             } else {
-                client = new DefaultAPIClient(settings.getActiveCloudUrl(), settings.getEmail(), settings.getPassword(), settings.getNoCheckCertificate());
+                client = new DefaultAPIClient(cloudURL, email, password, dontCheckCert);
             }
         }
 

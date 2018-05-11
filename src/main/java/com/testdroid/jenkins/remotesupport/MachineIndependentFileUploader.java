@@ -33,8 +33,8 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
         DATA
     }
 
-    public MachineIndependentFileUploader(TestdroidCloudSettings.DescriptorImpl settings, long projectId, FILE_TYPE fileType,
-            TaskListener listener) {
+    public MachineIndependentFileUploader(TestdroidCloudSettings.DescriptorImpl settings, long projectId,
+            FILE_TYPE fileType, TaskListener listener) {
         super(settings);
         this.projectId = projectId;
         this.fileType = fileType;
@@ -54,7 +54,8 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
         int attempts = 3;
         do {
             try {
-                APIClient client = new TestdroidApiUtil(new TestdroidCloudSettings.DescriptorImpl(this)).getTestdroidAPIClient();
+                TestdroidCloudSettings.DescriptorImpl settings = new TestdroidCloudSettings.DescriptorImpl(this);
+                APIClient client = new TestdroidApiUtil(settings).getTestdroidAPIClient();
                 APIProject project = client.me().getProject(projectId);
 
                 if (file.exists()) {

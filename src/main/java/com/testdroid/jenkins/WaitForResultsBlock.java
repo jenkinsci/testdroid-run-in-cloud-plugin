@@ -21,16 +21,17 @@ public class WaitForResultsBlock implements Describable<WaitForResultsBlock> {
 
     boolean forceFinishAfterBreak;
 
-    String hookURL = "";
+    String hookURL;
 
-    String resultsPath = "";
+    String resultsPath;
 
     TestRunStateCheckMethod testRunStateCheckMethod;
 
     Integer waitForResultsTimeout;
 
     @DataBoundConstructor
-    public WaitForResultsBlock(String testRunStateCheckMethod, String hookURL, String waitForResultsTimeout, String resultsPath, boolean downloadScreenshots, boolean forceFinishAfterBreak) {
+    public WaitForResultsBlock(String testRunStateCheckMethod, String hookURL, String waitForResultsTimeout,
+            String resultsPath, boolean downloadScreenshots, boolean forceFinishAfterBreak) {
         this.testRunStateCheckMethod = TestRunStateCheckMethod.valueOf(testRunStateCheckMethod);
         this.hookURL = hookURL;
         this.resultsPath = resultsPath;

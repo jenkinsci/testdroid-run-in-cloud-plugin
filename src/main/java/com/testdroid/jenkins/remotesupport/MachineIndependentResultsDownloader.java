@@ -40,7 +40,8 @@ public class MachineIndependentResultsDownloader extends MachineIndependentTask
 
     private long testRunId;
 
-    public MachineIndependentResultsDownloader(TestdroidCloudSettings.DescriptorImpl settings, TaskListener listener, long projectId, long testRunId,
+    public MachineIndependentResultsDownloader(TestdroidCloudSettings.DescriptorImpl settings, TaskListener listener,
+            long projectId, long testRunId,
             String resultsPath, boolean downloadScreenshots) {
         super(settings);
         this.projectId = projectId;
@@ -59,7 +60,8 @@ public class MachineIndependentResultsDownloader extends MachineIndependentTask
 
     @Override
     public Boolean call() throws APIException {
-        APIClient client = new TestdroidApiUtil(new TestdroidCloudSettings.DescriptorImpl(this)).getTestdroidAPIClient();
+        TestdroidCloudSettings.DescriptorImpl settings = new TestdroidCloudSettings.DescriptorImpl(this);
+        APIClient client = new TestdroidApiUtil(settings).getTestdroidAPIClient();
         APITestRun testRun = client.me().getProject(projectId).getTestRun(testRunId);
 
         boolean success = false; //if we are able to download results from at least one device then whole method

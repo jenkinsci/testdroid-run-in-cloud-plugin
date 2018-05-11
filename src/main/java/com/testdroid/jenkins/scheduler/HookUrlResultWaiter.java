@@ -73,11 +73,11 @@ public class HookUrlResultWaiter extends Plugin implements ModelObject {
         @Override
         public void doJson(StaplerRequest req, StaplerResponse resp) throws IOException, ServletException {
             HookUrlResultWaiter plugin = (HookUrlResultWaiter) bean;
-            LOGGER.log(Level.INFO, String.format("%s received a REST request to the JSON endpoint.", plugin.getDisplayName()));
+            LOGGER.log(Level.INFO, String.format(Messages.RECEIVED_REST_JSON(), plugin.getDisplayName()));
             if (req.getMethod().toLowerCase().equals("post") && req.hasParameter("testRunId")) {
                 plugin.notifyWaitingObject(Long.parseLong(req.getParameter("testRunId")));
             } else {
-                LOGGER.log(Level.INFO, String.format("%s: the request did not contain the parameter 'testRunId'. Ignoring.", plugin.getDisplayName()));
+                LOGGER.log(Level.INFO, String.format(Messages.REQUEST_NEEDS_TESTRUNID(), plugin.getDisplayName()));
             }
         }
     }

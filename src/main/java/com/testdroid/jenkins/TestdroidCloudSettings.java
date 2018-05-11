@@ -159,13 +159,20 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
             }
 
             DescriptorImpl other = (DescriptorImpl) obj;
-            boolean stringParamsMatch = StringUtils.equals(cloudUrl, other.cloudUrl) && StringUtils.equals(newCloudUrl, other.newCloudUrl) &&
-                    StringUtils.equals(email, other.email) && StringUtils.equals(password, other.password) &&
-                    StringUtils.equals(notificationEmail, other.notificationEmail) && StringUtils.equals(notificationEmailType, other.notificationEmailType) &&
-                    StringUtils.equals(proxyHost, other.proxyHost) && StringUtils.equals(proxyPassword, other.proxyPassword) &&
+            boolean stringParamsMatch = StringUtils.equals(cloudUrl, other.cloudUrl) &&
+                    StringUtils.equals(newCloudUrl, other.newCloudUrl) &&
+                    StringUtils.equals(email, other.email) &&
+                    StringUtils.equals(password, other.password) &&
+                    StringUtils.equals(notificationEmail, other.notificationEmail) &&
+                    StringUtils.equals(notificationEmailType, other.notificationEmailType) &&
+                    StringUtils.equals(proxyHost, other.proxyHost) &&
+                    StringUtils.equals(proxyPassword, other.proxyPassword) &&
                     StringUtils.equals(proxyUser, other.proxyUser);
 
-            return stringParamsMatch && isProxy == other.isProxy && proxyPort == other.proxyPort && noCheckCertificate == other.noCheckCertificate && privateInstanceState == other.privateInstanceState;
+            return stringParamsMatch && isProxy == other.isProxy &&
+                    proxyPort == other.proxyPort &&
+                    noCheckCertificate == other.noCheckCertificate &&
+                    privateInstanceState == other.privateInstanceState;
         }
 
         public String getEmail() {
