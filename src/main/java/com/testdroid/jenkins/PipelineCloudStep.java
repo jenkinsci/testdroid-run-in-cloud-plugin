@@ -36,7 +36,7 @@ import java.util.logging.Logger;
 
 public class PipelineCloudStep extends AbstractStepImpl {
 
-    transient private static final Logger LOGGER = Logger.getLogger(PipelineCloudStep.class.getSimpleName());
+    private static final Logger LOGGER = Logger.getLogger(PipelineCloudStep.class.getSimpleName());
 
     private String appPath;
     private String deviceGroupId;

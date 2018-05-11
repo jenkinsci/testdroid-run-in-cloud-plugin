@@ -39,11 +39,11 @@ import java.util.logging.Logger;
 
 public class RunInCloudBuilder extends AbstractBuilder {
 
-    transient private static final Logger LOGGER = Logger.getLogger(RunInCloudBuilder.class.getSimpleName());
+    private static final Logger LOGGER = Logger.getLogger(RunInCloudBuilder.class.getSimpleName());
 
-    transient private static final String POST_HOOK_URL = "/plugin/testdroid-run-in-cloud/api/json/cloud-webhook";
+    private static final String POST_HOOK_URL = "/plugin/testdroid-run-in-cloud/api/json/cloud-webhook";
 
-    transient private static final Semaphore semaphore = new Semaphore(1);
+    private static final Semaphore semaphore = new Semaphore(1);
 
     private String appPath;
 

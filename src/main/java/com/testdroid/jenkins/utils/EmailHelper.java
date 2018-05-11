@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 
 public class EmailHelper {
 
-    transient private static final Logger LOGGER = Logger.getLogger(EmailHelper.class.getSimpleName());
+    private static final Logger LOGGER = Logger.getLogger(EmailHelper.class.getSimpleName());
 
     public static List<String> getEmailAddresses(String email) {
         ArrayList<String> result = new ArrayList<>();
