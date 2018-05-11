@@ -400,7 +400,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
         try {
             // make part update and run project "transactional"
             // so that a different job can't overwrite project settings just after the first one set it
-            // TODO: is this still needed..?
             RunInCloudBuilder.semaphore.acquire();
 
             TestdroidApiUtil api = new TestdroidApiUtil(cloudSettings);
