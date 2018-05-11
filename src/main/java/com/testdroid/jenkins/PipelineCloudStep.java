@@ -74,12 +74,10 @@ public class PipelineCloudStep extends AbstractStepImpl {
      *
      * @param projectId: Bitbar Cloud project Id
      * @param deviceGroupId: Bitbar Cloud device group Id
-     * @param appPath: local path of app (.ipa, .apk) to be uploaded
      */
     @DataBoundConstructor
-    public PipelineCloudStep(String projectId, String deviceGroupId, String appPath) {
+    public PipelineCloudStep(String projectId, String deviceGroupId) {
         this.projectId = projectId;
-        this.appPath = appPath;
         this.deviceGroupId = deviceGroupId;
     }
 
@@ -89,6 +87,11 @@ public class PipelineCloudStep extends AbstractStepImpl {
     @DataBoundSetter
     public void setTestRunName(String testRunName) {
         this.testRunName = testRunName;
+    }
+
+    @DataBoundSetter
+    public void setAppPath(String appPath) {
+        this.appPath = appPath;
     }
 
     @DataBoundSetter
