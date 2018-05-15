@@ -57,9 +57,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     private String language;
 
-    private String notificationEmail = "";
+    private String notificationEmail;
 
-    private String notificationEmailType = String.valueOf(APINotificationEmail.Type.ALWAYS);
+    private String notificationEmailType;
 
     private String projectId;
 
@@ -202,6 +202,10 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
 
     public String getTestCasesSelect() {
+        if (StringUtils.isBlank(testCasesSelect)) {
+            return APITestRunConfig.LimitationType.PACKAGE.toString();
+        }
+
         return testCasesSelect;
     }
 
@@ -237,7 +241,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
 
     public String getScheduler() {
-        if (scheduler == null) {
+        if (StringUtils.isBlank(scheduler)) {
             scheduler = Scheduler.PARALLEL.toString();
         }
         return scheduler;
@@ -248,6 +252,10 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
 
     public String getNotificationEmail() {
+        if (notificationEmail == null) {
+            return "";
+        }
+
         return notificationEmail;
     }
 
@@ -256,6 +264,10 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
 
     public String getNotificationEmailType() {
+        if (StringUtils.isBlank(notificationEmailType)) {
+            return APINotificationEmail.Type.ALWAYS.toString();
+        }
+
         return notificationEmailType;
     }
 
@@ -436,7 +448,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             APITestRunConfig config = project.getTestRunConfig();
             config.setAppCrawlerRun(!isFullTest());
             config.setDeviceLanguageCode(this.language);
-            config.setScheduler(Scheduler.valueOf(this.scheduler));
+            config.setScheduler(Scheduler.valueOf(getScheduler().toUpperCase()));
             config.setUsedDeviceGroupId(Long.parseLong(this.clusterId));
             config.setHookURL(evaluateHookUrl());
             config.setScreenshotDir(this.screenshotsDirectory);
@@ -617,7 +629,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     private void setLimitations(Run<?, ?> build, final TaskListener listener, APITestRunConfig config) {
         if (StringUtils.isNotBlank(testCasesValue)) {
-            config.setLimitationType(APITestRunConfig.LimitationType.valueOf(testCasesSelect));
+            config.setLimitationType(APITestRunConfig.LimitationType.valueOf(getTestCasesSelect().toUpperCase()));
             config.setLimitationValue(applyMacro(build, listener, testCasesValue));
         } else {
             config.setLimitationType(null);
@@ -703,8 +715,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
             }
 
             //set emails per project
-            neType = APINotificationEmail.Type.valueOf(notificationEmailType);
-            emailAddressesToSet = EmailHelper.getEmailAddresses(notificationEmail);
+            neType = APINotificationEmail.Type.valueOf(getNotificationEmailType().toUpperCase());
+            emailAddressesToSet = EmailHelper.getEmailAddresses(getNotificationEmail());
             currentEmails = project.getNotificationEmails().getEntity().getData();
             //remove exceeded emails and update type of existed ones
             for (APINotificationEmail email : currentEmails) {

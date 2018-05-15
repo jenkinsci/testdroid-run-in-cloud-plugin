@@ -3,6 +3,7 @@ package com.testdroid.jenkins;
 import com.testdroid.jenkins.model.TestRunStateCheckMethod;
 import hudson.Extension;
 import hudson.model.*;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import jenkins.model.Jenkins;
@@ -32,7 +33,8 @@ public class WaitForResultsBlock implements Describable<WaitForResultsBlock> {
     @DataBoundConstructor
     public WaitForResultsBlock(String testRunStateCheckMethod, String hookURL, String waitForResultsTimeout,
             String resultsPath, boolean downloadScreenshots, boolean forceFinishAfterBreak) {
-        this.testRunStateCheckMethod = TestRunStateCheckMethod.valueOf(testRunStateCheckMethod);
+        this.testRunStateCheckMethod = (StringUtils.isBlank(testRunStateCheckMethod)) ? TestRunStateCheckMethod.HOOK_URL :
+        TestRunStateCheckMethod.valueOf(testRunStateCheckMethod.toUpperCase());
         this.hookURL = hookURL;
         this.resultsPath = resultsPath;
         this.downloadScreenshots = downloadScreenshots;
