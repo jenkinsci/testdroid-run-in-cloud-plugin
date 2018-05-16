@@ -3,6 +3,7 @@ package com.testdroid.jenkins.utils;
 import com.testdroid.api.APIClient;
 import com.testdroid.api.APIException;
 import com.testdroid.api.DefaultAPIClient;
+import com.testdroid.api.model.APICloudInfo;
 import com.testdroid.api.model.APIRole;
 import com.testdroid.api.model.APIUser;
 import com.testdroid.jenkins.Messages;
@@ -62,6 +63,17 @@ public class TestdroidApiUtil {
         return client;
     }
 
+    public String getCloudVersion() {
+        try {
+            APICloudInfo cloudInfo = getTestdroidAPIClient().get("/info", APICloudInfo.class);
+            return cloudInfo.getVersion();
+        } catch (APIException e) {
+            LOGGER.log(Level.WARNING, "APIException occurred when trying to get the cloud version.");
+        }
+
+        return null;
+    }
+
     public APIUser getUser() throws APIException {
         APIUser user;
         try {
@@ -94,7 +106,6 @@ public class TestdroidApiUtil {
     /**
      * Static methods for managing instances of this class.
      */
-
     public static boolean isPaidUser(APIUser user) {
         if (user == null) return false;
 

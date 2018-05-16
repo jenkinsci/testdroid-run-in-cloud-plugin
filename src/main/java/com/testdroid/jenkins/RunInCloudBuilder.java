@@ -43,6 +43,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     private static final String POST_HOOK_URL = "/plugin/testdroid-run-in-cloud/api/json/cloud-webhook";
 
+    private static final String DEFAULT_TEST_TIMEOUT = "600"; // 10 minutes
+
     private static final Semaphore semaphore = new Semaphore(1);
 
     private String appPath;
@@ -230,8 +232,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
 
     public String getLanguage() {
-        if (language == null) {
-            language = String.format("%s-%s", Locale.ENGLISH.getLanguage(), Locale.ENGLISH.getCountry());
+        if (StringUtils.isBlank(language)) {
+            language = String.format("%s-%s", Locale.US.getLanguage(), Locale.US.getCountry());
         }
         return language;
     }
@@ -276,6 +278,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
 
     public String getTestTimeout() {
+        if (StringUtils.isBlank(testTimeout)) {
+            return DEFAULT_TEST_TIMEOUT;
+        }
         return testTimeout;
     }
 
@@ -457,13 +462,13 @@ public class RunInCloudBuilder extends AbstractBuilder {
             config.setWithAnnotation(withAnnotationFinal);
 
             // default test timeout is 10 minutes
-            config.setTimeout(600L);
+            config.setTimeout(Long.parseLong(DEFAULT_TEST_TIMEOUT));
             if (TestdroidApiUtil.isPaidUser(user)) {
                 try {
-                    long runTimeout = Long.parseLong(testTimeout);
+                    long runTimeout = Long.parseLong(getTestTimeout());
                     config.setTimeout(runTimeout);
                 } catch (NumberFormatException ignored) {
-                    listener.getLogger().println(String.format(Messages.TEST_TIMEOUT_NOT_NUMERIC_VALUE(), testTimeout));
+                    listener.getLogger().println(String.format(Messages.TEST_TIMEOUT_NOT_NUMERIC_VALUE(), getTestTimeout()));
                 }
             } else {
                 listener.getLogger().println(String.format(Messages.FREE_USERS_MAX_10_MINS(), user.getEmail()));
@@ -475,6 +480,15 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
             config.update();
             printTestJob(project, config, cloudSettings, listener);
+            String cloudVersion = api.getCloudVersion();
+
+            if (cloudVersion == null) {
+                listener.getLogger().println("Cloud version: null!");
+            } else {
+                listener.getLogger().println(String.format("Cloud version: %s", cloudVersion));
+            }
+
+
             getDescriptor().save();
 
             Long testFileId = null;
@@ -530,11 +544,10 @@ public class RunInCloudBuilder extends AbstractBuilder {
                     appFileId, testFileId, dataFileId);
 
             // add the Bitbar Cloud link to the left-hand-side menu in Jenkins
-            String cloudLink = String.format("%s/#service/testrun/%s/%s", cloudSettings.getActiveCloudUrl(),
-                    testRun.getProjectId(), testRun.getId());
-
-            build.addAction(new CloudLink(build, cloudLink));
-            RunInCloudEnvInject variable = new RunInCloudEnvInject("CLOUD_LINK", cloudLink);
+            BuildBadgeAction cloudLinkAction = new CloudLink(cloudSettings.getActiveCloudUrl(), project.getId(),
+                    testRun.getId(), cloudVersion);
+            build.addAction(cloudLinkAction);
+            RunInCloudEnvInject variable = new RunInCloudEnvInject("CLOUD_LINK", cloudLinkAction.getUrlName());
             build.addAction(variable);
 
             RunInCloudBuilder.semaphore.release();
