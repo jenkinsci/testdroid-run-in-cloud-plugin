@@ -205,7 +205,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     public String getTestCasesSelect() {
         if (StringUtils.isBlank(testCasesSelect)) {
-            return APITestRunConfig.LimitationType.PACKAGE.toString();
+            return APITestRunConfig.LimitationType.PACKAGE.name();
         }
 
         return testCasesSelect;
@@ -244,7 +244,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     public String getScheduler() {
         if (StringUtils.isBlank(scheduler)) {
-            scheduler = Scheduler.PARALLEL.toString();
+            scheduler = Scheduler.PARALLEL.name();
         }
         return scheduler;
     }
@@ -267,7 +267,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     public String getNotificationEmailType() {
         if (StringUtils.isBlank(notificationEmailType)) {
-            return APINotificationEmail.Type.ALWAYS.toString();
+            return APINotificationEmail.Type.ALWAYS.name();
         }
 
         return notificationEmailType;
@@ -816,9 +816,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
         public ListBoxModel doFillSchedulerItems() {
             ListBoxModel schedulers = new ListBoxModel();
-            schedulers.add(Messages.SCHEDULER_PARALLEL(), Scheduler.PARALLEL.toString());
-            schedulers.add(Messages.SCHEDULER_SERIAL(), Scheduler.SERIAL.toString());
-            schedulers.add(Messages.SCHEDULER_SINGLE(), Scheduler.SINGLE.toString());
+            schedulers.add(Messages.SCHEDULER_PARALLEL(), Scheduler.PARALLEL.name());
+            schedulers.add(Messages.SCHEDULER_SERIAL(), Scheduler.SERIAL.name());
+            schedulers.add(Messages.SCHEDULER_SINGLE(), Scheduler.SINGLE.name());
             return schedulers;
         }
 

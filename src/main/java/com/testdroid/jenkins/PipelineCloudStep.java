@@ -276,7 +276,7 @@ public class PipelineCloudStep extends AbstractStepImpl {
 
     public String getScheduler() {
         if (scheduler == null) {
-            scheduler = Scheduler.PARALLEL.toString();
+            scheduler = Scheduler.PARALLEL.name();
         }
         return scheduler;
     }

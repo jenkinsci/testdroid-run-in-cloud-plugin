@@ -142,8 +142,8 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
         public ListBoxModel doFillNotificationEmailTypeItems() {
             ListBoxModel emailNotificationTypes = new ListBoxModel();
 
-            emailNotificationTypes.add(Messages.ALWAYS(), APINotificationEmail.Type.ALWAYS.toString());
-            emailNotificationTypes.add(Messages.ON_FAILURE_ONLY(), APINotificationEmail.Type.ON_FAILURE.toString());
+            emailNotificationTypes.add(Messages.ALWAYS(), APINotificationEmail.Type.ALWAYS.name());
+            emailNotificationTypes.add(Messages.ON_FAILURE_ONLY(), APINotificationEmail.Type.ON_FAILURE.name());
 
             return emailNotificationTypes;
         }
