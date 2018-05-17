@@ -255,7 +255,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     public String getNotificationEmail() {
         if (notificationEmail == null) {
-            return "";
+            return StringUtils.EMPTY;
         }
 
         return notificationEmail;
@@ -688,7 +688,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     private String getAbsolutePath(FilePath workspace, String path) throws IOException, InterruptedException {
         if (StringUtils.isBlank(path)) {
-            return "";
+            return StringUtils.EMPTY;
         }
         String trimmed = StringUtils.trim(path);
         if (trimmed.startsWith(File.separator)) { // absolute
