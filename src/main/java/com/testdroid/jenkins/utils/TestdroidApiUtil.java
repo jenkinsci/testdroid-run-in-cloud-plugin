@@ -6,9 +6,7 @@ import com.testdroid.api.DefaultAPIClient;
 import com.testdroid.api.model.APICloudInfo;
 import com.testdroid.api.model.APIRole;
 import com.testdroid.api.model.APIUser;
-import com.testdroid.jenkins.Messages;
 import com.testdroid.jenkins.TestdroidCloudSettings;
-import hudson.model.Api;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHost;
 
@@ -22,14 +20,13 @@ public class TestdroidApiUtil {
 
     private static final Logger LOGGER = Logger.getLogger(TestdroidApiUtil.class.getName());
 
-    private static final List<String> PAID_ROLES = new ArrayList<String>() {
-        {
-            add("PRIORITY_SILVER");
-            add("PRIORITY_GOLD");
-            add("PRIORITY_PLATINUM");
-            add("PAID_RUN");
-        }
-    };
+    private static final List<String> PAID_ROLES = new ArrayList<>();
+    static {
+        PAID_ROLES.add("PRIORITY_SILVER");
+        PAID_ROLES.add("PRIORITY_GOLD");
+        PAID_ROLES.add("PRIORITY_PLATINUM");
+        PAID_ROLES.add("PAID_RUN");
+    }
 
     private TestdroidCloudSettings.DescriptorImpl settings;
 
