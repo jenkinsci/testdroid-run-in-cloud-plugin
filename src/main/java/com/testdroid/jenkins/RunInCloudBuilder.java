@@ -296,6 +296,14 @@ public class RunInCloudBuilder extends AbstractBuilder {
         this.credentialsId = credentialsId;
     }
 
+    public String getCloudUrl() {
+        return cloudUrl;
+    }
+
+    public void setCloudUrl(String cloudUrl) {
+        this.cloudUrl = cloudUrl;
+    }
+
     public WaitForResultsBlock getWaitForResultsBlock() {
         return waitForResultsBlock;
     }
@@ -398,9 +406,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
         TestdroidCloudSettings.DescriptorImpl cloudSettings = new TestdroidCloudSettings.DescriptorImpl();
 
         // override default cloud settings if credentials/cloud URL specified on build level
-        if (StringUtils.isNotBlank(this.credentialsId)) {
+        if (StringUtils.isNotBlank(getCredentialsId())) {
             StandardUsernamePasswordCredentials credentials = CredentialsProvider.findCredentialById(
-                    this.credentialsId,StandardUsernamePasswordCredentials.class,
+                    getCredentialsId(),StandardUsernamePasswordCredentials.class,
                     build,
                     Collections.emptyList()
             );
@@ -411,15 +419,15 @@ public class RunInCloudBuilder extends AbstractBuilder {
                         credentials.getUsername(),
                         credentials.getPassword().getPlainText()
                 );
-                if (StringUtils.isNotBlank(this.cloudUrl)) {
-                    cloudSettings.setCloudUrl(this.cloudUrl);
+                if (StringUtils.isNotBlank(getCloudUrl())) {
+                    cloudSettings.setCloudUrl(getCloudUrl());
                 }
             } else {
-                listener.getLogger().println(String.format(Messages.COULDNT_FIND_CREDENTIALS(), this.credentialsId));
+                listener.getLogger().println(String.format(Messages.COULDNT_FIND_CREDENTIALS(), getCredentialsId()));
             }
         } else if (StringUtils.isNotBlank(this.cloudUrl)) {
             // cloud URL always goes 1-to-1 with credentials, so it can't be used if credentials aren't specified..!
-            listener.getLogger().println(String.format(Messages.CLOUD_URL_SET_BUT_NO_CREDENTIALS(), this.cloudUrl,
+            listener.getLogger().println(String.format(Messages.CLOUD_URL_SET_BUT_NO_CREDENTIALS(), getCloudUrl(),
                     cloudSettings.getActiveCloudUrl()));
         }
 
@@ -442,7 +450,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
             APIUser user = api.getUser();
 
-            final APIProject project = user.getProject(Long.parseLong(this.projectId.trim()));
+            final APIProject project = user.getProject(Long.parseLong(getProjectId().trim()));
             if (project == null) {
                 listener.getLogger().println(Messages.CHECK_PROJECT_NAME());
                 return false;
@@ -452,11 +460,11 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
             APITestRunConfig config = project.getTestRunConfig();
             config.setAppCrawlerRun(!isFullTest());
-            config.setDeviceLanguageCode(this.language);
+            config.setDeviceLanguageCode(getLanguage());
             config.setScheduler(Scheduler.valueOf(getScheduler().toUpperCase()));
-            config.setUsedDeviceGroupId(Long.parseLong(this.clusterId));
+            config.setUsedDeviceGroupId(Long.parseLong(getClusterId()));
             config.setHookURL(evaluateHookUrl());
-            config.setScreenshotDir(this.screenshotsDirectory);
+            config.setScreenshotDir(getScreenshotsDirectory());
             config.setInstrumentationRunner(testRunnerFinal);
             config.setWithoutAnnotation(withoutAnnotationFinal);
             config.setWithAnnotation(withAnnotationFinal);
@@ -496,7 +504,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             Long dataFileId = null;
             Long appFileId = null;
 
-            if (StringUtils.isNotBlank(this.appPath)) {
+            if (StringUtils.isNotBlank(getAppPath())) {
                 final FilePath appFile = new FilePath(launcher.getChannel(), getAbsolutePath(workspace, appPathFinal));
                 listener.getLogger().println(String.format(Messages.UPLOADING_NEW_APPLICATION_S(), appPathFinal));
 
@@ -535,7 +543,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             listener.getLogger().println(Messages.RUNNING_TESTS());
 
             // run project with proper name set in jenkins if it's set
-            String finalTestRunName = applyMacro(build, listener, testRunName);
+            String finalTestRunName = applyMacro(build, listener, getTestRunName());
             if (StringUtils.isBlank(finalTestRunName) || finalTestRunName.trim().startsWith("$")) {
                 finalTestRunName = null;
             }
@@ -620,7 +628,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
                     listener.getLogger().println(e.getMessage());
                     LOGGER.log(Level.WARNING, e.getMessage(), e);
                 }
-                if (testRunToAbort && waitForResultsBlock.forceFinishAfterBreak) {
+                if (testRunToAbort && waitForResultsBlock.isForceFinishAfterBreak()) {
                     String msg = "Force finish test in Cloud";
                     listener.getLogger().println(msg);
                     LOGGER.log(Level.WARNING, msg);
@@ -642,9 +650,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
 
     private void setLimitations(Run<?, ?> build, final TaskListener listener, APITestRunConfig config) {
-        if (StringUtils.isNotBlank(testCasesValue)) {
+        if (StringUtils.isNotBlank(getTestCasesValue())) {
             config.setLimitationType(APITestRunConfig.LimitationType.valueOf(getTestCasesSelect().toUpperCase()));
-            config.setLimitationValue(applyMacro(build, listener, testCasesValue));
+            config.setLimitationValue(applyMacro(build, listener, getTestCasesValue()));
         } else {
             config.setLimitationType(null);
             config.setLimitationValue("");
