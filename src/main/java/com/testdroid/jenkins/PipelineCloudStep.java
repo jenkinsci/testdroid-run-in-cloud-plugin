@@ -45,8 +45,8 @@ public class PipelineCloudStep extends AbstractStepImpl {
     private boolean failBuildIfThisStepFailed;
     private String keyValuePairs;
     private String language;
-    private String notificationEmail = "";
-    private String notificationEmailType = String.valueOf(APINotificationEmail.Type.ALWAYS);
+    private String notificationEmail;
+    private String notificationEmailType;
     private String projectId;
     private String scheduler;
     private String screenshotsDirectory;
@@ -268,16 +268,10 @@ public class PipelineCloudStep extends AbstractStepImpl {
     }
 
     private String getLanguage() {
-        if (language == null) {
-            language = String.format("%s-%s", Locale.ENGLISH.getLanguage(), Locale.ENGLISH.getCountry());
-        }
         return language;
     }
 
     public String getScheduler() {
-        if (scheduler == null) {
-            scheduler = Scheduler.PARALLEL.name();
-        }
         return scheduler;
     }
 
