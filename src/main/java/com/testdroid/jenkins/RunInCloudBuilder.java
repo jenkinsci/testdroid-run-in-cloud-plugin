@@ -467,8 +467,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 try {
                     long runTimeout = Long.parseLong(getTestTimeout());
                     config.setTimeout(runTimeout);
-                } catch (NumberFormatException ignored) {
+                } catch (NumberFormatException e) {
                     listener.getLogger().println(String.format(Messages.TEST_TIMEOUT_NOT_NUMERIC_VALUE(), getTestTimeout()));
+                    LOGGER.log(Level.WARNING, "NumberFormatException when parsing timeout.", e);
                 }
             } else {
                 listener.getLogger().println(String.format(Messages.FREE_USERS_MAX_10_MINS(), user.getEmail()));

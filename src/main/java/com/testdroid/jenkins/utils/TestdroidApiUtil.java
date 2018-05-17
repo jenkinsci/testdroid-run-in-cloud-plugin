@@ -98,7 +98,7 @@ public class TestdroidApiUtil {
         try {
             return getUser() != null;
         } catch (APIException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "isAuthenticated: Error when getting user.", e);
         }
         return false;
     }
