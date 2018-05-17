@@ -1,5 +1,6 @@
 package com.testdroid.jenkins;
 
+import com.testdroid.jenkins.utils.VersionString;
 import hudson.model.Run;
 import hudson.model.BuildBadgeAction;
 import org.apache.commons.lang.StringUtils;
@@ -18,7 +19,11 @@ public class CloudLink implements BuildBadgeAction {
     private String cloudLink;
 
     public CloudLink(String cloudURL, Long projectId, Long testRunId, String cloudVersion) {
-        if (StringUtils.isBlank(cloudVersion) || versionCompare(cloudVersion, "2.54") >= 0) {
+        VersionString v254 = new VersionString("2.54");
+        VersionString currentVersion = new VersionString(cloudVersion);
+
+        // if the cloud version is 2.54 or bigger, return the newer cloud endpoint
+        if (StringUtils.isBlank(cloudVersion) || currentVersion.compareTo(v254) >= 0) {
             this.cloudLink = String.format(POST_254_ENDPOINT_FORMAT, cloudURL, projectId, testRunId);
         } else {
             this.cloudLink = String.format(PRE_254_ENDPOINT_FORMAT, cloudURL, projectId, testRunId);
@@ -42,18 +47,5 @@ public class CloudLink implements BuildBadgeAction {
     @Override
     public String getUrlName() {
         return cloudLink;
-    }
-
-    private static int versionCompare(String v1, String v2) {
-        String[] parts1 = v1.split("\\.");
-        String[] parts2 = v2.split("\\.");
-        int i = 0;
-        while (i < parts1.length && i < parts2.length && parts1[i].equals(parts2[i])) {
-            i++;
-        }
-        if (i < parts1.length && i < parts2.length) {
-            return Integer.signum(Integer.valueOf(parts1[i]).compareTo(Integer.valueOf(parts2[i])));
-        }
-        return Integer.signum(parts1.length - parts2.length);
     }
 }
