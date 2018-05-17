@@ -449,6 +449,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             }
 
             APIUser user = api.getUser();
+            String cloudVersion = api.getCloudVersion();
 
             final APIProject project = user.getProject(Long.parseLong(getProjectId().trim()));
             if (project == null) {
@@ -488,16 +489,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             createProvidedParameters(config);
 
             config.update();
-            printTestJob(project, config, cloudSettings, listener);
-            String cloudVersion = api.getCloudVersion();
-
-            if (cloudVersion == null) {
-                listener.getLogger().println("Cloud version: null!");
-            } else {
-                listener.getLogger().println(String.format("Cloud version: %s", cloudVersion));
-            }
-
-
+            printTestJob(project, config, cloudSettings, cloudVersion, listener);
             getDescriptor().save();
 
             Long testFileId = null;
@@ -558,6 +550,10 @@ public class RunInCloudBuilder extends AbstractBuilder {
             build.addAction(cloudLinkAction);
             RunInCloudEnvInject variable = new RunInCloudEnvInject("CLOUD_LINK", cloudLinkAction.getUrlName());
             build.addAction(variable);
+
+            listener.getLogger().println(String.format("Started new Bitbar Cloud run at: %s (id: %s)",
+                    cloudLinkAction.getUrlName(),
+                    testRun.getId()));
 
             RunInCloudBuilder.semaphore.release();
             releaseDone = true;
@@ -682,9 +678,10 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
 
     private void printTestJob(APIProject project, APITestRunConfig config,
-            TestdroidCloudSettings.DescriptorImpl cloudSettings, TaskListener listener) {
+            TestdroidCloudSettings.DescriptorImpl cloudSettings, String cloudVersion, TaskListener listener) {
         listener.getLogger().println(Messages.TEST_RUN_CONFIGURATION());
-        listener.getLogger().println(String.format("%s: %s", Messages.CLOUD_URL(), cloudSettings.getActiveCloudUrl()));
+        listener.getLogger().println(String.format("%s: %s (version %s)", Messages.CLOUD_URL(),
+                cloudSettings.getActiveCloudUrl(), cloudVersion));
         listener.getLogger().println(String.format("%s: %s", Messages.USER_EMAIL(), cloudSettings.getEmail()));
         listener.getLogger().println(String.format("%s: %s", Messages.PROJECT(), project.getName()));
         listener.getLogger().println(String.format("%s: %s", Messages.LOCALE(), config.getDeviceLanguageCode()));
