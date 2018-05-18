@@ -1,18 +1,10 @@
 package com.testdroid.jenkins.scheduler;
 
-/**
- * Testdroid Run in Cloud plugin
- *
- * https://git@github.com/jenkinsci/testdroid-run-in-cloud
- *
- * Usage:
- * @TODO
- *
- * @author info@bitbar.com
- */
+import com.testdroid.api.model.APIUser;
+
 public interface TestRunFinishCheckScheduler {
 
-    void schedule(final Object object, final Long projectId, final Long testRunId);
+    void schedule(final Object object, APIUser user, final Long projectId, final Long testRunId);
 
     void cancel(final Long projectId, final Long testRunId);
 

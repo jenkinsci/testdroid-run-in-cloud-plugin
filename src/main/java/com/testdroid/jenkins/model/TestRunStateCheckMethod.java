@@ -1,14 +1,10 @@
 package com.testdroid.jenkins.model;
 
 /**
- * Testdroid Run in Cloud plugin
+ * How the plugin should check for the state of a test run.
  *
- * https://git@github.com/jenkinsci/testdroid-run-in-cloud
- *
- * Usage:
- * @TODO
- *
- * @author info@bitbar.com
+ * HOOK_URL: the cloud should poll the plugin when it's done.
+ * API_CALL: plugin will continuously poll the cloud.
  */
 public enum TestRunStateCheckMethod {
     HOOK_URL,

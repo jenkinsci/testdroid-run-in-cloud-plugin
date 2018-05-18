@@ -2,16 +2,6 @@ package com.testdroid.jenkins.scheduler;
 
 import com.testdroid.jenkins.model.TestRunStateCheckMethod;
 
-/**
- * Testdroid Run in Cloud plugin
- *
- * https://git@github.com/jenkinsci/testdroid-run-in-cloud
- *
- * Usage:
- * @TODO
- *
- * @author info@bitbar.com
- */
 public class TestRunFinishCheckSchedulerFactory {
 
     public static TestRunFinishCheckScheduler createTestRunFinishScheduler(TestRunStateCheckMethod method) {

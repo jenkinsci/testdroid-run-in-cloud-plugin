@@ -2,7 +2,7 @@
         xmlns:j="jelly:core"
         xmlns:f="/lib/form">
     <f:section
-            title="${%Testdroid Run-in-Cloud}">
+            title="${%Bitbar Run-in-Cloud}">
         <f:entry
                 field="authorize"/>
         <f:block>
@@ -15,12 +15,12 @@
                 <f:password name="password" value="${descriptor.getPassword()}"/>
             </f:entry>
             <f:block>
-                <f:optionalBlock name="privateInstanceState" title="${%Testdroid Cloud - private instance}"
+                <f:optionalBlock name="privateInstanceState" title="${%Bitbar Cloud - private instance}"
                                  checked="${descriptor.getPrivateInstanceState()}">
-                    <f:entry field="cloud" title="${%Testdroid Cloud URL}">
+                    <f:entry field="cloud" title="${%Bitbar Cloud URL}">
                         <f:textbox name="cloudUrl" value="${descriptor.getCloudUrl()}"/>
                     </f:entry>
-                    <f:entry field="cloudNewUI" title="${%Testdroid Cloud UI URL}">
+                    <f:entry field="cloudNewUI" title="${%Bitbar Cloud UI URL}">
                         <f:textbox name="newCloudUrl" value="${descriptor.getNewCloudUrl()}"/>
                     </f:entry>
                     <f:entry title="${%Accept self-signed certificates}">
@@ -54,7 +54,7 @@
             </f:block>
 
             <f:validateButton
-                    title="${%Authorize}"
+                    title="${%Authorize &amp; Save}"
                     progress="${%Authorizing...}"
                     method="authorize"
                     with="email,password,userManagementUrl,cloudUrl,privateInstanceState,noCheckCertificate,isProxy,proxyHost,proxyPort,proxyUser,proxyPassword"/>

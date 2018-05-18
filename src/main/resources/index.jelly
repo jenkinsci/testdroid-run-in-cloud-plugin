@@ -2,5 +2,5 @@
   This view is used to render the installed plugins page.
 -->
 <div>
-    Plugin to run your tests on Testdroid Cloud.
+    Plugin to run your tests in Bitbar Cloud.
 </div>

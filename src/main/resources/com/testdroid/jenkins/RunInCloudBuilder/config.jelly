@@ -73,7 +73,7 @@
                 <f:textbox name="notificationEmail" value="${instance.getNotificationEmail()}"/>
             </f:entry>
             <f:optionalBlock name="waitForResultsBlock"
-                             title="${%Wait for test finished in Testdroid Cloud and download results}"
+                             title="${%Wait for test to finish in Bitbar Cloud and download results}"
                              checked="${instance.waitForResultsBlock != null}">
                 <f:entry name="testRunStateCheckMethod" title="${%Check test run status method}"
                          field="testRunStateCheckMethod">
@@ -92,7 +92,7 @@
                                value="${instance.waitForResultsBlock.waitForResultsTimeout}"/>
                 </f:entry>
                 <f:entry field="forceFinishAfterWaitField"
-                         title="${%Finish test in Testdroid Cloud after 'Timeout for results'}">
+                         title="${%Finish test in Bitbar Cloud after 'Timeout for results'}">
                     <f:checkbox name="forceFinishAfterBreak"
                                 checked="${instance.waitForResultsBlock.forceFinishAfterBreak}"/>
                 </f:entry>
@@ -108,7 +108,7 @@
             </f:entry>
         </j:when>
         <j:otherwise>
-            <f:entry title="${%Please authenticate to Testdroid Cloud first}"/>
+            <f:entry title="${%Please authenticate with Bitbar Cloud first}"/>
         </j:otherwise>
     </j:choose>
 </j:jelly>

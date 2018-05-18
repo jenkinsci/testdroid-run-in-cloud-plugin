@@ -6,22 +6,16 @@ import com.testdroid.jenkins.Messages;
 import com.testdroid.jenkins.TestdroidCloudSettings;
 import com.testdroid.jenkins.utils.TestdroidApiUtil;
 import hudson.FilePath;
-import hudson.model.BuildListener;
+import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
+import org.jenkinsci.remoting.RoleChecker;
 
 import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Testdroid Run in Cloud plugin
- * <p>
- * https://git@github.com/jenkinsci/testdroid-run-in-cloud
- * <p>
- * Usage:
- *
- * @author info@bitbar.com
- * @TODO
+ * Utility for uploading files to the cloud before a run starts
  */
 public class MachineIndependentFileUploader extends MachineIndependentTask implements FilePath.FileCallable<Long> {
 
@@ -29,7 +23,7 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
 
     private FILE_TYPE fileType;
 
-    private BuildListener listener;
+    private TaskListener listener;
 
     private long projectId;
 
@@ -39,14 +33,19 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
         DATA
     }
 
-    public MachineIndependentFileUploader(
-            TestdroidCloudSettings.DescriptorImpl descriptor, long projectId, FILE_TYPE fileType,
-            BuildListener listener) {
-        super(descriptor);
-
+    public MachineIndependentFileUploader(TestdroidCloudSettings.DescriptorImpl settings, long projectId,
+            FILE_TYPE fileType, TaskListener listener) {
+        super(settings);
         this.projectId = projectId;
         this.fileType = fileType;
         this.listener = listener;
+    }
+
+    @Override
+    public void checkRoles(RoleChecker checker) throws SecurityException {
+        // no specific role needed, which is somewhat dubious, but I can't think of any attack vector that involves this.
+        // it would have been simpler if the setMaximumBytecodeLevel only controlled the local setting,
+        // not the remote setting
     }
 
     @Override
@@ -55,12 +54,8 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
         int attempts = 3;
         do {
             try {
-                if (!TestdroidApiUtil.isInitialized()) {
-                    TestdroidApiUtil.init(user, password, cloudUrl, privateInstance,
-                            noCheckCertificate, isProxy, proxyHost, proxyPort, proxyUser,
-                            proxyPassword);
-                }
-                APIClient client = TestdroidApiUtil.getInstance().getTestdroidAPIClient();
+                TestdroidCloudSettings.DescriptorImpl settings = new TestdroidCloudSettings.DescriptorImpl(this);
+                APIClient client = new TestdroidApiUtil(settings).getTestdroidAPIClient();
                 APIProject project = client.me().getProject(projectId);
 
                 if (file.exists()) {

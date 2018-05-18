@@ -9,10 +9,11 @@ import com.testdroid.api.model.APITestRun;
 import com.testdroid.jenkins.Messages;
 import com.testdroid.jenkins.TestdroidCloudSettings;
 import com.testdroid.jenkins.utils.TestdroidApiUtil;
-import hudson.model.BuildListener;
+import hudson.model.TaskListener;
 import hudson.remoting.Callable;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.jenkinsci.remoting.RoleChecker;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -22,14 +23,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Testdroid Run in Cloud plugin
- *
- * https://git@github.com/jenkinsci/testdroid-run-in-cloud
- *
- * Usage:
- * @TODO
- *
- * @author info@bitbar.com
+ * Utility for downloading results from the cloud after a run is completed
  */
 public class MachineIndependentResultsDownloader extends MachineIndependentTask
         implements Callable<Boolean, APIException> {
@@ -38,7 +32,7 @@ public class MachineIndependentResultsDownloader extends MachineIndependentTask
 
     private boolean downloadScreenshots;
 
-    private BuildListener listener;
+    private TaskListener listener;
 
     private long projectId;
 
@@ -46,11 +40,10 @@ public class MachineIndependentResultsDownloader extends MachineIndependentTask
 
     private long testRunId;
 
-    public MachineIndependentResultsDownloader(
-            TestdroidCloudSettings.DescriptorImpl descriptor, BuildListener listener, long projectId, long testRunId,
+    public MachineIndependentResultsDownloader(TestdroidCloudSettings.DescriptorImpl settings, TaskListener listener,
+            long projectId, long testRunId,
             String resultsPath, boolean downloadScreenshots) {
-        super(descriptor);
-
+        super(settings);
         this.projectId = projectId;
         this.testRunId = testRunId;
         this.resultsPath = resultsPath;
@@ -59,14 +52,18 @@ public class MachineIndependentResultsDownloader extends MachineIndependentTask
     }
 
     @Override
+    public void checkRoles(RoleChecker checker) throws SecurityException {
+        // no specific role needed, which is somewhat dubious, but I can't think of any attack vector that involves this.
+        // it would have been simpler if the setMaximumBytecodeLevel only controlled the local setting,
+        // not the remote setting
+    }
+
+    @Override
     public Boolean call() throws APIException {
-        if (!TestdroidApiUtil.isInitialized()) {
-            TestdroidApiUtil.init(user, password, cloudUrl, privateInstance,
-                    noCheckCertificate, isProxy, proxyHost, proxyPort, proxyUser,
-                    proxyPassword);
-        }
-        APIClient client = TestdroidApiUtil.getInstance().getTestdroidAPIClient();
+        TestdroidCloudSettings.DescriptorImpl settings = new TestdroidCloudSettings.DescriptorImpl(this);
+        APIClient client = new TestdroidApiUtil(settings).getTestdroidAPIClient();
         APITestRun testRun = client.me().getProject(projectId).getTestRun(testRunId);
+
         boolean success = false; //if we are able to download results from at least one device then whole method
         // should return true, false only when results was not available at all, other case just warn in logs
 

@@ -3,112 +3,72 @@ package com.testdroid.jenkins.utils;
 import com.testdroid.api.APIClient;
 import com.testdroid.api.APIException;
 import com.testdroid.api.DefaultAPIClient;
+import com.testdroid.api.model.APICloudInfo;
+import com.testdroid.api.model.APIRole;
 import com.testdroid.api.model.APIUser;
+import com.testdroid.jenkins.TestdroidCloudSettings;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHost;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * Testdroid Run in Cloud plugin
- *
- * https://git@github.com/jenkinsci/testdroid-run-in-cloud
- *
- * Usage:
- * @TODO
- *
- * @author info@bitbar.com
- */
 public class TestdroidApiUtil {
-
-    private static final String CLOUD_ENDPOINT = "https://cloud.testdroid.com";
 
     private static final Logger LOGGER = Logger.getLogger(TestdroidApiUtil.class.getName());
 
-    private static TestdroidApiUtil instance;
+    private static final List<String> PAID_ROLES = new ArrayList<>();
+    static {
+        PAID_ROLES.add("PRIORITY_SILVER");
+        PAID_ROLES.add("PRIORITY_GOLD");
+        PAID_ROLES.add("PRIORITY_PLATINUM");
+        PAID_ROLES.add("PAID_RUN");
+    }
+
+    private TestdroidCloudSettings.DescriptorImpl settings;
 
     private APIClient client;
 
-    private String cloudUrl;
-
-    private String email;
-
-    private boolean isProxy;
-
-    private boolean noCheckCertificate;
-
-    private String password;
-
-    private String proxyHost;
-
-    private String proxyPassword;
-
-    private Integer proxyPort;
-
-    private String proxyUser;
-
-    private TestdroidApiUtil(
-            String email, String password, String cloudUrl,
-            boolean privateInstanceState, boolean noCheckCertificate,
-            boolean isProxy, String proxyHost, Integer proxyPort,
-            String proxyUser, String proxyPassword) {
-        this.email = email;
-        this.password = password;
-        this.cloudUrl = (!privateInstanceState || StringUtils.isEmpty(cloudUrl)) ? CLOUD_ENDPOINT : cloudUrl;
-        this.noCheckCertificate = noCheckCertificate;
-        this.isProxy = isProxy;
-
-        if (isProxy) {
-            this.proxyHost = proxyHost;
-            this.proxyPort = proxyPort;
-            this.proxyUser = proxyUser;
-            this.proxyPassword = proxyPassword;
-        }
-    }
-
-    public static TestdroidApiUtil init(
-            String email, String password, String cloudUrl,
-            boolean privateInstanceState, boolean noCheckCertificate,
-            boolean isProxy, String proxyHost, Integer proxyPort,
-            String proxyUser, String proxyPassword) {
-        if (instance == null) {
-            instance = new TestdroidApiUtil(
-                    email, password, cloudUrl,
-                    privateInstanceState, noCheckCertificate,
-                    isProxy, proxyHost, proxyPort,
-                    proxyUser, proxyPassword);
-        }
-        return instance;
-    }
-
-    public static void clean() {
-        instance = null;
-    }
-
-    public static TestdroidApiUtil getInstance() {
-        return instance;
-    }
-
-    public static boolean isInitialized() {
-        return instance != null;
+    public TestdroidApiUtil(TestdroidCloudSettings.DescriptorImpl settings) {
+        this.settings = settings;
     }
 
     public APIClient getTestdroidAPIClient() {
         if (client == null) {
-            if (isProxy) {
-                HttpHost proxy = proxyPort != null ? new HttpHost(proxyHost, proxyPort, "http")
-                        : new HttpHost(proxyHost);
-                client = StringUtils
-                        .isBlank(proxyUser) ? new DefaultAPIClient(cloudUrl, email, password, proxy, noCheckCertificate)
-                        : new DefaultAPIClient(cloudUrl, email, password, proxy, proxyUser, proxyPassword,
-                        noCheckCertificate);
+            String cloudURL = settings.getActiveCloudUrl();
+            String email = settings.getEmail();
+            String password = settings.getPassword();
+            boolean dontCheckCert = settings.getNoCheckCertificate();
+
+            if (settings.getIsProxy()) {
+                HttpHost proxy = settings.getProxyPort() != null ?
+                        new HttpHost(settings.getProxyHost(), settings.getProxyPort(), "http") :
+                        new HttpHost(settings.getProxyHost());
+
+                client = StringUtils.isBlank(settings.getProxyUser()) ?
+                        new DefaultAPIClient(cloudURL, email, password, proxy, dontCheckCert) :
+                        new DefaultAPIClient(cloudURL, email, password, proxy,
+                                settings.getProxyUser(), settings.getProxyPassword(), dontCheckCert);
             } else {
-                client = new DefaultAPIClient(cloudUrl, email, password, noCheckCertificate);
+                client = new DefaultAPIClient(cloudURL, email, password, dontCheckCert);
             }
         }
 
         return client;
+    }
+
+    public String getCloudVersion() {
+        try {
+            APICloudInfo cloudInfo = getTestdroidAPIClient().get("/info", APICloudInfo.class);
+            return cloudInfo.getVersion();
+        } catch (APIException e) {
+            LOGGER.log(Level.WARNING, "APIException occurred when trying to get the cloud version.");
+        }
+
+        return null;
     }
 
     public APIUser getUser() throws APIException {
@@ -123,5 +83,37 @@ public class TestdroidApiUtil {
         }
 
         return user;
+    }
+
+    public void tryValidateConfig() throws APIException {
+        if (getUser() == null) {
+            throw new APIException("Couldn't retrieve Cloud user with the current settings!");
+        }
+    }
+
+    public boolean isAuthenticated() {
+        try {
+            return getUser() != null;
+        } catch (APIException e) {
+            LOGGER.log(Level.WARNING, "isAuthenticated: Error when getting user.", e);
+        }
+        return false;
+    }
+
+    /**
+     * Static methods for managing instances of this class.
+     */
+    public static boolean isPaidUser(APIUser user) {
+        if (user == null) return false;
+
+        Date now = new Date();
+        for (APIRole role : user.getRoles()) {
+            if (PAID_ROLES.contains(role.getName())
+                    && (role.getExpireTime() == null || role.getExpireTime().after(now))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

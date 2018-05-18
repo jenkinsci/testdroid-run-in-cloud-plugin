@@ -3,14 +3,16 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>1.427</version>
+        <!-- Baseline Jenkins version you use to build and test the plugin. Users must have this version or newer to run. -->
+        <version>1.596.1</version>
+        <relativePath />
     </parent>
 
     <groupId>testdroid</groupId>
     <artifactId>testdroid-run-in-cloud</artifactId>
     <version>1.0.23-SNAPSHOT</version>
     <packaging>hpi</packaging>
-    <name>Testdroid Plugin for CI</name>
+    <name>Bitbar Run-in-Cloud Plugin</name>
 
     <developers>
       <developer>
@@ -21,9 +23,9 @@
     </developers>
     
     <properties>
-        <maven-release-plugin.version>2.5.3</maven-release-plugin.version>
-        <maven-javadoc-plugin.version>2.10.3</maven-javadoc-plugin.version>
-        <maven-compiler-plugin.version>2.3.2</maven-compiler-plugin.version>
+        <maven-release-plugin.version>3.0.4</maven-release-plugin.version>
+        <maven-javadoc-plugin.version>3.0.0</maven-javadoc-plugin.version>
+        <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
         <intranet.repo>http://nexus/content/repositories</intranet.repo>
         <testdroid.api.version>2.39</testdroid.api.version>
         <jdk.version>1.8</jdk.version>
@@ -146,11 +148,21 @@
         <dependency>
             <groupId>org.jenkins-ci.main</groupId>
             <artifactId>cli</artifactId>
-            <version>1.427</version>
+            <version>1.596.1</version>
             <type>pom</type>
             <optional>false</optional>
         </dependency>
-
+        <dependency>
+            <groupId>org.jenkins-ci.plugins</groupId>
+            <artifactId>credentials</artifactId>
+            <version>2.1.16</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jenkins-ci.plugins.workflow</groupId>
+            <artifactId>workflow-step-api</artifactId>
+            <version>1.10</version>
+            <optional>true</optional>
+        </dependency>
         <dependency>
             <groupId>com.testdroid</groupId>
             <artifactId>testdroid-api</artifactId>

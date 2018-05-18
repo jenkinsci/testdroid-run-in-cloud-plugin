@@ -1,25 +1,15 @@
 package com.testdroid.jenkins.scheduler;
 
-import com.testdroid.jenkins.utils.ResultWaiter;
+import com.testdroid.api.model.APIUser;
 
-/**
- * Testdroid Run in Cloud plugin
- *
- * https://git@github.com/jenkinsci/testdroid-run-in-cloud
- *
- * Usage:
- * @TODO
- *
- * @author info@bitbar.com
- */
 public class HookUrlDrivenTestFinishCheckScheduler implements TestRunFinishCheckScheduler {
 
-    public void schedule(final Object object, final Long projectId, final Long testRunId) {
-        ResultWaiter.getInstance().putToWaitList(testRunId, object);
+    public void schedule(final Object object, APIUser user, final Long projectId, final Long testRunId) {
+        HookUrlResultWaiter.addToWaitList(testRunId, object);
     }
 
     public void cancel(final Long projectId, final Long testRunId) {
-        ResultWaiter.getInstance().removeFromWaitList(testRunId);
+        HookUrlResultWaiter.removeFromWaitList(testRunId);
     }
 
 }
