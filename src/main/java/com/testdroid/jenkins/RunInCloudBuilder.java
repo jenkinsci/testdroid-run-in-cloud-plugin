@@ -14,6 +14,7 @@ import com.testdroid.jenkins.scheduler.TestRunFinishCheckScheduler;
 import com.testdroid.jenkins.scheduler.TestRunFinishCheckSchedulerFactory;
 import com.testdroid.jenkins.utils.AndroidLocale;
 import com.testdroid.jenkins.utils.EmailHelper;
+import com.testdroid.jenkins.utils.LocaleUtil;
 import com.testdroid.jenkins.utils.TestdroidApiUtil;
 import hudson.Extension;
 import hudson.FilePath;
@@ -233,7 +234,11 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     public String getLanguage() {
         if (StringUtils.isBlank(language)) {
-            language = String.format("%s-%s", Locale.US.getLanguage(), Locale.US.getCountry());
+            language = LocaleUtil.formatLangCode(Locale.US);
+        }
+        // handle old versions' configs with wrongly formatted language codes
+        if (language.contains("-")) {
+            language = language.replace('-', '_');
         }
         return language;
     }
@@ -849,7 +854,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             for (Locale locale : AndroidLocale.LOCALES) {
                 String langDisplay = String.format("%s (%s)", locale.getDisplayLanguage(),
                         locale.getDisplayCountry());
-                String langCode = String.format("%s-%s", locale.getLanguage(), locale.getCountry());
+                String langCode = LocaleUtil.formatLangCode(locale);
                 language.add(langDisplay, langCode);
             }
             return language;
