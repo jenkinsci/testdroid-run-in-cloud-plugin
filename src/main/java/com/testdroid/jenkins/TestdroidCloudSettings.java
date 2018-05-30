@@ -100,6 +100,7 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
         public void save() {
             this.password = Secret.fromString(this.password).getEncryptedValue();
             this.proxyPassword = Secret.fromString(this.proxyPassword).getEncryptedValue();
+            TestdroidApiUtil.createGlobalApiClient(this);
             super.save();
         }
 
@@ -129,7 +130,8 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
             this.proxyPassword = proxyPassword;
 
             try {
-                new TestdroidApiUtil(this).tryValidateConfig();
+                TestdroidApiUtil.createApiClient(this).tryValidateConfig();
+                save();
                 return FormValidation.ok(Messages.AUTHORIZATION_OK());
             } catch (APIException e) {
                 this.password = null;
@@ -214,11 +216,14 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
             if (privateInstanceState && StringUtils.isNotBlank(newCloudUrl)) {
                 return newCloudUrl;
             }
-            return getCloudUrl();
+            if (privateInstanceState && StringUtils.isNotBlank(cloudUrl)) {
+                return cloudUrl;
+            }
+            return DEFAULT_CLOUD_URL;
         }
 
         public String getCloudUrl() {
-            return StringUtils.isBlank(cloudUrl) ? DEFAULT_CLOUD_URL : cloudUrl;
+            return cloudUrl;
         }
 
         public void setCloudUrl(String cloudUrl) {

@@ -1,6 +1,5 @@
 package com.testdroid.jenkins.remotesupport;
 
-import com.testdroid.api.APIClient;
 import com.testdroid.api.model.APIProject;
 import com.testdroid.jenkins.Messages;
 import com.testdroid.jenkins.TestdroidCloudSettings;
@@ -55,8 +54,7 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
         do {
             try {
                 TestdroidCloudSettings.DescriptorImpl settings = new TestdroidCloudSettings.DescriptorImpl(this);
-                APIClient client = new TestdroidApiUtil(settings).getTestdroidAPIClient();
-                APIProject project = client.me().getProject(projectId);
+                APIProject project = TestdroidApiUtil.createApiClient(settings).getUser().getProject(projectId);
 
                 if (file.exists()) {
                     switch (fileType) {
