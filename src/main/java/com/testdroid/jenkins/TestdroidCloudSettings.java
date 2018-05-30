@@ -1,11 +1,12 @@
 package com.testdroid.jenkins;
 
 import com.testdroid.api.APIException;
-import com.testdroid.api.model.APINotificationEmail;
+import com.testdroid.api.model.notification.APINotificationScope;
 import com.testdroid.jenkins.remotesupport.MachineIndependentTask;
 import com.testdroid.jenkins.utils.TestdroidApiUtil;
 import hudson.Extension;
-import hudson.model.*;
+import hudson.model.Describable;
+import hudson.model.Descriptor;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
@@ -46,7 +47,7 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
 
         String notificationEmail = "";
 
-        String notificationEmailType = String.valueOf(APINotificationEmail.Type.ALWAYS);
+        String notificationEmailType = "";
 
         boolean privateInstanceState;
 
@@ -144,8 +145,9 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
         public ListBoxModel doFillNotificationEmailTypeItems() {
             ListBoxModel emailNotificationTypes = new ListBoxModel();
 
-            emailNotificationTypes.add(Messages.ALWAYS(), APINotificationEmail.Type.ALWAYS.name());
-            emailNotificationTypes.add(Messages.ON_FAILURE_ONLY(), APINotificationEmail.Type.ON_FAILURE.name());
+            emailNotificationTypes.add(Messages.ALWAYS(), APINotificationScope.TEST_RUN.name());
+            emailNotificationTypes.add(Messages.ON_FAILURE_ONLY(), APINotificationScope.TEST_RUN_FAILURE.name());
+            emailNotificationTypes.add(Messages.ON_SUCCESS_ONLY(), APINotificationScope.TEST_RUN_SUCCEEDED.name());
 
             return emailNotificationTypes;
         }
@@ -312,9 +314,21 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
 
 
         public String getNotificationEmailType() {
+            if(StringUtils.isNotBlank(notificationEmailType)){
+                return migrateNotificationEmailType(notificationEmailType);
+            }
             return notificationEmailType;
         }
 
+        public static String migrateNotificationEmailType(String notificationEmailType){
+            switch(notificationEmailType){
+                case "ON_FAILURE":
+                    return APINotificationScope.TEST_RUN_FAILURE.name();
+                case "ALWAYS":
+                default:
+                    return APINotificationScope.TEST_RUN.name();
+            }
+        }
 
         public void setNotificationEmailType(String notificationEmailType) {
             this.notificationEmailType = notificationEmailType;

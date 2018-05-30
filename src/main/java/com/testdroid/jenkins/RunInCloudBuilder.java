@@ -12,7 +12,10 @@ import com.testdroid.jenkins.remotesupport.MachineIndependentFileUploader;
 import com.testdroid.jenkins.remotesupport.MachineIndependentResultsDownloader;
 import com.testdroid.jenkins.scheduler.TestRunFinishCheckScheduler;
 import com.testdroid.jenkins.scheduler.TestRunFinishCheckSchedulerFactory;
-import com.testdroid.jenkins.utils.*;
+import com.testdroid.jenkins.utils.AndroidLocale;
+import com.testdroid.jenkins.utils.ApiClientAdapter;
+import com.testdroid.jenkins.utils.LocaleUtil;
+import com.testdroid.jenkins.utils.TestdroidApiUtil;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -270,10 +273,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
 
     public String getNotificationEmailType() {
-        if (StringUtils.isBlank(notificationEmailType)) {
-            return APINotificationEmail.Type.ALWAYS.name();
+        if(StringUtils.isNotBlank(notificationEmailType)){
+            return TestdroidCloudSettings.DescriptorImpl.migrateNotificationEmailType(notificationEmailType);
         }
-
         return notificationEmailType;
     }
 
@@ -715,59 +717,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     private void updateUserEmailNotifications(TestdroidCloudSettings.DescriptorImpl settings,
             APIUser user, APIProject project) {
-
-        try {
-            //set emails per user
-            APINotificationEmail.Type neType = APINotificationEmail.Type.valueOf(settings.getNotificationEmailType());
-            List<String> emailAddressesToSet = EmailHelper.getEmailAddresses(settings.getNotificationEmail());
-            List<APINotificationEmail> currentEmails = user.getNotificationEmails().getEntity().getData();
-            //remove exceeded emails and update type of existed ones
-            for (APINotificationEmail email : currentEmails) {
-                if (!emailAddressesToSet.contains(email.getEmail())) {
-                    email.delete();
-                } else if (!email.getType().equals(neType)) {
-                    email.setType(neType);
-                    email.refresh();
-                }
-            }
-            //add missed emails
-            for (String email : emailAddressesToSet) {
-                if (!isNotificationEmailContained(currentEmails, email)) {
-                    user.createNotificationEmail(email, neType);
-                }
-            }
-
-            //set emails per project
-            neType = APINotificationEmail.Type.valueOf(getNotificationEmailType().toUpperCase());
-            emailAddressesToSet = EmailHelper.getEmailAddresses(getNotificationEmail());
-            currentEmails = project.getNotificationEmails().getEntity().getData();
-            //remove exceeded emails and update type of existed ones
-            for (APINotificationEmail email : currentEmails) {
-                if (!emailAddressesToSet.contains(email.getEmail())) {
-                    email.delete();
-                } else if (!email.getType().equals(neType)) {
-                    email.setType(neType);
-                    email.refresh();
-                }
-            }
-            //add missed emails
-            for (String email : emailAddressesToSet) {
-                if (!isNotificationEmailContained(currentEmails, email)) {
-                    project.createNotificationEmail(email, neType);
-                }
-            }
-        } catch (APIException e) {
-            LOGGER.log(Level.WARNING, Messages.ERROR_API());
-        }
-    }
-
-    private boolean isNotificationEmailContained(List<APINotificationEmail> notificationEmails, String searchEmail) {
-        for (APINotificationEmail notificationEmail : notificationEmails) {
-            if (notificationEmail.getEmail().equals(searchEmail)) {
-                return true;
-            }
-        }
-        return false;
+            //TODO fix email notification
     }
 
     @Extension
