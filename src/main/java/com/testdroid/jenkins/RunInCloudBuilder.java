@@ -273,7 +273,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
 
     public String getNotificationEmailType() {
-        if(StringUtils.isNotBlank(notificationEmailType)){
+        if (StringUtils.isNotBlank(notificationEmailType)) {
             return TestdroidCloudSettings.DescriptorImpl.migrateNotificationEmailType(notificationEmailType);
         }
         return notificationEmailType;

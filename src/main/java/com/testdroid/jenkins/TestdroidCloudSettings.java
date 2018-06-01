@@ -314,14 +314,14 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
 
 
         public String getNotificationEmailType() {
-            if(StringUtils.isNotBlank(notificationEmailType)){
+            if (StringUtils.isNotBlank(notificationEmailType)) {
                 return migrateNotificationEmailType(notificationEmailType);
             }
             return notificationEmailType;
         }
 
-        public static String migrateNotificationEmailType(String notificationEmailType){
-            switch(notificationEmailType){
+        public static String migrateNotificationEmailType(String notificationEmailType) {
+            switch (notificationEmailType) {
                 case "ON_FAILURE":
                     return APINotificationScope.TEST_RUN_FAILURE.name();
                 case "ALWAYS":

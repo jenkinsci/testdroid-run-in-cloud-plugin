@@ -28,27 +28,26 @@ public class TestdroidApiUtil {
     private ApiClientAdapter apiClientAdapter;
 
     public static TestdroidApiUtil getInstance() {
-        return Jenkins.getActiveInstance().getExtensionList(TestdroidApiUtil
-                .class).stream().findFirst().get();
+        return Jenkins.getActiveInstance().getExtensionList(TestdroidApiUtil.class).stream().findFirst().get();
     }
 
-    public static ApiClientAdapter getGlobalApiClient(){
-        if(getInstance().apiClientAdapter == null){
+    public static ApiClientAdapter getGlobalApiClient() {
+        if (getInstance().apiClientAdapter == null) {
             createGlobalApiClient(new TestdroidCloudSettings.DescriptorImpl());
         }
         return getInstance().apiClientAdapter;
     }
 
-    public static ApiClientAdapter createGlobalApiClient(TestdroidCloudSettings.DescriptorImpl settings){
+    public static ApiClientAdapter createGlobalApiClient(TestdroidCloudSettings.DescriptorImpl settings) {
         getInstance().apiClientAdapter = getInstance().createApiClientHelper(settings);
         return getInstance().apiClientAdapter;
     }
 
-    public static ApiClientAdapter createApiClient(TestdroidCloudSettings.DescriptorImpl settings){
+    public static ApiClientAdapter createApiClient(TestdroidCloudSettings.DescriptorImpl settings) {
         return getInstance().createApiClientHelper(settings);
     }
 
-    private ApiClientAdapter createApiClientHelper(TestdroidCloudSettings.DescriptorImpl settings){
+    private ApiClientAdapter createApiClientHelper(TestdroidCloudSettings.DescriptorImpl settings) {
         String cloudURL = settings.getActiveCloudUrl();
         String email = settings.getEmail();
         String password = settings.getPassword();
