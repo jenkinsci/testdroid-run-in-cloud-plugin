@@ -1,6 +1,5 @@
 package com.testdroid.jenkins.remotesupport;
 
-import com.testdroid.api.APIClient;
 import com.testdroid.api.APIException;
 import com.testdroid.api.APIQueryBuilder;
 import com.testdroid.api.model.APIDeviceSession;
@@ -61,8 +60,8 @@ public class MachineIndependentResultsDownloader extends MachineIndependentTask
     @Override
     public Boolean call() throws APIException {
         TestdroidCloudSettings.DescriptorImpl settings = new TestdroidCloudSettings.DescriptorImpl(this);
-        APIClient client = new TestdroidApiUtil(settings).getTestdroidAPIClient();
-        APITestRun testRun = client.me().getProject(projectId).getTestRun(testRunId);
+        TestdroidApiUtil.createApiClient(settings);
+        APITestRun testRun = TestdroidApiUtil.createApiClient(settings).getUser().getProject(projectId).getTestRun(testRunId);
 
         boolean success = false; //if we are able to download results from at least one device then whole method
         // should return true, false only when results was not available at all, other case just warn in logs

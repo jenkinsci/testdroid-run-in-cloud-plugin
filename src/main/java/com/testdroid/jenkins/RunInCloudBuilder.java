@@ -13,7 +13,7 @@ import com.testdroid.jenkins.remotesupport.MachineIndependentResultsDownloader;
 import com.testdroid.jenkins.scheduler.TestRunFinishCheckScheduler;
 import com.testdroid.jenkins.scheduler.TestRunFinishCheckSchedulerFactory;
 import com.testdroid.jenkins.utils.AndroidLocale;
-import com.testdroid.jenkins.utils.EmailHelper;
+import com.testdroid.jenkins.utils.ApiClientAdapter;
 import com.testdroid.jenkins.utils.LocaleUtil;
 import com.testdroid.jenkins.utils.TestdroidApiUtil;
 import hudson.Extension;
@@ -33,7 +33,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -271,10 +273,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
 
     public String getNotificationEmailType() {
-        if (StringUtils.isBlank(notificationEmailType)) {
-            return APINotificationEmail.Type.ALWAYS.name();
+        if(StringUtils.isNotBlank(notificationEmailType)){
+            return TestdroidCloudSettings.DescriptorImpl.migrateNotificationEmailType(notificationEmailType);
         }
-
         return notificationEmailType;
     }
 
@@ -443,7 +444,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             // so that a different job can't overwrite project settings just after the first one set it
             RunInCloudBuilder.semaphore.acquire();
 
-            TestdroidApiUtil api = new TestdroidApiUtil(cloudSettings);
+            ApiClientAdapter api = TestdroidApiUtil.createApiClient(cloudSettings);
             if (!api.isAuthenticated()) {
                 listener.getLogger().println("Couldn't connect to the cloud!");
                 return false;
@@ -477,7 +478,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
             // default test timeout is 10 minutes
             config.setTimeout(Long.parseLong(DEFAULT_TEST_TIMEOUT));
-            if (TestdroidApiUtil.isPaidUser(user)) {
+            if (ApiClientAdapter.isPaidUser(user)) {
                 try {
                     long runTimeout = Long.parseLong(getTestTimeout());
                     config.setTimeout(runTimeout);
@@ -716,59 +717,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     private void updateUserEmailNotifications(TestdroidCloudSettings.DescriptorImpl settings,
             APIUser user, APIProject project) {
-
-        try {
-            //set emails per user
-            APINotificationEmail.Type neType = APINotificationEmail.Type.valueOf(settings.getNotificationEmailType());
-            List<String> emailAddressesToSet = EmailHelper.getEmailAddresses(settings.getNotificationEmail());
-            List<APINotificationEmail> currentEmails = user.getNotificationEmails().getEntity().getData();
-            //remove exceeded emails and update type of existed ones
-            for (APINotificationEmail email : currentEmails) {
-                if (!emailAddressesToSet.contains(email.getEmail())) {
-                    email.delete();
-                } else if (!email.getType().equals(neType)) {
-                    email.setType(neType);
-                    email.refresh();
-                }
-            }
-            //add missed emails
-            for (String email : emailAddressesToSet) {
-                if (!isNotificationEmailContained(currentEmails, email)) {
-                    user.createNotificationEmail(email, neType);
-                }
-            }
-
-            //set emails per project
-            neType = APINotificationEmail.Type.valueOf(getNotificationEmailType().toUpperCase());
-            emailAddressesToSet = EmailHelper.getEmailAddresses(getNotificationEmail());
-            currentEmails = project.getNotificationEmails().getEntity().getData();
-            //remove exceeded emails and update type of existed ones
-            for (APINotificationEmail email : currentEmails) {
-                if (!emailAddressesToSet.contains(email.getEmail())) {
-                    email.delete();
-                } else if (!email.getType().equals(neType)) {
-                    email.setType(neType);
-                    email.refresh();
-                }
-            }
-            //add missed emails
-            for (String email : emailAddressesToSet) {
-                if (!isNotificationEmailContained(currentEmails, email)) {
-                    project.createNotificationEmail(email, neType);
-                }
-            }
-        } catch (APIException e) {
-            LOGGER.log(Level.WARNING, Messages.ERROR_API());
-        }
-    }
-
-    private boolean isNotificationEmailContained(List<APINotificationEmail> notificationEmails, String searchEmail) {
-        for (APINotificationEmail notificationEmail : notificationEmails) {
-            if (notificationEmail.getEmail().equals(searchEmail)) {
-                return true;
-            }
-        }
-        return false;
+            //TODO fix email notification
     }
 
     @Extension
@@ -776,17 +725,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
         private static final long serialVersionUID = 1L;
 
-        private TestdroidCloudSettings.DescriptorImpl cloudSettings;
-
-        private TestdroidApiUtil api;
-
         public DescriptorImpl() {
             super(RunInCloudBuilder.class);
             load();
-
-            // cloud settings load the shared global settings when it's created
-            cloudSettings = new TestdroidCloudSettings.DescriptorImpl();
-            api = new TestdroidApiUtil(cloudSettings);
         }
 
         @Override
@@ -806,13 +747,13 @@ public class RunInCloudBuilder extends AbstractBuilder {
         }
 
         public boolean isAuthenticated() {
-            return api.isAuthenticated();
+            return TestdroidApiUtil.getGlobalApiClient().isAuthenticated();
         }
 
         public ListBoxModel doFillProjectIdItems() {
             ListBoxModel projects = new ListBoxModel();
             try {
-                APIUser user = api.getUser();
+                APIUser user = TestdroidApiUtil.getGlobalApiClient().getUser();
                 List<APIProject> list = user.getProjectsResource(new APIQueryBuilder().limit(Integer.MAX_VALUE))
                         .getEntity().getData();
                 for (APIProject project : list) {
@@ -835,7 +776,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         public ListBoxModel doFillClusterIdItems() {
             ListBoxModel deviceGroups = new ListBoxModel();
             try {
-                APIUser user = api.getUser();
+                APIUser user = TestdroidApiUtil.getGlobalApiClient().getUser();
                 List<APIDeviceGroup> list = user.getDeviceGroupsResource(new APIDeviceGroupQueryBuilder().withPublic()
                         .limit(Integer.MAX_VALUE)).getEntity().getData();
                 for (APIDeviceGroup deviceGroup : list) {
@@ -861,7 +802,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         }
 
         public ListBoxModel doFillNotificationEmailTypeItems() {
-            return cloudSettings.doFillNotificationEmailTypeItems();
+            return new TestdroidCloudSettings.DescriptorImpl().doFillNotificationEmailTypeItems();
         }
 
         public ListBoxModel doFillTestCasesSelectItems() {

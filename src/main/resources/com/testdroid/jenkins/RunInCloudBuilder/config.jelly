@@ -39,7 +39,7 @@
                 <f:select/>
             </f:entry>
             <f:entry field="language" title="${%Device language}">
-                <f:select default="en-US"/>
+                <f:select default="en_US"/>
             </f:entry>
             <f:entry field="screenshotsDirectoryField" title="${%Screenshots configuration}">
                 <f:textbox name="screenshotsDirectory" value="${instance.screenshotsDirectory}"
