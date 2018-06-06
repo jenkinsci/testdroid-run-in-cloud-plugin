@@ -1,3 +1,17 @@
+2.49.0
+======
+* Add Jenkis pipeline support
+* Fix default build language
+* Use correct format for testRun Id
+* Pass TestdroidCloudSettings to apiClient properly. Reuse apiClient where possible
+* Migrate of APINotificationEmail.Type to APINotificationScope
+* Update testdroid.api.version to 2.49, pom cleanup
+* Rebranded to Bitbar Run-in-Cloud and fixed some typos
+* Started using cloud.bitbar.com (instead of testdroid) as the default URL
+* Allow user to leave out app path and use latest app to run tests
+* Fixed cloud link api endpoint that changed in 2.54
+* Separate the device language and country code with an underscore
+
 1.0.23
 ======
 * Double check for Custom Key/Value pairs - removed admin property check
