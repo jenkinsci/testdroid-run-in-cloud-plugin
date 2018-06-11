@@ -1,14 +1,12 @@
 package com.testdroid.jenkins;
 
 import com.testdroid.api.APIException;
-import com.testdroid.api.model.notification.APINotificationScope;
 import com.testdroid.jenkins.remotesupport.MachineIndependentTask;
 import com.testdroid.jenkins.utils.TestdroidApiUtil;
 import hudson.Extension;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.util.FormValidation;
-import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
@@ -44,10 +42,6 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
         boolean isProxy;
 
         boolean noCheckCertificate;
-
-        String notificationEmail = "";
-
-        String notificationEmailType = "";
 
         boolean privateInstanceState;
 
@@ -142,16 +136,6 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
             }
         }
 
-        public ListBoxModel doFillNotificationEmailTypeItems() {
-            ListBoxModel emailNotificationTypes = new ListBoxModel();
-
-            emailNotificationTypes.add(Messages.ALWAYS(), APINotificationScope.TEST_RUN.name());
-            emailNotificationTypes.add(Messages.ON_FAILURE_ONLY(), APINotificationScope.TEST_RUN_FAILURE.name());
-            emailNotificationTypes.add(Messages.ON_SUCCESS_ONLY(), APINotificationScope.TEST_RUN_SUCCEEDED.name());
-
-            return emailNotificationTypes;
-        }
-
         @Override
         public boolean equals(Object obj) {
             if (this == obj) {
@@ -167,8 +151,6 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
                     StringUtils.equals(newCloudUrl, other.newCloudUrl) &&
                     StringUtils.equals(email, other.email) &&
                     StringUtils.equals(password, other.password) &&
-                    StringUtils.equals(notificationEmail, other.notificationEmail) &&
-                    StringUtils.equals(notificationEmailType, other.notificationEmailType) &&
                     StringUtils.equals(proxyHost, other.proxyHost) &&
                     StringUtils.equals(proxyPassword, other.proxyPassword) &&
                     StringUtils.equals(proxyUser, other.proxyUser);
@@ -302,36 +284,5 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
             this.proxyPassword = proxyPassword;
         }
 
-
-        public String getNotificationEmail() {
-            return notificationEmail;
-        }
-
-
-        public void setNotificationEmail(String notificationEmail) {
-            this.notificationEmail = notificationEmail;
-        }
-
-
-        public String getNotificationEmailType() {
-            if (StringUtils.isNotBlank(notificationEmailType)) {
-                return migrateNotificationEmailType(notificationEmailType);
-            }
-            return notificationEmailType;
-        }
-
-        public static String migrateNotificationEmailType(String notificationEmailType) {
-            switch (notificationEmailType) {
-                case "ON_FAILURE":
-                    return APINotificationScope.TEST_RUN_FAILURE.name();
-                case "ALWAYS":
-                default:
-                    return APINotificationScope.TEST_RUN.name();
-            }
-        }
-
-        public void setNotificationEmailType(String notificationEmailType) {
-            this.notificationEmailType = notificationEmailType;
-        }
     }
 }

@@ -59,14 +59,5 @@
                     method="authorize"
                     with="email,password,userManagementUrl,cloudUrl,privateInstanceState,noCheckCertificate,isProxy,proxyHost,proxyPort,proxyUser,proxyPassword"/>
         </f:block>
-
-        <f:block>
-            <f:entry field="notificationEmailType" title="${%Send email when}">
-                <f:select name="notificationEmailType"/>
-            </f:entry>
-            <f:entry field="notificationEmailField" title="${%Email address(es)}">
-                <f:textbox name="notificationEmail" value="${descriptor.getNotificationEmail()}"/>
-            </f:entry>
-        </f:block>
     </f:section>
 </j:jelly>

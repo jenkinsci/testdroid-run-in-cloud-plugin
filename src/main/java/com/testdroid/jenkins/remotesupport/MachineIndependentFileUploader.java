@@ -10,15 +10,11 @@ import hudson.remoting.VirtualChannel;
 import org.jenkinsci.remoting.RoleChecker;
 
 import java.io.File;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Utility for uploading files to the cloud before a run starts
  */
 public class MachineIndependentFileUploader extends MachineIndependentTask implements FilePath.FileCallable<Long> {
-
-    private static final Logger LOGGER = Logger.getLogger(MachineIndependentFileUploader.class.getName());
 
     private FILE_TYPE fileType;
 
@@ -50,12 +46,9 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
     @Override
     public Long invoke(File file, VirtualChannel vc) {
         Long result = null;
-        int attempts = 3;
-        do {
             try {
                 TestdroidCloudSettings.DescriptorImpl settings = new TestdroidCloudSettings.DescriptorImpl(this);
                 APIProject project = TestdroidApiUtil.createApiClient(settings).getUser().getProject(projectId);
-
                 if (file.exists()) {
                     switch (fileType) {
                         case APPLICATION:
@@ -69,22 +62,11 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
                             break;
                     }
                 } else {
-                    listener.getLogger().println(String.format("%s: %s", Messages.ERROR_FILE_NOT_FOUND(),
-                            file.getAbsolutePath()));
-                    return null;
+                    listener.getLogger().println(Messages.ERROR_FILE_NOT_FOUND(file.getAbsolutePath()));
                 }
             } catch (Exception ex) {
-                String message = String.format("Cannot upload file %s%s", file.getAbsolutePath(), attempts > 1 ?
-                        ". Will retry automatically" : "Won't be retried anymore");
-                listener.getLogger().println(message);
-                LOGGER.log(Level.WARNING, message, ex);
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException ignore) {
-                }
+                listener.getLogger().println(Messages.UPLOADING_FILE_ERROR(file.getAbsolutePath(), ex));
             }
-        } while (result == null && --attempts > 0);
-
         return result;
     }
 }

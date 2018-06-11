@@ -31,10 +31,6 @@ To get started, you can open existing Jenkins job or create a new one. From the 
 
 Now you can select your target project (must exist in Bitbar Cloud) and enter the name for your test run. The next ones are the Application and Test where you specify the files that will be uploaded in Bitbar Cloud. If you need to further customize project settings click the "Edit project on Bitbar Cloud website" button and it will open Bitbar Cloud webpage with access to configure your project details.
 
-## Notifications from Bitbar Cloud about Test Run
-
-There's two simple ways to get notifications from Bitbar Cloud that your test runs are finished. Whether you are running just on few devices or hundreds different devices simultaneously, both of these ways provide extremely easy and straightforward way to get results back to your Jenkins environment.
-
 ### API CALL
 
 Jenkins is polling Bitbar Cloud for the results. Test results are fetched from Bitbar Cloud to Jenkins workspace after all your tests are finished.

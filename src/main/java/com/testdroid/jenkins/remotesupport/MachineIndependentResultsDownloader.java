@@ -1,7 +1,8 @@
 package com.testdroid.jenkins.remotesupport;
 
 import com.testdroid.api.APIException;
-import com.testdroid.api.APIQueryBuilder;
+import com.testdroid.api.APIListResource;
+import com.testdroid.api.dto.Context;
 import com.testdroid.api.model.APIDeviceSession;
 import com.testdroid.api.model.APIScreenshot;
 import com.testdroid.api.model.APITestRun;
@@ -20,6 +21,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.Integer.MAX_VALUE;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 /**
  * Utility for downloading results from the cloud after a run is completed
@@ -67,8 +71,10 @@ public class MachineIndependentResultsDownloader extends MachineIndependentTask
         // should return true, false only when results was not available at all, other case just warn in logs
 
         String deviceDisplayName;
-        for (APIDeviceSession deviceSession : testRun.getDeviceSessionsResource(new APIQueryBuilder().limit(Integer
-                .MAX_VALUE)).getEntity().getData()) {
+
+        final APIListResource<APIDeviceSession> deviceSessionsResource = testRun.getDeviceSessionsResource(new Context
+                (APIDeviceSession.class, 0, MAX_VALUE, EMPTY, EMPTY));
+        for (APIDeviceSession deviceSession : deviceSessionsResource.getEntity().getData()) {
             deviceDisplayName = deviceSession.getDevice().getDisplayName();
 
             //create directory with results for this device
@@ -81,8 +87,9 @@ public class MachineIndependentResultsDownloader extends MachineIndependentTask
                 //optionally download screenshots
                 if (downloadScreenshots) {
                     resultDir = new File(resultDir, "screenshots");
-                    for (APIScreenshot screenshot : deviceSession.getScreenshotsResource(new APIQueryBuilder()
-                            .limit(Integer.MAX_VALUE)).getEntity().getData()) {
+                    final APIListResource<APIScreenshot> screenshotsResource = deviceSession.getScreenshotsResource(new Context
+                            (APIScreenshot.class, 0, MAX_VALUE, EMPTY, EMPTY));
+                    for (APIScreenshot screenshot : screenshotsResource.getEntity().getData()) {
                         download(screenshot.getContent(), resultDir, screenshot.getOriginalName(), deviceDisplayName);
                     }
                 }

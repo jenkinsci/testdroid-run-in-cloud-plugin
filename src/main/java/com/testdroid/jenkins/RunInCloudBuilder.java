@@ -2,9 +2,9 @@ package com.testdroid.jenkins;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
-import com.testdroid.api.APIDeviceGroupQueryBuilder;
 import com.testdroid.api.APIException;
-import com.testdroid.api.APIQueryBuilder;
+import com.testdroid.api.APIListResource;
+import com.testdroid.api.dto.Context;
 import com.testdroid.api.model.*;
 import com.testdroid.api.model.APITestRunConfig.Scheduler;
 import com.testdroid.jenkins.model.TestRunStateCheckMethod;
@@ -40,6 +40,9 @@ import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.Integer.MAX_VALUE;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+
 public class RunInCloudBuilder extends AbstractBuilder {
 
     private static final Logger LOGGER = Logger.getLogger(RunInCloudBuilder.class.getSimpleName());
@@ -61,10 +64,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
     private String keyValuePairs;
 
     private String language;
-
-    private String notificationEmail;
-
-    private String notificationEmailType;
 
     private String projectId;
 
@@ -98,9 +97,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
     @DataBoundConstructor
     public RunInCloudBuilder(
             String projectId, String appPath, String testPath, String dataPath, String testRunName, String scheduler,
-            String testRunner, String clusterId, String language, String notificationEmail, String screenshotsDirectory,
+            String testRunner, String clusterId, String language, String screenshotsDirectory,
             String keyValuePairs, String withAnnotation, String withoutAnnotation, String testCasesSelect,
-            String testCasesValue, String notificationEmailType, Boolean failBuildIfThisStepFailed,
+            String testCasesValue, Boolean failBuildIfThisStepFailed,
             WaitForResultsBlock waitForResultsBlock, String testTimeout, String credentialsId, String cloudUrl) {
         this.projectId = projectId;
         this.appPath = appPath;
@@ -117,8 +116,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
         this.testCasesValue = testCasesValue;
         this.clusterId = clusterId;
         this.language = language;
-        this.notificationEmail = notificationEmail;
-        this.notificationEmailType = notificationEmailType;
         this.failBuildIfThisStepFailed = failBuildIfThisStepFailed;
         this.testTimeout = testTimeout;
         this.credentialsId = credentialsId;
@@ -258,29 +255,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     public void setScheduler(String scheduler) {
         this.scheduler = scheduler.toLowerCase();
-    }
-
-    public String getNotificationEmail() {
-        if (notificationEmail == null) {
-            return StringUtils.EMPTY;
-        }
-
-        return notificationEmail;
-    }
-
-    public void setNotificationEmail(String notificationEmail) {
-        this.notificationEmail = notificationEmail;
-    }
-
-    public String getNotificationEmailType() {
-        if (StringUtils.isNotBlank(notificationEmailType)) {
-            return TestdroidCloudSettings.DescriptorImpl.migrateNotificationEmailType(notificationEmailType);
-        }
-        return notificationEmailType;
-    }
-
-    public void setNotificationEmailType(String notificationEmailType) {
-        this.notificationEmailType = notificationEmailType;
     }
 
     public String getTestTimeout() {
@@ -463,8 +437,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 return false;
             }
 
-            updateUserEmailNotifications(cloudSettings, user, project);
-
             APITestRunConfig config = project.getTestRunConfig();
             config.setAppCrawlerRun(!isFullTest());
             config.setDeviceLanguageCode(getLanguage());
@@ -590,7 +562,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
     private boolean waitForResults(final APIUser user, final APIProject project, final APITestRun testRun,
             FilePath workspace, Launcher launcher, TaskListener listener,
             TestdroidCloudSettings.DescriptorImpl cloudSettings) {
-        boolean isDownloadOk = true;
+        boolean isDownloadOk = false;
         if (isWaitForResults()) {
             TestRunFinishCheckScheduler scheduler = TestRunFinishCheckSchedulerFactory.createTestRunFinishScheduler(
                     waitForResultsBlock.getTestRunStateCheckMethod()
@@ -618,7 +590,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
                         }
                     } else {
                         testRunToAbort = true;
-                        isDownloadOk = false;
                         String msg = String.format(Messages.DOWNLOAD_RESULTS_FAILED_WITH_REASON_S(),
                                 "Test run is not finished yet!");
                         listener.getLogger().println(msg);
@@ -626,7 +597,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
                     }
                 } catch (InterruptedException e) {
                     testRunToAbort = true;
-
                     listener.getLogger().println(e.getMessage());
                     LOGGER.log(Level.WARNING, e.getMessage(), e);
                 }
@@ -662,8 +632,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
 
     private void deleteExistingParameters(APITestRunConfig config) throws APIException {
-        List<APITestRunParameter> parameters = config
-                .getParameters(new APIQueryBuilder().limit(Integer.MAX_VALUE)).getEntity().getData();
+        final List<APITestRunParameter> parameters = config.getTestRunParameters();
         for (APITestRunParameter parameter : parameters) {
             config.deleteParameter(parameter.getId());
         }
@@ -692,7 +661,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         listener.getLogger().println(String.format("%s: %s", Messages.PROJECT(), project.getName()));
         listener.getLogger().println(String.format("%s: %s", Messages.LOCALE(), config.getDeviceLanguageCode()));
         listener.getLogger().println(String.format("%s: %s", Messages.SCHEDULER(), config.getScheduler()));
-        listener.getLogger().println(String.format("%s: %s", Messages.APP_CRAWLER(), config.getAppCrawlerRun()));
+        listener.getLogger().println(String.format("%s: %s", Messages.APP_CRAWLER(), config.isAppCrawlerRun()));
         listener.getLogger().println(String.format("%s: %s", Messages.PRICE(), config.getCreditsPrice()));
         listener.getLogger().println(String.format("%s: %s", Messages.TIMEOUT(), config.getTimeout()));
     }
@@ -713,11 +682,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
     @Override
     public DescriptorImpl getDescriptor() {
         return (DescriptorImpl) super.getDescriptor();
-    }
-
-    private void updateUserEmailNotifications(TestdroidCloudSettings.DescriptorImpl settings,
-            APIUser user, APIProject project) {
-            //TODO fix email notification
     }
 
     @Extension
@@ -754,9 +718,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
             ListBoxModel projects = new ListBoxModel();
             try {
                 APIUser user = TestdroidApiUtil.getGlobalApiClient().getUser();
-                List<APIProject> list = user.getProjectsResource(new APIQueryBuilder().limit(Integer.MAX_VALUE))
-                        .getEntity().getData();
-                for (APIProject project : list) {
+                final Context context = new Context(APIProject.class, 0, MAX_VALUE, EMPTY, EMPTY);
+                final APIListResource<APIProject> projectResource = user.getProjectsResource(context);
+                for (APIProject project : projectResource.getEntity().getData()) {
                     projects.add(project.getName(), project.getId().toString());
                 }
             } catch (APIException e) {
@@ -777,9 +741,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
             ListBoxModel deviceGroups = new ListBoxModel();
             try {
                 APIUser user = TestdroidApiUtil.getGlobalApiClient().getUser();
-                List<APIDeviceGroup> list = user.getDeviceGroupsResource(new APIDeviceGroupQueryBuilder().withPublic()
-                        .limit(Integer.MAX_VALUE)).getEntity().getData();
-                for (APIDeviceGroup deviceGroup : list) {
+                final APIListResource<APIDeviceGroup> deviceGroupResource = user.getDeviceGroupsResource(new Context
+                        (APIDeviceGroup.class, 0, MAX_VALUE, EMPTY, EMPTY));
+                for (APIDeviceGroup deviceGroup : deviceGroupResource.getEntity().getData()) {
                     deviceGroups.add(String.format("%s (%d device(s))", deviceGroup.getDisplayName(),
                             deviceGroup.getDeviceCount()), deviceGroup.getId().toString());
                 }
@@ -799,10 +763,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 language.add(langDisplay, langCode);
             }
             return language;
-        }
-
-        public ListBoxModel doFillNotificationEmailTypeItems() {
-            return new TestdroidCloudSettings.DescriptorImpl().doFillNotificationEmailTypeItems();
         }
 
         public ListBoxModel doFillTestCasesSelectItems() {
