@@ -1,21 +1,18 @@
 package com.testdroid.jenkins;
 
-import com.testdroid.api.model.*;
-import com.testdroid.api.model.APITestRunConfig.Scheduler;
+import com.google.inject.Inject;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.*;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.DataBoundSetter;
+import hudson.model.Run;
+import hudson.model.TaskListener;
 import org.jenkinsci.plugins.workflow.steps.AbstractStepDescriptorImpl;
 import org.jenkinsci.plugins.workflow.steps.AbstractStepImpl;
-import com.google.inject.Inject;
-
 import org.jenkinsci.plugins.workflow.steps.AbstractSynchronousNonBlockingStepExecution;
 import org.jenkinsci.plugins.workflow.steps.StepContextParameter;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 
-import java.util.Locale;
 import java.util.logging.Logger;
 
 /**
@@ -45,8 +42,6 @@ public class PipelineCloudStep extends AbstractStepImpl {
     private boolean failBuildIfThisStepFailed;
     private String keyValuePairs;
     private String language;
-    private String notificationEmail;
-    private String notificationEmailType;
     private String projectId;
     private String scheduler;
     private String screenshotsDirectory;
@@ -147,16 +142,6 @@ public class PipelineCloudStep extends AbstractStepImpl {
     @DataBoundSetter
     public void setScheduler(String scheduler) {
         this.scheduler = scheduler.toLowerCase();
-    }
-
-    @DataBoundSetter
-    public void setNotificationEmail(String notificationEmail) {
-        this.notificationEmail = notificationEmail;
-    }
-
-    @DataBoundSetter
-    public void setNotificationEmailType(String notificationEmailType) {
-        this.notificationEmailType = notificationEmailType;
     }
 
     @DataBoundSetter
@@ -275,14 +260,6 @@ public class PipelineCloudStep extends AbstractStepImpl {
         return scheduler;
     }
 
-    private String getNotificationEmail() {
-        return notificationEmail;
-    }
-
-    private String getNotificationEmailType() {
-        return notificationEmailType;
-    }
-
     private boolean isFailBuildIfThisStepFailed() {
         return failBuildIfThisStepFailed;
     }
@@ -388,14 +365,12 @@ public class PipelineCloudStep extends AbstractStepImpl {
                     step.getTestRunner(),
                     step.getDeviceGroupId(),
                     step.getLanguage(),
-                    step.getNotificationEmail(),
                     step.getScreenshotsDirectory(),
                     step.getKeyValuePairs(),
                     step.getWithAnnotation(),
                     step.getWithoutAnnotation(),
                     step.getTestCasesSelect(),
                     step.getTestCasesValue(),
-                    step.getNotificationEmailType(),
                     step.isFailBuildIfThisStepFailed(),
                     waitForResultsBlock,
                     step.getTestTimeout(),

@@ -66,12 +66,6 @@
                 <f:textbox name="keyValuePairs" value="${instance.keyValuePairs}"
                            placeholder="For instance: key1:value1;key2:value2"/>
             </f:entry>
-            <f:entry field="notificationEmailType" title="${%Send email when}">
-                <f:select name="notificationEmailType"/>
-            </f:entry>
-            <f:entry field="notificationEmailField" title="${%Email address(es)}">
-                <f:textbox name="notificationEmail" value="${instance.getNotificationEmail()}"/>
-            </f:entry>
             <f:optionalBlock name="waitForResultsBlock"
                              title="${%Wait for test to finish in Bitbar Cloud and download results}"
                              checked="${instance.waitForResultsBlock != null}">

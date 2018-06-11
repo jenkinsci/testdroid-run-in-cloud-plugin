@@ -65,10 +65,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     private String language;
 
-    private String notificationEmail;
-
-    private String notificationEmailType;
-
     private String projectId;
 
     private String scheduler;
@@ -101,9 +97,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
     @DataBoundConstructor
     public RunInCloudBuilder(
             String projectId, String appPath, String testPath, String dataPath, String testRunName, String scheduler,
-            String testRunner, String clusterId, String language, String notificationEmail, String screenshotsDirectory,
+            String testRunner, String clusterId, String language, String screenshotsDirectory,
             String keyValuePairs, String withAnnotation, String withoutAnnotation, String testCasesSelect,
-            String testCasesValue, String notificationEmailType, Boolean failBuildIfThisStepFailed,
+            String testCasesValue, Boolean failBuildIfThisStepFailed,
             WaitForResultsBlock waitForResultsBlock, String testTimeout, String credentialsId, String cloudUrl) {
         this.projectId = projectId;
         this.appPath = appPath;
@@ -120,8 +116,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
         this.testCasesValue = testCasesValue;
         this.clusterId = clusterId;
         this.language = language;
-        this.notificationEmail = notificationEmail;
-        this.notificationEmailType = notificationEmailType;
         this.failBuildIfThisStepFailed = failBuildIfThisStepFailed;
         this.testTimeout = testTimeout;
         this.credentialsId = credentialsId;
@@ -261,29 +255,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     public void setScheduler(String scheduler) {
         this.scheduler = scheduler.toLowerCase();
-    }
-
-    public String getNotificationEmail() {
-        if (notificationEmail == null) {
-            return StringUtils.EMPTY;
-        }
-
-        return notificationEmail;
-    }
-
-    public void setNotificationEmail(String notificationEmail) {
-        this.notificationEmail = notificationEmail;
-    }
-
-    public String getNotificationEmailType() {
-        if (StringUtils.isNotBlank(notificationEmailType)) {
-            return TestdroidCloudSettings.DescriptorImpl.migrateNotificationEmailType(notificationEmailType);
-        }
-        return notificationEmailType;
-    }
-
-    public void setNotificationEmailType(String notificationEmailType) {
-        this.notificationEmailType = notificationEmailType;
     }
 
     public String getTestTimeout() {
@@ -465,8 +436,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 listener.getLogger().println(Messages.CHECK_PROJECT_NAME());
                 return false;
             }
-
-            updateUserEmailNotifications(cloudSettings, user, project);
 
             APITestRunConfig config = project.getTestRunConfig();
             config.setAppCrawlerRun(!isFullTest());
@@ -715,11 +684,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
         return (DescriptorImpl) super.getDescriptor();
     }
 
-    private void updateUserEmailNotifications(TestdroidCloudSettings.DescriptorImpl settings,
-            APIUser user, APIProject project) {
-            //TODO fix email notification
-    }
-
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> implements Serializable {
 
@@ -799,10 +763,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 language.add(langDisplay, langCode);
             }
             return language;
-        }
-
-        public ListBoxModel doFillNotificationEmailTypeItems() {
-            return new TestdroidCloudSettings.DescriptorImpl().doFillNotificationEmailTypeItems();
         }
 
         public ListBoxModel doFillTestCasesSelectItems() {
