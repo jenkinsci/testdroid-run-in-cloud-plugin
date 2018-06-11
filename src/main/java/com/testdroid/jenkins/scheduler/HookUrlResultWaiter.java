@@ -4,7 +4,6 @@ import com.testdroid.jenkins.Messages;
 import hudson.Plugin;
 import hudson.model.Api;
 import hudson.model.ModelObject;
-import jenkins.model.Jenkins;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.export.ExportedBean;
@@ -27,7 +26,7 @@ import java.util.logging.Logger;
  *  means to "expose your plugin data".
  */
 
-@ExportedBean()
+@ExportedBean
 public class HookUrlResultWaiter extends Plugin implements ModelObject {
 
     private static final Logger LOGGER = Logger.getLogger(HookUrlResultWaiter.class.getName());
@@ -60,7 +59,7 @@ public class HookUrlResultWaiter extends Plugin implements ModelObject {
         return new TestdroidRunInCloudApi(this);
     }
 
-    private static class TestdroidRunInCloudApi extends Api {
+    public static class TestdroidRunInCloudApi extends Api {
 
         private TestdroidRunInCloudApi(HookUrlResultWaiter thisPlugin) {
             super(thisPlugin);

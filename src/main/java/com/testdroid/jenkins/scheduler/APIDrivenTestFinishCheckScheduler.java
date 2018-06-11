@@ -47,6 +47,7 @@ public class APIDrivenTestFinishCheckScheduler implements TestRunFinishCheckSche
             }
         } catch (APIException exc) {
             LOGGER.log(Level.SEVERE, Messages.API_GET_TESTRUN_ERROR(testRunId), exc);
+            result = true;
         }
         return result;
     }
