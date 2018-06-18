@@ -33,9 +33,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,6 +50,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
     private static final String DEFAULT_TEST_TIMEOUT = "600"; // 10 minutes
 
     private static final Semaphore semaphore = new Semaphore(1);
+
+    private static final List<String> PAID_ROLES = Arrays
+            .asList("PRIORITY_SILVER", "PRIORITY_GOLD", "PRIORITY_PLATINUM");
 
     private String appPath;
 
@@ -712,6 +713,22 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
         public boolean isAuthenticated() {
             return TestdroidApiUtil.getGlobalApiClient().isAuthenticated();
+        }
+
+        //Do not remove, is used in config.jelly
+        public boolean isPaidUser() {
+            boolean result = false;
+            if (isAuthenticated()) {
+                try {
+                    Date now = new Date();
+                    result = Arrays.stream(TestdroidApiUtil.getGlobalApiClient().getUser().getRoles()).
+                            anyMatch(r -> PAID_ROLES.contains(r.getName())
+                                    && (r.getExpireTime() == null || r.getExpireTime().after(now)));
+                } catch (APIException e) {
+                    LOGGER.log(Level.WARNING, Messages.ERROR_API());
+                }
+            }
+            return result;
         }
 
         public ListBoxModel doFillProjectIdItems() {
