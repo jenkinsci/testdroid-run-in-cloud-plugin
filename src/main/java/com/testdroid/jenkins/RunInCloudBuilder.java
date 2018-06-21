@@ -758,8 +758,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
             ListBoxModel deviceGroups = new ListBoxModel();
             try {
                 APIUser user = TestdroidApiUtil.getGlobalApiClient().getUser();
-                final APIListResource<APIDeviceGroup> deviceGroupResource = user.getDeviceGroupsResource(new Context
-                        (APIDeviceGroup.class, 0, MAX_VALUE, EMPTY, EMPTY));
+                final Context context = new Context(APIDeviceGroup.class, 0, MAX_VALUE, EMPTY, EMPTY);
+                context.setExtraParams(Collections.singletonMap("withPublic", Boolean.TRUE));
+                final APIListResource<APIDeviceGroup> deviceGroupResource = user.getDeviceGroupsResource(context);
                 for (APIDeviceGroup deviceGroup : deviceGroupResource.getEntity().getData()) {
                     deviceGroups.add(String.format("%s (%d device(s))", deviceGroup.getDisplayName(),
                             deviceGroup.getDeviceCount()), deviceGroup.getId().toString());
@@ -767,7 +768,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
             } catch (APIException e) {
                 LOGGER.log(Level.WARNING, Messages.ERROR_API());
             }
-
             return deviceGroups;
         }
 
