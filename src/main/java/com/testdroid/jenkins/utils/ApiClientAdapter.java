@@ -5,7 +5,6 @@ import com.testdroid.api.APIException;
 import com.testdroid.api.model.APICloudInfo;
 import com.testdroid.api.model.APIRole;
 import com.testdroid.api.model.APIUser;
-import com.testdroid.jenkins.TestdroidCloudSettings;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -25,13 +24,10 @@ public class ApiClientAdapter {
         PAID_ROLES.add("PAID_RUN");
     }
 
-    private TestdroidCloudSettings.DescriptorImpl settings;
-
     private APIClient apiClient;
 
-    public ApiClientAdapter(APIClient apiClient, TestdroidCloudSettings.DescriptorImpl settings){
+    public ApiClientAdapter(APIClient apiClient){
         this.apiClient = apiClient;
-        this.settings = settings;
     }
 
     public String getCloudVersion() {
@@ -46,14 +42,11 @@ public class ApiClientAdapter {
     }
 
     public APIUser getUser() throws APIException {
-        APIUser user;
+        APIUser user = null;
         try {
             user = apiClient.me();
         } catch (APIException e) {
-            LOGGER.log(Level.INFO, "ApiException occurred during get user from client. Client will be recreated");
-            //if sth happen to cached client(probably problem with refreshing access token) then we create client again
-            this.apiClient = TestdroidApiUtil.createApiClient(settings).apiClient;
-            user = apiClient.me();
+            LOGGER.log(Level.INFO, "ApiException occurred during get user from client.");
         }
         return user;
     }

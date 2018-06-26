@@ -47,8 +47,8 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
     public Long invoke(File file, VirtualChannel vc) {
         Long result = null;
             try {
-                TestdroidCloudSettings.DescriptorImpl settings = new TestdroidCloudSettings.DescriptorImpl(this);
-                APIProject project = TestdroidApiUtil.createApiClient(settings).getUser().getProject(projectId);
+
+                APIProject project = TestdroidApiUtil.createNewApiClient(this).getUser().getProject(projectId);
                 if (file.exists()) {
                     switch (fileType) {
                         case APPLICATION:
@@ -65,7 +65,9 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
                     listener.getLogger().println(Messages.ERROR_FILE_NOT_FOUND(file.getAbsolutePath()));
                 }
             } catch (Exception ex) {
-                listener.getLogger().println(Messages.UPLOADING_FILE_ERROR(file.getAbsolutePath(), ex));
+                ex.printStackTrace();
+                listener.getLogger().println(ex);
+                listener.getLogger().println(Messages.UPLOADING_FILE_ERROR(file.getAbsolutePath(), ex.getStackTrace()));
             }
         return result;
     }

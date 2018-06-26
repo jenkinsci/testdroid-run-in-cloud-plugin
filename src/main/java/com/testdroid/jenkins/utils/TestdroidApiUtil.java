@@ -3,6 +3,7 @@ package com.testdroid.jenkins.utils;
 import com.testdroid.api.APIClient;
 import com.testdroid.api.DefaultAPIClient;
 import com.testdroid.jenkins.TestdroidCloudSettings;
+import com.testdroid.jenkins.remotesupport.MachineIndependentTask;
 import hudson.Extension;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
@@ -44,11 +45,42 @@ public class TestdroidApiUtil {
     }
 
     public static ApiClientAdapter createApiClient(TestdroidCloudSettings.DescriptorImpl settings) {
+
         return getInstance().createApiClientHelper(settings);
     }
 
+    public static ApiClientAdapter createNewApiClient(
+            MachineIndependentTask machineIndependentTaskachineIndependentTask) {
+        APIClient apiClient;
+
+        if (machineIndependentTaskachineIndependentTask.isProxy) {
+            HttpHost proxy = machineIndependentTaskachineIndependentTask.proxyPort != null ?
+                    new HttpHost(machineIndependentTaskachineIndependentTask.proxyHost,
+                            machineIndependentTaskachineIndependentTask.proxyPort, "http") :
+                    new HttpHost(machineIndependentTaskachineIndependentTask.proxyHost);
+
+            apiClient = StringUtils.isBlank(machineIndependentTaskachineIndependentTask.proxyUser) ?
+                    new DefaultAPIClient(machineIndependentTaskachineIndependentTask.cloudUrl,
+                            machineIndependentTaskachineIndependentTask.user,
+                            machineIndependentTaskachineIndependentTask.password, proxy,
+                            machineIndependentTaskachineIndependentTask.noCheckCertificate) :
+                    new DefaultAPIClient(machineIndependentTaskachineIndependentTask.cloudUrl,
+                            machineIndependentTaskachineIndependentTask.user,
+                            machineIndependentTaskachineIndependentTask.password, proxy,
+                            machineIndependentTaskachineIndependentTask.proxyUser,
+                            machineIndependentTaskachineIndependentTask.proxyPassword,
+                            machineIndependentTaskachineIndependentTask.noCheckCertificate);
+        } else {
+            apiClient = new DefaultAPIClient(machineIndependentTaskachineIndependentTask.cloudUrl,
+                    machineIndependentTaskachineIndependentTask.user,
+                    machineIndependentTaskachineIndependentTask.password,
+                    machineIndependentTaskachineIndependentTask.noCheckCertificate);
+        }
+        return new ApiClientAdapter(apiClient);
+    }
+
     private ApiClientAdapter createApiClientHelper(TestdroidCloudSettings.DescriptorImpl settings) {
-        String cloudURL = settings.getActiveCloudUrl();
+        String cloudURL = settings.getCloudUrl();
         String email = settings.getEmail();
         String password = settings.getPassword();
         boolean dontCheckCert = settings.getNoCheckCertificate();
@@ -66,6 +98,6 @@ public class TestdroidApiUtil {
         } else {
             apiClient = new DefaultAPIClient(cloudURL, email, password, dontCheckCert);
         }
-        return new ApiClientAdapter(apiClient, settings);
+        return new ApiClientAdapter(apiClient);
     }
 }

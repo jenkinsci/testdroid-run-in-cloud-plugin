@@ -93,6 +93,16 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     private String cloudUrl;
 
+    private String cloudUIUrl;
+
+    public String getCloudUIUrl() {
+        return cloudUIUrl;
+    }
+
+    public void setCloudUIUrl(String cloudUIUrl) {
+        this.cloudUIUrl = cloudUIUrl;
+    }
+
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
     public RunInCloudBuilder(
@@ -100,7 +110,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
             String testRunner, String clusterId, String language, String screenshotsDirectory,
             String keyValuePairs, String withAnnotation, String withoutAnnotation, String testCasesSelect,
             String testCasesValue, Boolean failBuildIfThisStepFailed,
-            WaitForResultsBlock waitForResultsBlock, String testTimeout, String credentialsId, String cloudUrl) {
+            WaitForResultsBlock waitForResultsBlock, String testTimeout, String credentialsId, String cloudUrl,
+            String cloudUIUrl) {
         this.projectId = projectId;
         this.appPath = appPath;
         this.dataPath = dataPath;
@@ -121,6 +132,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         this.credentialsId = credentialsId;
         this.cloudUrl = cloudUrl;
         this.waitForResultsBlock = waitForResultsBlock;
+        this.cloudUIUrl = cloudUIUrl;
     }
 
     public String getTestRunName() {
@@ -394,6 +406,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             );
 
             if (credentials != null) {
+
                 listener.getLogger().println(Messages.BUILD_STEP_USING_CREDENTIALS());
                 cloudSettings = new TestdroidCloudSettings.DescriptorImpl(
                         credentials.getUsername(),
@@ -401,6 +414,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 );
                 if (StringUtils.isNotBlank(getCloudUrl())) {
                     cloudSettings.setCloudUrl(getCloudUrl());
+                    if( StringUtils.isNotBlank(getCloudUIUrl())) {
+                        cloudSettings.setNewCloudUrl(getCloudUIUrl());
+                    }
                 }
             } else {
                 listener.getLogger().println(String.format(Messages.COULDNT_FIND_CREDENTIALS(), getCredentialsId()));
@@ -419,6 +435,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             RunInCloudBuilder.semaphore.acquire();
 
             ApiClientAdapter api = TestdroidApiUtil.createApiClient(cloudSettings);
+
             if (!api.isAuthenticated()) {
                 listener.getLogger().println("Couldn't connect to the cloud!");
                 return false;
@@ -656,7 +673,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             TestdroidCloudSettings.DescriptorImpl cloudSettings, String cloudVersion, TaskListener listener) {
         listener.getLogger().println(Messages.TEST_RUN_CONFIGURATION());
         listener.getLogger().println(String.format("%s: %s (version %s)", Messages.CLOUD_URL(),
-                cloudSettings.getActiveCloudUrl(), cloudVersion));
+                cloudSettings.getCloudUrl(), cloudVersion));
         listener.getLogger().println(String.format("%s: %s", Messages.USER_EMAIL(), cloudSettings.getEmail()));
         listener.getLogger().println(String.format("%s: %s", Messages.PROJECT(), project.getName()));
         listener.getLogger().println(String.format("%s: %s", Messages.LOCALE(), config.getDeviceLanguageCode()));
