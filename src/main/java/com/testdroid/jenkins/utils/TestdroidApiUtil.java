@@ -49,32 +49,31 @@ public class TestdroidApiUtil {
         return getInstance().createApiClientHelper(settings);
     }
 
-    public static ApiClientAdapter createNewApiClient(
-            MachineIndependentTask machineIndependentTaskachineIndependentTask) {
+    public static ApiClientAdapter createNewApiClient(MachineIndependentTask machineIndependentTask) {
         APIClient apiClient;
 
-        if (machineIndependentTaskachineIndependentTask.isProxy) {
-            HttpHost proxy = machineIndependentTaskachineIndependentTask.proxyPort != null ?
-                    new HttpHost(machineIndependentTaskachineIndependentTask.proxyHost,
-                            machineIndependentTaskachineIndependentTask.proxyPort, "http") :
-                    new HttpHost(machineIndependentTaskachineIndependentTask.proxyHost);
+        if (machineIndependentTask.isProxy) {
+            HttpHost proxy = machineIndependentTask.proxyPort != null ?
+                    new HttpHost(machineIndependentTask.proxyHost,
+                            machineIndependentTask.proxyPort, "http") :
+                    new HttpHost(machineIndependentTask.proxyHost);
 
-            apiClient = StringUtils.isBlank(machineIndependentTaskachineIndependentTask.proxyUser) ?
-                    new DefaultAPIClient(machineIndependentTaskachineIndependentTask.cloudUrl,
-                            machineIndependentTaskachineIndependentTask.user,
-                            machineIndependentTaskachineIndependentTask.password, proxy,
-                            machineIndependentTaskachineIndependentTask.noCheckCertificate) :
-                    new DefaultAPIClient(machineIndependentTaskachineIndependentTask.cloudUrl,
-                            machineIndependentTaskachineIndependentTask.user,
-                            machineIndependentTaskachineIndependentTask.password, proxy,
-                            machineIndependentTaskachineIndependentTask.proxyUser,
-                            machineIndependentTaskachineIndependentTask.proxyPassword,
-                            machineIndependentTaskachineIndependentTask.noCheckCertificate);
+            apiClient = StringUtils.isBlank(machineIndependentTask.proxyUser) ?
+                    new DefaultAPIClient(machineIndependentTask.cloudUrl,
+                            machineIndependentTask.user,
+                            machineIndependentTask.password, proxy,
+                            machineIndependentTask.noCheckCertificate) :
+                    new DefaultAPIClient(machineIndependentTask.cloudUrl,
+                            machineIndependentTask.user,
+                            machineIndependentTask.password, proxy,
+                            machineIndependentTask.proxyUser,
+                            machineIndependentTask.proxyPassword,
+                            machineIndependentTask.noCheckCertificate);
         } else {
-            apiClient = new DefaultAPIClient(machineIndependentTaskachineIndependentTask.cloudUrl,
-                    machineIndependentTaskachineIndependentTask.user,
-                    machineIndependentTaskachineIndependentTask.password,
-                    machineIndependentTaskachineIndependentTask.noCheckCertificate);
+            apiClient = new DefaultAPIClient(machineIndependentTask.cloudUrl,
+                    machineIndependentTask.user,
+                    machineIndependentTask.password,
+                    machineIndependentTask.noCheckCertificate);
         }
         return new ApiClientAdapter(apiClient);
     }

@@ -406,7 +406,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
             );
 
             if (credentials != null) {
-
                 listener.getLogger().println(Messages.BUILD_STEP_USING_CREDENTIALS());
                 cloudSettings = new TestdroidCloudSettings.DescriptorImpl(
                         credentials.getUsername(),
@@ -435,7 +434,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
             RunInCloudBuilder.semaphore.acquire();
 
             ApiClientAdapter api = TestdroidApiUtil.createApiClient(cloudSettings);
-
             if (!api.isAuthenticated()) {
                 listener.getLogger().println("Couldn't connect to the cloud!");
                 return false;

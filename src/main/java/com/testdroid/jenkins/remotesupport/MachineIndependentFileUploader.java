@@ -65,8 +65,6 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
                     listener.getLogger().println(Messages.ERROR_FILE_NOT_FOUND(file.getAbsolutePath()));
                 }
             } catch (Exception ex) {
-                ex.printStackTrace();
-                listener.getLogger().println(ex);
                 listener.getLogger().println(Messages.UPLOADING_FILE_ERROR(file.getAbsolutePath(), ex.getStackTrace()));
             }
         return result;
