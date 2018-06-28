@@ -11,6 +11,12 @@
             <f:entry field="projectId" title="${%Project}">
                 <f:select/>
             </f:entry>
+            <f:entry field="osType" title="${%OsType}">
+                <f:select default="UNDEFINED"/>
+            </f:entry>
+            <f:entry field="frameworkId" title="${%Framework}">
+                <f:select/>
+            </f:entry>
             <f:entry field="testRunNameField" title="${%Test run name}">
                 <f:textbox name="testRunName" value="${instance.testRunName}"/>
             </f:entry>
