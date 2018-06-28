@@ -54,6 +54,7 @@ public class PipelineCloudStep extends AbstractStepImpl {
     private String testTimeout;
     private String credentialsId;
     private String cloudUrl;
+    private String cloudUIUrl;
 
     // these variables are used to create a WaitForResultsBlock
     private boolean waitForResults;
@@ -78,7 +79,7 @@ public class PipelineCloudStep extends AbstractStepImpl {
 
     // optional params for the plugin
     // defined in DataBoundSetters
-    
+
     @DataBoundSetter
     public void setTestRunName(String testRunName) {
         this.testRunName = testRunName;
@@ -157,6 +158,11 @@ public class PipelineCloudStep extends AbstractStepImpl {
     @DataBoundSetter
     public void setCloudUrl(String cloudUrl) {
         this.cloudUrl = cloudUrl;
+    }
+
+    @DataBoundSetter
+    public void setCloudUIUrl(String cloudUIUrl) {
+        this.cloudUIUrl = cloudUIUrl;
     }
 
     @DataBoundSetter
@@ -276,6 +282,10 @@ public class PipelineCloudStep extends AbstractStepImpl {
         return cloudUrl;
     }
 
+    public String getCloudUIUrl() {
+        return cloudUIUrl;
+    }
+
     private boolean isWaitForResults() {
         return waitForResults;
     }
@@ -375,7 +385,8 @@ public class PipelineCloudStep extends AbstractStepImpl {
                     waitForResultsBlock,
                     step.getTestTimeout(),
                     step.getCredentialsId(),
-                    step.getCloudUrl()
+                    step.getCloudUrl(),
+                    step.getCloudUIUrl()
             );
 
             return builder.completeRun(run, workspace, launcher, listener);

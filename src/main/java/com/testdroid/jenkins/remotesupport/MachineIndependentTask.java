@@ -40,7 +40,7 @@ public class MachineIndependentTask implements Serializable {
         this.user = settings.getEmail();
         this.password = settings.getPassword();
         this.noCheckCertificate = settings.getNoCheckCertificate();
-        this.cloudUrl = settings.getActiveCloudUrl();
+        this.cloudUrl = settings.getCloudUrl();
         this.privateInstance = settings.getPrivateInstanceState();
         this.isProxy = settings.getIsProxy();
         this.proxyHost = settings.getProxyHost();
