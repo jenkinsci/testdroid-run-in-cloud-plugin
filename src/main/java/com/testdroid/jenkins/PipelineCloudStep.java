@@ -1,6 +1,7 @@
 package com.testdroid.jenkins;
 
 import com.google.inject.Inject;
+import com.testdroid.api.model.APIDevice;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -55,6 +56,8 @@ public class PipelineCloudStep extends AbstractStepImpl {
     private String credentialsId;
     private String cloudUrl;
     private String cloudUIUrl;
+    private Long frameworkId;
+    private APIDevice.OsType osType;
 
     // these variables are used to create a WaitForResultsBlock
     private boolean waitForResults;
@@ -205,6 +208,16 @@ public class PipelineCloudStep extends AbstractStepImpl {
         this.forceFinishAfterBreak = forceFinishAfterBreak;
     }
 
+    @DataBoundSetter
+    public void setFrameworkId(Long frameworkId) {
+        this.frameworkId = frameworkId;
+    }
+
+    @DataBoundSetter
+    public void setOsType(APIDevice.OsType osType) {
+        this.osType = osType;
+    }
+
 
     private String getTestRunName() {
         return testRunName;
@@ -314,6 +327,14 @@ public class PipelineCloudStep extends AbstractStepImpl {
         return forceFinishAfterBreak;
     }
 
+    private Long getFrameworkId() {
+        return this.frameworkId;
+    }
+
+    public APIDevice.OsType getOsType() {
+        return osType;
+    }
+
     @Extension
     public static final class DescriptorImpl extends AbstractStepDescriptorImpl {
         public DescriptorImpl() {
@@ -386,7 +407,9 @@ public class PipelineCloudStep extends AbstractStepImpl {
                     step.getTestTimeout(),
                     step.getCredentialsId(),
                     step.getCloudUrl(),
-                    step.getCloudUIUrl()
+                    step.getCloudUIUrl(),
+                    step.getFrameworkId(),
+                    step.getOsType()
             );
 
             return builder.completeRun(run, workspace, launcher, listener);

@@ -1,6 +1,6 @@
 package com.testdroid.jenkins.remotesupport;
 
-import com.testdroid.api.model.APIProject;
+import com.testdroid.api.model.APIUser;
 import com.testdroid.jenkins.Messages;
 import com.testdroid.jenkins.TestdroidCloudSettings;
 import com.testdroid.jenkins.utils.TestdroidApiUtil;
@@ -16,23 +16,10 @@ import java.io.File;
  */
 public class MachineIndependentFileUploader extends MachineIndependentTask implements FilePath.FileCallable<Long> {
 
-    private FILE_TYPE fileType;
-
     private TaskListener listener;
 
-    private long projectId;
-
-    public enum FILE_TYPE {
-        APPLICATION,
-        TEST,
-        DATA
-    }
-
-    public MachineIndependentFileUploader(TestdroidCloudSettings.DescriptorImpl settings, long projectId,
-            FILE_TYPE fileType, TaskListener listener) {
+    public MachineIndependentFileUploader(TestdroidCloudSettings.DescriptorImpl settings, TaskListener listener) {
         super(settings);
-        this.projectId = projectId;
-        this.fileType = fileType;
         this.listener = listener;
     }
 
@@ -47,20 +34,9 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
     public Long invoke(File file, VirtualChannel vc) {
         Long result = null;
             try {
-
-                APIProject project = TestdroidApiUtil.createNewApiClient(this).getUser().getProject(projectId);
+                APIUser user = TestdroidApiUtil.createNewApiClient(this).getUser();
                 if (file.exists()) {
-                    switch (fileType) {
-                        case APPLICATION:
-                            result = project.uploadApplication(file, "application/octet-stream").getId();
-                            break;
-                        case TEST:
-                            result = project.uploadTest(file, "application/octet-stream").getId();
-                            break;
-                        case DATA:
-                            result = project.uploadData(file, "application/zip").getId();
-                            break;
-                    }
+                    result = user.uploadFile(file).getId();
                 } else {
                     listener.getLogger().println(Messages.ERROR_FILE_NOT_FOUND(file.getAbsolutePath()));
                 }

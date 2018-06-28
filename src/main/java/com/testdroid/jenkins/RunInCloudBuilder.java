@@ -5,6 +5,8 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 import com.testdroid.api.APIException;
 import com.testdroid.api.APIListResource;
 import com.testdroid.api.dto.Context;
+import com.testdroid.api.filter.BooleanFilterEntry;
+import com.testdroid.api.filter.StringFilterEntry;
 import com.testdroid.api.model.*;
 import com.testdroid.api.model.APITestRunConfig.Scheduler;
 import com.testdroid.jenkins.model.TestRunStateCheckMethod;
@@ -22,11 +24,13 @@ import hudson.Launcher;
 import hudson.model.*;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
+import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
 import java.io.File;
@@ -37,9 +41,17 @@ import java.util.*;
 import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
+import static com.testdroid.api.dto.Operand.EQ;
+import static com.testdroid.api.model.APIDevice.OsType;
+import static com.testdroid.api.model.APIDevice.OsType.UNDEFINED;
+import static com.testdroid.jenkins.Messages.*;
+import static hudson.util.ListBoxModel.Option;
+import static java.lang.Boolean.TRUE;
 import static java.lang.Integer.MAX_VALUE;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 public class RunInCloudBuilder extends AbstractBuilder {
 
@@ -94,6 +106,10 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     private String cloudUrl;
 
+    private Long frameworkId;
+
+    private APIDevice.OsType osType;
+
     private String cloudUIUrl;
 
     public String getCloudUIUrl() {
@@ -112,7 +128,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             String keyValuePairs, String withAnnotation, String withoutAnnotation, String testCasesSelect,
             String testCasesValue, Boolean failBuildIfThisStepFailed,
             WaitForResultsBlock waitForResultsBlock, String testTimeout, String credentialsId, String cloudUrl,
-            String cloudUIUrl) {
+            String cloudUIUrl, Long frameworkId, APIDevice.OsType osType) {
         this.projectId = projectId;
         this.appPath = appPath;
         this.dataPath = dataPath;
@@ -132,6 +148,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
         this.testTimeout = testTimeout;
         this.credentialsId = credentialsId;
         this.cloudUrl = cloudUrl;
+        this.frameworkId = frameworkId;
+        this.osType = osType;
         this.waitForResultsBlock = waitForResultsBlock;
         this.cloudUIUrl = cloudUIUrl;
     }
@@ -323,9 +341,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     private boolean verifyParameters(TaskListener listener) {
         boolean result = true;
-
         if (StringUtils.isBlank(projectId)) {
-            listener.getLogger().println(Messages.EMPTY_PROJECT() + "\n");
+            listener.getLogger().println(EMPTY_PROJECT() + "\n");
             result = false;
         }
         return result;
@@ -333,6 +350,25 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     public boolean isWaitForResults() {
         return waitForResultsBlock != null;
+    }
+
+    public Long getFrameworkId() {
+        return frameworkId;
+    }
+
+    public void setFrameworkId(Long frameworkId) {
+        this.frameworkId = frameworkId;
+    }
+
+    public OsType getOsType() {
+        if (osType == null) {
+            osType = UNDEFINED;
+        }
+        return osType;
+    }
+
+    public void setOsType(OsType osType) {
+        this.osType = osType;
     }
 
     private String evaluateHookUrl() {
@@ -401,7 +437,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         // override default cloud settings if credentials/cloud URL specified on build level
         if (StringUtils.isNotBlank(getCredentialsId())) {
             StandardUsernamePasswordCredentials credentials = CredentialsProvider.findCredentialById(
-                    getCredentialsId(),StandardUsernamePasswordCredentials.class,
+                    getCredentialsId(), StandardUsernamePasswordCredentials.class,
                     build,
                     Collections.emptyList()
             );
@@ -454,7 +490,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
             }
 
             APITestRunConfig config = project.getTestRunConfig();
-            config.setAppCrawlerRun(!isFullTest());
             config.setDeviceLanguageCode(getLanguage());
             config.setScheduler(Scheduler.valueOf(getScheduler().toUpperCase()));
             config.setUsedDeviceGroupId(Long.parseLong(getClusterId()));
@@ -463,6 +498,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
             config.setInstrumentationRunner(testRunnerFinal);
             config.setWithoutAnnotation(withoutAnnotationFinal);
             config.setWithAnnotation(withAnnotationFinal);
+            config.setFrameworkId(Optional.ofNullable(frameworkId).orElse(config.getFrameworkId()));
+            config.setOsType(Optional.ofNullable(osType).orElse(config.getOsType()));
 
             // default test timeout is 10 minutes
             config.setTimeout(Long.parseLong(DEFAULT_TEST_TIMEOUT));
@@ -471,7 +508,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
                     long runTimeout = Long.parseLong(getTestTimeout());
                     config.setTimeout(runTimeout);
                 } catch (NumberFormatException e) {
-                    listener.getLogger().println(String.format(Messages.TEST_TIMEOUT_NOT_NUMERIC_VALUE(), getTestTimeout()));
+                    listener.getLogger().println(TEST_TIMEOUT_NOT_NUMERIC_VALUE(getTestTimeout()));
                     LOGGER.log(Level.WARNING, "NumberFormatException when parsing timeout.", e);
                 }
             } else {
@@ -479,25 +516,27 @@ public class RunInCloudBuilder extends AbstractBuilder {
             }
 
             setLimitations(build, listener, config);
-            deleteExistingParameters(config);
             createProvidedParameters(config);
 
-            config.update();
+            config = user.validateTestRunConfig(config);
+
             printTestJob(project, config, cloudSettings, cloudVersion, listener);
             getDescriptor().save();
 
-            Long testFileId = null;
-            Long dataFileId = null;
-            Long appFileId = null;
+            Long testFileId;
+            Long dataFileId;
+            Long appFileId;
+
+            List<APIFileConfig> files = new ArrayList<>();
 
             if (StringUtils.isNotBlank(getAppPath())) {
                 final FilePath appFile = new FilePath(launcher.getChannel(), getAbsolutePath(workspace, appPathFinal));
                 listener.getLogger().println(String.format(Messages.UPLOADING_NEW_APPLICATION_S(), appPathFinal));
-
-                appFileId = appFile.act(new MachineIndependentFileUploader(cloudSettings, project.getId(),
-                        MachineIndependentFileUploader.FILE_TYPE.APPLICATION, listener));
+                appFileId = appFile.act(new MachineIndependentFileUploader(cloudSettings, listener));
                 if (appFileId == null) {
                     return false;
+                } else {
+                    files.add(new APIFileConfig(appFileId, APIFileConfig.Action.INSTALL));
                 }
             } else {
                 listener.getLogger().println("App path was blank. Using latest app in project.");
@@ -505,24 +544,23 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
             if (isFullTest()) {
                 FilePath testFile = new FilePath(launcher.getChannel(), getAbsolutePath(workspace, testPathFinal));
-
-                listener.getLogger().println(String.format(Messages.UPLOADING_NEW_INSTRUMENTATION_S(),
-                        testPathFinal));
-
-                testFileId = testFile.act(new MachineIndependentFileUploader(cloudSettings, project.getId(),
-                        MachineIndependentFileUploader.FILE_TYPE.TEST, listener));
+                listener.getLogger().println(String.format(Messages.UPLOADING_NEW_INSTRUMENTATION_S(), testPathFinal));
+                testFileId = testFile.act(new MachineIndependentFileUploader(cloudSettings, listener));
                 if (testFileId == null) {
                     return false;
+                } else {
+                    files.add(new APIFileConfig(testFileId, APIFileConfig.Action.RUN_TEST));
                 }
             }
 
             if (isDataFile()) {
                 FilePath dataFile = new FilePath(launcher.getChannel(), getAbsolutePath(workspace, dataPathFinal));
                 listener.getLogger().println(String.format(Messages.UPLOADING_DATA_FILE_S(), dataPathFinal));
-                dataFileId = dataFile.act(new MachineIndependentFileUploader(cloudSettings, project.getId(),
-                        MachineIndependentFileUploader.FILE_TYPE.DATA, listener));
+                dataFileId = dataFile.act(new MachineIndependentFileUploader(cloudSettings, listener));
                 if (dataFileId == null) {
                     return false;
+                } else {
+                    files.add(new APIFileConfig(dataFileId, APIFileConfig.Action.COPY_TO_DEVICE));
                 }
             }
 
@@ -534,9 +572,11 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 finalTestRunName = null;
             }
 
+            config.setFiles(files);
+            config.setTestRunName(finalTestRunName);
+            config = user.validateTestRunConfig(config);
             // start the test run itself
-            APITestRun testRun = project.runWithConfig(finalTestRunName, null, config,
-                    appFileId, testFileId, dataFileId);
+            APITestRun testRun = user.startTestRun(config);
 
             // add the Bitbar Cloud link to the left-hand-side menu in Jenkins
             BuildBadgeAction cloudLinkAction = new CloudLink(cloudSettings.getActiveCloudUrl(), project.getId(),
@@ -575,11 +615,13 @@ public class RunInCloudBuilder extends AbstractBuilder {
         return false;
     }
 
-    private boolean waitForResults(final APIUser user, final APIProject project, final APITestRun testRun,
+    private boolean waitForResults(
+            final APIUser user, final APIProject project, final APITestRun testRun,
             FilePath workspace, Launcher launcher, TaskListener listener,
             TestdroidCloudSettings.DescriptorImpl cloudSettings) {
-        boolean isDownloadOk = false;
+
         if (isWaitForResults()) {
+            boolean isDownloadOk = false;
             TestRunFinishCheckScheduler scheduler = TestRunFinishCheckSchedulerFactory.createTestRunFinishScheduler(
                     waitForResultsBlock.getTestRunStateCheckMethod()
             );
@@ -633,8 +675,10 @@ public class RunInCloudBuilder extends AbstractBuilder {
             } finally {
                 scheduler.cancel(project.getId(), testRun.getId());
             }
+            return isDownloadOk;
+        } else {
+            return true;
         }
-        return isDownloadOk;
     }
 
     private void setLimitations(Run<?, ?> build, final TaskListener listener, APITestRunConfig config) {
@@ -647,25 +691,16 @@ public class RunInCloudBuilder extends AbstractBuilder {
         }
     }
 
-    private void deleteExistingParameters(APITestRunConfig config) throws APIException {
-        final List<APITestRunParameter> parameters = config.getTestRunParameters();
-        for (APITestRunParameter parameter : parameters) {
-            config.deleteParameter(parameter.getId());
-        }
-    }
-
-    private void createProvidedParameters(APITestRunConfig config) throws APIException {
+    private void createProvidedParameters(APITestRunConfig config) {
+        List<APITestRunParameter> apiTestRunParameters = new ArrayList<>();
         if (keyValuePairs != null) {
             String[] splitKeyValuePairs = keyValuePairs.split(";");
-            for (String splitKeyValuePair : splitKeyValuePairs) {
-                if (StringUtils.isNotBlank(splitKeyValuePair)) {
-                    String[] splitKeyValue = splitKeyValuePair.split(":");
-                    if (splitKeyValue.length == 2) {
-                        config.createParameter(splitKeyValue[0], splitKeyValue[1]);
-                    }
-                }
-            }
+            apiTestRunParameters.addAll(Arrays.stream(splitKeyValuePairs).filter(p -> isNotEmpty(p)).map(s -> {
+                String[] pair = s.split(":");
+                return pair.length == 2 ? new APITestRunParameter(pair[0], pair[1]) : null;
+            }).filter(Objects::nonNull).collect(Collectors.toList()));
         }
+        config.setTestRunParameters(apiTestRunParameters);
     }
 
     private void printTestJob(APIProject project, APITestRunConfig config,
@@ -675,10 +710,10 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 cloudSettings.getCloudUrl(), cloudVersion));
         listener.getLogger().println(String.format("%s: %s", Messages.USER_EMAIL(), cloudSettings.getEmail()));
         listener.getLogger().println(String.format("%s: %s", Messages.PROJECT(), project.getName()));
+        listener.getLogger().println(OS_TYPE_VALUE(config.getOsType()));
+        listener.getLogger().println(FRAMEWORK_ID_VALUE(config.getFrameworkId()));
         listener.getLogger().println(String.format("%s: %s", Messages.LOCALE(), config.getDeviceLanguageCode()));
         listener.getLogger().println(String.format("%s: %s", Messages.SCHEDULER(), config.getScheduler()));
-        listener.getLogger().println(String.format("%s: %s", Messages.APP_CRAWLER(), config.isAppCrawlerRun()));
-        listener.getLogger().println(String.format("%s: %s", Messages.PRICE(), config.getCreditsPrice()));
         listener.getLogger().println(String.format("%s: %s", Messages.TIMEOUT(), config.getTimeout()));
     }
 
@@ -702,6 +737,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> implements Serializable {
+
+        public static final ListBoxModel.Option EMPTY_OPTION = new Option(EMPTY, EMPTY);
 
         private static final long serialVersionUID = 1L;
 
@@ -761,6 +798,18 @@ public class RunInCloudBuilder extends AbstractBuilder {
             return projects;
         }
 
+        public ListBoxModel doFillOsTypeItems() {
+            ListBoxModel osTypes = new ListBoxModel();
+            osTypes.addAll(Arrays.stream(OsType.values())
+                    .map(t -> new Option(t.getDisplayName(), t.name()))
+                    .collect(Collectors.toList()));
+            return osTypes;
+        }
+
+        public FormValidation doCheckOsType(@QueryParameter OsType value) {
+            return value == UNDEFINED ? FormValidation.error(DEFINE_OS_TYPE()) : FormValidation.ok();
+        }
+
         public ListBoxModel doFillSchedulerItems() {
             ListBoxModel schedulers = new ListBoxModel();
             schedulers.add(Messages.SCHEDULER_PARALLEL(), Scheduler.PARALLEL.name());
@@ -774,7 +823,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             try {
                 APIUser user = TestdroidApiUtil.getGlobalApiClient().getUser();
                 final Context context = new Context(APIDeviceGroup.class, 0, MAX_VALUE, EMPTY, EMPTY);
-                context.setExtraParams(Collections.singletonMap("withPublic", Boolean.TRUE));
+                context.setExtraParams(Collections.singletonMap("withPublic", TRUE));
                 final APIListResource<APIDeviceGroup> deviceGroupResource = user.getDeviceGroupsResource(context);
                 for (APIDeviceGroup deviceGroup : deviceGroupResource.getEntity().getData()) {
                     deviceGroups.add(String.format("%s (%d device(s))", deviceGroup.getDisplayName(),
@@ -813,6 +862,42 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 items.add(method.name(), method.name());
             }
             return items;
+        }
+
+        public ListBoxModel doFillFrameworkIdItems(@QueryParameter OsType osType) {
+            ListBoxModel frameworks = new ListBoxModel();
+            frameworks.add(EMPTY_OPTION);
+            if (osType != UNDEFINED) {
+                try {
+                    APIUser user = TestdroidApiUtil.getGlobalApiClient().getUser();
+                    StringFilterEntry osTypeFilter = new StringFilterEntry("osType", EQ, osType.name());
+                    BooleanFilterEntry forProject = new BooleanFilterEntry("forProjects", EQ, TRUE);
+                    BooleanFilterEntry canRunFromUI = new BooleanFilterEntry("canRunFromUI", EQ, TRUE);
+                    final Context<APIFramework> context = new Context(APIFramework.class, 0, MAX_VALUE, EMPTY, EMPTY);
+                    context.addFilter(osTypeFilter);
+                    context.addFilter(forProject);
+                    context.addFilter(canRunFromUI);
+                    final APIListResource<APIFramework> availableFrameworksResource = user
+                            .getAvailableFrameworksResource(context);
+                    frameworks.addAll(availableFrameworksResource.getEntity().getData().stream().map(f ->
+                            new Option(f.getName(), f.getId().toString())).collect(Collectors.toList()));
+                } catch (APIException e) {
+                    LOGGER.log(Level.WARNING, Messages.ERROR_API());
+                }
+            }
+            return frameworks;
+        }
+
+        public FormValidation doCheckFrameworkId(@QueryParameter String value) {
+            return parseLong(value).isPresent() ? FormValidation.ok() : FormValidation.error(DEFINE_FRAMEWORK());
+        }
+
+        private static Optional<Long> parseLong(String value){
+            try {
+                return Optional.of(Long.parseLong(value));
+            } catch (NumberFormatException nfe) {
+                return Optional.empty();
+            }
         }
 
     }
