@@ -24,8 +24,6 @@ public class MachineIndependentTask implements Serializable {
 
     public String password;
 
-    public boolean privateInstance;
-
     public String proxyHost;
 
     public String proxyPassword;
@@ -41,7 +39,6 @@ public class MachineIndependentTask implements Serializable {
         this.password = settings.getPassword();
         this.noCheckCertificate = settings.getNoCheckCertificate();
         this.cloudUrl = settings.getCloudUrl();
-        this.privateInstance = settings.getPrivateInstanceState();
         this.isProxy = settings.getIsProxy();
         this.proxyHost = settings.getProxyHost();
         this.proxyPort = settings.getProxyPort();

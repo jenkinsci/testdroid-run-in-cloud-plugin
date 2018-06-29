@@ -45,7 +45,6 @@ public class TestdroidApiUtil {
     }
 
     public static ApiClientAdapter createApiClient(TestdroidCloudSettings.DescriptorImpl settings) {
-
         return getInstance().createApiClientHelper(settings);
     }
 
