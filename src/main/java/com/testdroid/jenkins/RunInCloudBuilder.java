@@ -493,6 +493,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
             config.setDeviceLanguageCode(getLanguage());
             config.setScheduler(Scheduler.valueOf(getScheduler().toUpperCase()));
             config.setUsedDeviceGroupId(Long.parseLong(getClusterId()));
+            //Reset as in RiC we use only deviceGroups
+            config.setDeviceIds(null);
             config.setHookURL(evaluateHookUrl());
             config.setScreenshotDir(getScreenshotsDirectory());
             config.setInstrumentationRunner(testRunnerFinal);
