@@ -459,8 +459,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
             }
         } else if (StringUtils.isNotBlank(this.cloudUrl)) {
             // cloud URL always goes 1-to-1 with credentials, so it can't be used if credentials aren't specified..!
-            listener.getLogger().println(String.format(Messages.CLOUD_URL_SET_BUT_NO_CREDENTIALS(), getCloudUrl(),
-                    cloudSettings.getActiveCloudUrl()));
+            listener.getLogger().println(String.format(Messages.CLOUD_URL_SET_BUT_NO_CREDENTIALS(), cloudUrl,
+                    cloudSettings.getCloudUrl()));
         }
 
         boolean releaseDone = false;
@@ -579,7 +579,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             APITestRun testRun = user.startTestRun(config);
 
             // add the Bitbar Cloud link to the left-hand-side menu in Jenkins
-            BuildBadgeAction cloudLinkAction = new CloudLink(cloudSettings.getActiveCloudUrl(), project.getId(),
+            BuildBadgeAction cloudLinkAction = new CloudLink(cloudSettings.resolveCloudUiUrl(), project.getId(),
                     testRun.getId(), cloudVersion);
             build.addAction(cloudLinkAction);
             RunInCloudEnvInject variable = new RunInCloudEnvInject("CLOUD_LINK", cloudLinkAction.getUrlName());

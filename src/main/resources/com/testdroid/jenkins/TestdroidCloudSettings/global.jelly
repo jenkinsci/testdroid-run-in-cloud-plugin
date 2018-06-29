@@ -14,26 +14,21 @@
                     title="${%Password}">
                 <f:password name="password" value="${descriptor.getPassword()}"/>
             </f:entry>
-            <f:block>
-                <f:optionalBlock name="privateInstanceState" title="${%Bitbar Cloud - private instance}"
-                                 checked="${descriptor.getPrivateInstanceState()}">
-                    <f:entry field="cloud" title="${%Bitbar Cloud URL}">
-                        <f:textbox name="cloudUrl" value="${descriptor.getCloudUrl()}"/>
-                    </f:entry>
-                    <f:entry field="cloudNewUI" title="${%Bitbar Cloud UI URL}">
-                        <f:textbox name="newCloudUrl" value="${descriptor.getNewCloudUrl()}"/>
-                    </f:entry>
-                    <f:entry title="${%Accept self-signed certificates}">
-                        <f:checkbox name="noCheckCertificate" checked="${descriptor.getNoCheckCertificate()}"/>
-                        <f:description>
-                            <b>
-                                Security warning! By allowing any certificates, network traffic is vulnerable to
-                                man-in-the-middle attacks.
-                            </b>
-                        </f:description>
-                    </f:entry>
-                </f:optionalBlock>
-            </f:block>
+            <f:entry field="cloud" title="${%Bitbar Cloud URL}">
+                <f:textbox name="cloudUrl" value="${descriptor.getCloudUrl()}"/>
+            </f:entry>
+            <f:entry field="cloudNewUI" title="${%Bitbar Cloud UI URL}">
+                <f:textbox name="newCloudUrl" value="${descriptor.getNewCloudUrl()}"/>
+            </f:entry>
+            <f:entry title="${%Accept self-signed certificates}">
+                <f:checkbox name="noCheckCertificate" checked="${descriptor.getNoCheckCertificate()}"/>
+                <f:description>
+                    <b>
+                        Security warning! By allowing any certificates, network traffic is vulnerable to
+                        man-in-the-middle attacks.
+                    </b>
+                </f:description>
+            </f:entry>
 
             <f:block>
                 <f:optionalBlock name="isProxy" title="${%Proxy server}"
@@ -57,7 +52,7 @@
                     title="${%Authorize &amp; Save}"
                     progress="${%Authorizing...}"
                     method="authorize"
-                    with="email,password,userManagementUrl,cloudUrl,privateInstanceState,noCheckCertificate,isProxy,proxyHost,proxyPort,proxyUser,proxyPassword"/>
+                    with="email,password,userManagementUrl,cloudUrl,noCheckCertificate,isProxy,proxyHost,proxyPort,proxyUser,proxyPassword"/>
         </f:block>
     </f:section>
 </j:jelly>

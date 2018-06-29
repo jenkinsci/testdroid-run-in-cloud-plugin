@@ -43,8 +43,6 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
 
         boolean noCheckCertificate;
 
-        boolean privateInstanceState;
-
         String proxyHost;
 
         String proxyPassword;
@@ -64,11 +62,6 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
             this.password = password;
         }
 
-        DescriptorImpl(String cloudUrl, String email, String password) {
-            this(email, password);
-            this.cloudUrl = cloudUrl;
-        }
-
         /**
          * Recreate a CloudSettings object from a serialized task.
          * Note: this is not a full set of params, which is ok... mostly
@@ -79,7 +72,6 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
             this.password = task.password;
             this.isProxy = task.isProxy;
             this.noCheckCertificate = task.noCheckCertificate;
-            this.privateInstanceState = task.privateInstance;
             this.proxyHost = task.proxyHost;
             this.proxyPassword = task.proxyPassword;
             this.proxyPort = task.proxyPort;
@@ -109,14 +101,13 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
 
         public FormValidation doAuthorize(
                 @QueryParameter String email, @QueryParameter String password, @QueryParameter String cloudUrl,
-                @QueryParameter boolean privateInstanceState, @QueryParameter boolean noCheckCertificate,
+                @QueryParameter boolean noCheckCertificate,
                 @QueryParameter boolean isProxy, @QueryParameter String proxyHost, @QueryParameter Integer proxyPort,
                 @QueryParameter String proxyUser, @QueryParameter String proxyPassword) {
 
             this.email = email;
             this.password = password;
             this.cloudUrl = cloudUrl;
-            this.privateInstanceState = privateInstanceState;
             this.noCheckCertificate = noCheckCertificate;
             this.isProxy = isProxy;
             this.proxyHost = proxyHost;
@@ -157,8 +148,7 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
 
             return stringParamsMatch && isProxy == other.isProxy &&
                     proxyPort == other.proxyPort &&
-                    noCheckCertificate == other.noCheckCertificate &&
-                    privateInstanceState == other.privateInstanceState;
+                    noCheckCertificate == other.noCheckCertificate;
         }
 
         public String getEmail() {
@@ -183,30 +173,20 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
             this.password = password;
         }
 
-
-        public boolean getPrivateInstanceState() {
-            return privateInstanceState;
-        }
-
-
-        public void setPrivateInstanceState(boolean privateInstanceState) {
-            this.privateInstanceState = privateInstanceState;
-        }
-
         /**
          * Get the cloud URL that should be used by this config.
          */
-        public String getActiveCloudUrl() {
-            if (privateInstanceState && StringUtils.isNotBlank(newCloudUrl)) {
+        public String resolveCloudUiUrl() {
+            if (StringUtils.isNotBlank(newCloudUrl)) {
                 return newCloudUrl;
             }
-            if (privateInstanceState && StringUtils.isNotBlank(cloudUrl)) {
-                return cloudUrl;
-            }
-            return DEFAULT_CLOUD_URL;
+            return cloudUrl;
         }
 
         public String getCloudUrl() {
+            if (StringUtils.isBlank(cloudUrl)) {
+                cloudUrl = DEFAULT_CLOUD_URL;
+            }
             return cloudUrl;
         }
 
