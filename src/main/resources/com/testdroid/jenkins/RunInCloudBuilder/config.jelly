@@ -11,7 +11,7 @@
             <f:entry field="projectId" title="${%Project}">
                 <f:select/>
             </f:entry>
-            <f:entry field="osType" title="${%OsType}">
+            <f:entry field="osType" title="${%Os type}">
                 <f:select default="UNDEFINED"/>
             </f:entry>
             <f:entry field="frameworkId" title="${%Framework}">
