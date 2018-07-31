@@ -52,7 +52,6 @@ import static hudson.util.ListBoxModel.Option;
 import static java.lang.Boolean.TRUE;
 import static java.lang.Integer.MAX_VALUE;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 public class RunInCloudBuilder extends AbstractBuilder {
 
@@ -700,7 +699,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         List<APITestRunParameter> apiTestRunParameters = new ArrayList<>();
         if (keyValuePairs != null) {
             String[] splitKeyValuePairs = keyValuePairs.split(";");
-            apiTestRunParameters.addAll(Arrays.stream(splitKeyValuePairs).filter(p -> isNotEmpty(p)).map(s -> {
+            apiTestRunParameters.addAll(Arrays.stream(splitKeyValuePairs).filter(StringUtils::isNotEmpty).map(s -> {
                 String[] pair = s.split(":");
                 return pair.length == 2 ? new APITestRunParameter(pair[0], pair[1]) : null;
             }).filter(Objects::nonNull).collect(Collectors.toList()));
@@ -792,7 +791,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             ListBoxModel projects = new ListBoxModel();
             try {
                 APIUser user = TestdroidApiUtil.getGlobalApiClient().getUser();
-                final Context context = new Context(APIProject.class, 0, MAX_VALUE, EMPTY, EMPTY);
+                final Context<APIProject> context = new Context(APIProject.class, 0, MAX_VALUE, EMPTY, EMPTY);
                 final APIListResource<APIProject> projectResource = user.getProjectsResource(context);
                 for (APIProject project : projectResource.getEntity().getData()) {
                     projects.add(project.getName(), project.getId().toString());
@@ -827,7 +826,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             ListBoxModel deviceGroups = new ListBoxModel();
             try {
                 APIUser user = TestdroidApiUtil.getGlobalApiClient().getUser();
-                final Context context = new Context(APIDeviceGroup.class, 0, MAX_VALUE, EMPTY, EMPTY);
+                final Context<APIDeviceGroup> context = new Context(APIDeviceGroup.class, 0, MAX_VALUE, EMPTY, EMPTY);
                 context.setExtraParams(Collections.singletonMap("withPublic", TRUE));
                 final APIListResource<APIDeviceGroup> deviceGroupResource = user.getDeviceGroupsResource(context);
                 for (APIDeviceGroup deviceGroup : deviceGroupResource.getEntity().getData()) {

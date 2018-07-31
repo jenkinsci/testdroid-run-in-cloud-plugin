@@ -1,7 +1,6 @@
 package com.testdroid.jenkins;
 
 import com.testdroid.jenkins.utils.VersionString;
-import hudson.model.Run;
 import hudson.model.BuildBadgeAction;
 import org.apache.commons.lang.StringUtils;
 
