@@ -4,7 +4,6 @@ package com.testdroid.jenkins;
 import hudson.EnvVars;
 import hudson.Util;
 import hudson.model.AbstractBuild;
-import hudson.model.BuildListener;
 import hudson.model.Computer;
 import hudson.model.Run;
 import hudson.model.TaskListener;
