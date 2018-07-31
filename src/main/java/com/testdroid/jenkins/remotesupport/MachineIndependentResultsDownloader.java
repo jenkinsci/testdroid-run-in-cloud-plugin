@@ -63,8 +63,6 @@ public class MachineIndependentResultsDownloader extends MachineIndependentTask
 
     @Override
     public Boolean call() throws APIException {
-        TestdroidCloudSettings.DescriptorImpl settings = new TestdroidCloudSettings.DescriptorImpl(this);
-
         APITestRun testRun = TestdroidApiUtil.createNewApiClient(this).getUser().getProject(projectId).getTestRun
                 (testRunId);
 

@@ -4,7 +4,7 @@ import java.util.*;
 
 public class AndroidLocale {
 
-    public static final Locale[] LOCALES;
+    public static final Set<Locale> LOCALES;
 
     static {
         SortedSet<Locale> languages = new TreeSet<>((o1, o2) -> {
@@ -44,7 +44,6 @@ public class AndroidLocale {
                 new Locale("tl", "PH"), new Locale("th", "TH"),
                 new Locale("tr", "TR"), new Locale("uk", "UA"),
                 new Locale("vi", "VN"));
-        LOCALES = new Locale[languages.size()];
-        languages.toArray(LOCALES);
+        LOCALES = Collections.unmodifiableSet(languages);
     }
 }

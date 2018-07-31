@@ -1,6 +1,7 @@
 package com.testdroid.jenkins.scheduler;
 
 import com.testdroid.jenkins.Messages;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Plugin;
 import hudson.model.Api;
 import hudson.model.ModelObject;
@@ -41,6 +42,7 @@ public class HookUrlResultWaiter extends Plugin implements ModelObject {
         runIdWaitingObjectsMap.put(testRunId, waitingObject);
     }
 
+    @SuppressFBWarnings("NN_NAKED_NOTIFY")
     private void notifyWaitingObject(Long testRunId) {
         Object waitingObject = runIdWaitingObjectsMap.get(testRunId);
         if (waitingObject != null) {

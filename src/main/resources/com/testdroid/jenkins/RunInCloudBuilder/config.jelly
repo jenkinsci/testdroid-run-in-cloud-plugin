@@ -1,3 +1,4 @@
+<?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
     <style type="text/css">
         td.setting-name {
@@ -11,7 +12,7 @@
             <f:entry field="projectId" title="${%Project}">
                 <f:select/>
             </f:entry>
-            <f:entry field="osType" title="${%Os type}">
+            <f:entry field="osType" title="${%OS type}">
                 <f:select default="UNDEFINED"/>
             </f:entry>
             <f:entry field="frameworkId" title="${%Framework}">
