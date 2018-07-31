@@ -3,8 +3,7 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <!-- Baseline Jenkins version you use to build and test the plugin. Users must have this version or newer to run. -->
-        <version>1.596.1</version>
+        <version>3.2</version>
         <relativePath />
     </parent>
 
@@ -29,6 +28,8 @@
         <intranet.repo>http://nexus/content/repositories</intranet.repo>
         <testdroid.api.version>2.61</testdroid.api.version>
         <jdk.version>1.8</jdk.version>
+        <jenkins.version>1.596.1</jenkins.version>
+        <java.level>8</java.level>
     </properties>
     <url>https://wiki.jenkins-ci.org/display/JENKINS/Bitbar+Testing+Run+In+Cloud+Plugin</url>
     <scm>
@@ -132,6 +133,11 @@
             <groupId>com.testdroid</groupId>
             <artifactId>testdroid-api</artifactId>
             <version>${testdroid.api.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.4</version>
         </dependency>
     </dependencies>
 </project>

@@ -18,6 +18,7 @@ import com.testdroid.jenkins.utils.AndroidLocale;
 import com.testdroid.jenkins.utils.ApiClientAdapter;
 import com.testdroid.jenkins.utils.LocaleUtil;
 import com.testdroid.jenkins.utils.TestdroidApiUtil;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -371,6 +372,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         this.osType = osType;
     }
 
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private String evaluateHookUrl() {
         return isWaitForResults() ?
                 StringUtils.isNotBlank(waitForResultsBlock.getHookURL()) ? waitForResultsBlock.getHookURL()
@@ -617,6 +619,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         return false;
     }
 
+    @SuppressFBWarnings(value="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private boolean waitForResults(
             final APIUser user, final APIProject project, final APITestRun testRun,
             FilePath workspace, Launcher launcher, TaskListener listener,

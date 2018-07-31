@@ -14,8 +14,6 @@ import org.jenkinsci.plugins.workflow.steps.StepContextParameter;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
-import java.util.logging.Logger;
-
 /**
  * Pipeline build step for Bitbar Cloud's Jenkins plugin.
  *
@@ -33,8 +31,6 @@ import java.util.logging.Logger;
  */
 
 public class PipelineCloudStep extends AbstractStepImpl {
-
-    private static final Logger LOGGER = Logger.getLogger(PipelineCloudStep.class.getSimpleName());
 
     private String appPath;
     private String deviceGroupId;
@@ -71,8 +67,8 @@ public class PipelineCloudStep extends AbstractStepImpl {
     /**
      * Constructor; defined the mandatory parameters to be passed in Pipeline.
      *
-     * @param projectId: Bitbar Cloud project Id
-     * @param deviceGroupId: Bitbar Cloud device group Id
+     * @param projectId Bitbar Cloud project Id
+     * @param deviceGroupId Bitbar Cloud device group Id
      */
     @DataBoundConstructor
     public PipelineCloudStep(String projectId, String deviceGroupId) {

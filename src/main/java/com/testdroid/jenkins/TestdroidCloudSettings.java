@@ -14,6 +14,7 @@ import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -128,27 +129,31 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
+        public boolean equals(Object o) {
+            if (this == o) {
                 return true;
             }
-
-            if (!(obj instanceof DescriptorImpl)) {
+            if (o == null || getClass() != o.getClass()) {
                 return false;
             }
+            DescriptorImpl that = (DescriptorImpl) o;
+            return isProxy == that.isProxy &&
+                    noCheckCertificate == that.noCheckCertificate &&
+                    Objects.equals(cloudUrl, that.cloudUrl) &&
+                    Objects.equals(newCloudUrl, that.newCloudUrl) &&
+                    Objects.equals(email, that.email) &&
+                    Objects.equals(password, that.password) &&
+                    Objects.equals(proxyHost, that.proxyHost) &&
+                    Objects.equals(proxyPassword, that.proxyPassword) &&
+                    Objects.equals(proxyPort, that.proxyPort) &&
+                    Objects.equals(proxyUser, that.proxyUser);
+        }
 
-            DescriptorImpl other = (DescriptorImpl) obj;
-            boolean stringParamsMatch = StringUtils.equals(cloudUrl, other.cloudUrl) &&
-                    StringUtils.equals(newCloudUrl, other.newCloudUrl) &&
-                    StringUtils.equals(email, other.email) &&
-                    StringUtils.equals(password, other.password) &&
-                    StringUtils.equals(proxyHost, other.proxyHost) &&
-                    StringUtils.equals(proxyPassword, other.proxyPassword) &&
-                    StringUtils.equals(proxyUser, other.proxyUser);
-
-            return stringParamsMatch && isProxy == other.isProxy &&
-                    proxyPort == other.proxyPort &&
-                    noCheckCertificate == other.noCheckCertificate;
+        @Override
+        public int hashCode() {
+            return Objects
+                    .hash(cloudUrl, newCloudUrl, email, password, isProxy, noCheckCertificate, proxyHost,
+                            proxyPassword, proxyPort, proxyUser);
         }
 
         public String getEmail() {

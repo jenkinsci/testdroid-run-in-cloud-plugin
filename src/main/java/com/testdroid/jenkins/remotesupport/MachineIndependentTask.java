@@ -10,7 +10,7 @@ import java.io.Serializable;
  * https://git@github.com/jenkinsci/testdroid-run-in-cloud
  *
  * Usage:
- * @TODO
+ * TODO
  *
  * @author info@bitbar.com
  */

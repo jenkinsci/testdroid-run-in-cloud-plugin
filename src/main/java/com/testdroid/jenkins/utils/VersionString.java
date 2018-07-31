@@ -1,8 +1,10 @@
 package com.testdroid.jenkins.utils;
 
 import org.apache.commons.lang.StringUtils;
+
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Objects;
 
 /**
  * Class to safely compare version strings like "2.40", "0.1.1", "1.1-beta", etc.
@@ -43,5 +45,22 @@ public class VersionString implements Comparable<VersionString> {
         }
 
         return (comparison != 0) ? comparison : Integer.compare(parts1.length, parts2.length);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        VersionString that = (VersionString) o;
+        return Objects.equals(version, that.version);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(version);
     }
 }
