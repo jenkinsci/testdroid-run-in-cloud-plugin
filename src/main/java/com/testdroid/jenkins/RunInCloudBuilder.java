@@ -47,6 +47,7 @@ import java.util.stream.Collectors;
 import static com.testdroid.api.dto.Operand.EQ;
 import static com.testdroid.api.model.APIDevice.OsType;
 import static com.testdroid.api.model.APIDevice.OsType.UNDEFINED;
+import static com.testdroid.dao.repository.dto.MappingKey.*;
 import static com.testdroid.jenkins.Messages.*;
 import static hudson.util.ListBoxModel.Option;
 import static java.lang.Boolean.TRUE;
@@ -827,7 +828,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             try {
                 APIUser user = TestdroidApiUtil.getGlobalApiClient().getUser();
                 final Context<APIDeviceGroup> context = new Context(APIDeviceGroup.class, 0, MAX_VALUE, EMPTY, EMPTY);
-                context.setExtraParams(Collections.singletonMap("withPublic", TRUE));
+                context.setExtraParams(Collections.singletonMap(WITH_PUBLIC, TRUE));
                 final APIListResource<APIDeviceGroup> deviceGroupResource = user.getDeviceGroupsResource(context);
                 for (APIDeviceGroup deviceGroup : deviceGroupResource.getEntity().getData()) {
                     deviceGroups.add(String.format("%s (%d device(s))", deviceGroup.getDisplayName(),
@@ -874,13 +875,10 @@ public class RunInCloudBuilder extends AbstractBuilder {
             if (osType != UNDEFINED) {
                 try {
                     APIUser user = TestdroidApiUtil.getGlobalApiClient().getUser();
-                    StringFilterEntry osTypeFilter = new StringFilterEntry("osType", EQ, osType.name());
-                    BooleanFilterEntry forProject = new BooleanFilterEntry("forProjects", EQ, TRUE);
-                    BooleanFilterEntry canRunFromUI = new BooleanFilterEntry("canRunFromUI", EQ, TRUE);
                     final Context<APIFramework> context = new Context(APIFramework.class, 0, MAX_VALUE, EMPTY, EMPTY);
-                    context.addFilter(osTypeFilter);
-                    context.addFilter(forProject);
-                    context.addFilter(canRunFromUI);
+                    context.addFilter(new StringFilterEntry(OS_TYPE, EQ, osType.name()));
+                    context.addFilter(new BooleanFilterEntry(FOR_PROJECTS, EQ, TRUE));
+                    context.addFilter(new BooleanFilterEntry(CAN_RUN_FROM_UI, EQ, TRUE));
                     final APIListResource<APIFramework> availableFrameworksResource = user
                             .getAvailableFrameworksResource(context);
                     frameworks.addAll(availableFrameworksResource.getEntity().getData().stream().map(f ->
