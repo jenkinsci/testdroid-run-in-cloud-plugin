@@ -210,8 +210,8 @@ public class PipelineCloudStep extends AbstractStepImpl {
     }
 
     @DataBoundSetter
-    public void setOsType(APIDevice.OsType osType) {
-        this.osType = osType;
+    public void setOsType(String osType) {
+        this.osType = APIDevice.OsType.valueOf(osType);
     }
 
 
