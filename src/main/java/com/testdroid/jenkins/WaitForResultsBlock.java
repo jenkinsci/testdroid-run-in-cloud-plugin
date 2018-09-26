@@ -2,11 +2,13 @@ package com.testdroid.jenkins;
 
 import com.testdroid.jenkins.model.TestRunStateCheckMethod;
 import hudson.Extension;
-import hudson.model.*;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
-import org.kohsuke.stapler.DataBoundConstructor;
+import hudson.model.Describable;
+import hudson.model.Descriptor;
 import jenkins.model.Jenkins;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
+
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class WaitForResultsBlock implements Describable<WaitForResultsBlock> {
 
@@ -15,48 +17,42 @@ public class WaitForResultsBlock implements Describable<WaitForResultsBlock> {
      */
     @SuppressWarnings("unchecked")
     public Descriptor<WaitForResultsBlock> getDescriptor() {
-        return Jenkins.getActiveInstance().getDescriptorOrDie(getClass());
+        return Jenkins.getInstance().getDescriptorOrDie(getClass());
     }
 
-    boolean downloadScreenshots;
+    private boolean downloadScreenshots;
 
-    boolean forceFinishAfterBreak;
+    private boolean forceFinishAfterBreak;
 
-    String hookURL;
+    private String hookURL;
 
-    String resultsPath;
+    private String resultsPath;
 
-    TestRunStateCheckMethod testRunStateCheckMethod;
+    private TestRunStateCheckMethod testRunStateCheckMethod;
 
-    Integer waitForResultsTimeout;
+    private Integer waitForResultsTimeout;
 
     @DataBoundConstructor
-    public WaitForResultsBlock(String testRunStateCheckMethod, String hookURL, String waitForResultsTimeout,
-            String resultsPath, boolean downloadScreenshots, boolean forceFinishAfterBreak) {
-        this.testRunStateCheckMethod = (StringUtils.isBlank(testRunStateCheckMethod)) ? TestRunStateCheckMethod.HOOK_URL :
-        TestRunStateCheckMethod.valueOf(testRunStateCheckMethod.toUpperCase());
-        this.hookURL = hookURL;
-        this.resultsPath = resultsPath;
-        this.downloadScreenshots = downloadScreenshots;
-        this.forceFinishAfterBreak = forceFinishAfterBreak;
-        this.waitForResultsTimeout = NumberUtils.toInt(waitForResultsTimeout);
+    public WaitForResultsBlock(TestRunStateCheckMethod testRunStateCheckMethod) {
+        this.testRunStateCheckMethod = testRunStateCheckMethod;
     }
 
     public String getHookURL() {
         return hookURL;
     }
 
+    @DataBoundSetter
     public void setHookURL(String hookURL) {
-        this.hookURL = hookURL;
+        if (isNotBlank(hookURL)) {
+            this.hookURL = hookURL;
+        }
     }
 
     public Integer getWaitForResultsTimeout() {
-        if (waitForResultsTimeout == null) {
-            waitForResultsTimeout = 0;
-        }
-        return waitForResultsTimeout;
+        return waitForResultsTimeout != null ? waitForResultsTimeout : 0;
     }
 
+    @DataBoundSetter
     public void setWaitForResultsTimeout(Integer waitForResultsTimeout) {
         this.waitForResultsTimeout = waitForResultsTimeout;
     }
@@ -65,25 +61,27 @@ public class WaitForResultsBlock implements Describable<WaitForResultsBlock> {
         return resultsPath;
     }
 
+    @DataBoundSetter
     public void setResultsPath(String resultsPath) {
-        this.resultsPath = resultsPath;
+        if (isNotBlank(resultsPath)) {
+            this.resultsPath = resultsPath;
+        }
     }
 
     public boolean isDownloadScreenshots() {
         return downloadScreenshots;
     }
 
+    @DataBoundSetter
     public void setDownloadScreenshots(boolean downloadScreenshots) {
         this.downloadScreenshots = downloadScreenshots;
     }
 
     public TestRunStateCheckMethod getTestRunStateCheckMethod() {
-        if (testRunStateCheckMethod == null) {
-            testRunStateCheckMethod = TestRunStateCheckMethod.HOOK_URL;
-        }
-        return testRunStateCheckMethod;
+        return testRunStateCheckMethod != null ? testRunStateCheckMethod : TestRunStateCheckMethod.HOOK_URL;
     }
 
+    @DataBoundSetter
     public void setTestRunStateCheckMethod(TestRunStateCheckMethod testRunStateCheckMethod) {
         this.testRunStateCheckMethod = testRunStateCheckMethod;
     }
@@ -92,12 +90,14 @@ public class WaitForResultsBlock implements Describable<WaitForResultsBlock> {
         return forceFinishAfterBreak;
     }
 
+    @DataBoundSetter
     public void setForceFinishAfterBreak(boolean forceFinishAfterBreak) {
         this.forceFinishAfterBreak = forceFinishAfterBreak;
     }
 
     @Extension
     public static final class DescriptorImpl extends Descriptor<WaitForResultsBlock> {
+
         public DescriptorImpl() {
             super(WaitForResultsBlock.class);
         }

@@ -42,7 +42,7 @@
             <f:entry title="${%Scheduling}" field="scheduler">
                 <f:select default="PARALLEL"/>
             </f:entry>
-            <f:entry field="clusterId" title="${%Device group}">
+            <f:entry field="deviceGroupId" title="${%Device group}">
                 <f:select/>
             </f:entry>
             <f:entry field="language" title="${%Device language}">

@@ -3,18 +3,12 @@ package com.testdroid.jenkins;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.testdroid.api.APIException;
-import com.testdroid.api.APIListResource;
-import com.testdroid.api.dto.Context;
-import com.testdroid.api.filter.BooleanFilterEntry;
-import com.testdroid.api.filter.StringFilterEntry;
 import com.testdroid.api.model.*;
 import com.testdroid.api.model.APITestRunConfig.Scheduler;
-import com.testdroid.jenkins.model.TestRunStateCheckMethod;
 import com.testdroid.jenkins.remotesupport.MachineIndependentFileUploader;
 import com.testdroid.jenkins.remotesupport.MachineIndependentResultsDownloader;
 import com.testdroid.jenkins.scheduler.TestRunFinishCheckScheduler;
 import com.testdroid.jenkins.scheduler.TestRunFinishCheckSchedulerFactory;
-import com.testdroid.jenkins.utils.AndroidLocale;
 import com.testdroid.jenkins.utils.ApiClientAdapter;
 import com.testdroid.jenkins.utils.LocaleUtil;
 import com.testdroid.jenkins.utils.TestdroidApiUtil;
@@ -25,13 +19,10 @@ import hudson.Launcher;
 import hudson.model.*;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
-import hudson.util.FormValidation;
-import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
 import java.io.File;
@@ -44,15 +35,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static com.testdroid.api.dto.Operand.EQ;
 import static com.testdroid.api.model.APIDevice.OsType;
 import static com.testdroid.api.model.APIDevice.OsType.UNDEFINED;
-import static com.testdroid.dao.repository.dto.MappingKey.*;
 import static com.testdroid.jenkins.Messages.*;
-import static hudson.util.ListBoxModel.Option;
-import static java.lang.Boolean.TRUE;
-import static java.lang.Integer.MAX_VALUE;
-import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class RunInCloudBuilder extends AbstractBuilder {
 
@@ -64,12 +51,12 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     private static final Semaphore semaphore = new Semaphore(1);
 
-    private static final List<String> PAID_ROLES = Arrays
-            .asList("PRIORITY_SILVER", "PRIORITY_GOLD", "PRIORITY_PLATINUM");
-
     private String appPath;
 
+    //Backward compatibility, for those who has clusterId in config.xml
     private String clusterId;
+
+    private String deviceGroupId;
 
     private String dataPath;
 
@@ -125,7 +112,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
     @DataBoundConstructor
     public RunInCloudBuilder(
             String projectId, String appPath, String testPath, String dataPath, String testRunName, String scheduler,
-            String testRunner, String clusterId, String language, String screenshotsDirectory,
+            String testRunner, String deviceGroupId, String language, String screenshotsDirectory,
             String keyValuePairs, String withAnnotation, String withoutAnnotation, String testCasesSelect,
             String testCasesValue, Boolean failBuildIfThisStepFailed,
             WaitForResultsBlock waitForResultsBlock, String testTimeout, String credentialsId, String cloudUrl,
@@ -143,7 +130,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         this.withoutAnnotation = withoutAnnotation;
         this.testCasesSelect = testCasesSelect;
         this.testCasesValue = testCasesValue;
-        this.clusterId = clusterId;
+        this.deviceGroupId = deviceGroupId;
         this.language = language;
         this.failBuildIfThisStepFailed = failBuildIfThisStepFailed;
         this.testTimeout = testTimeout;
@@ -187,12 +174,17 @@ public class RunInCloudBuilder extends AbstractBuilder {
         this.projectId = projectId;
     }
 
-    public String getClusterId() {
-        return clusterId;
+    public String getDeviceGroupId() {
+        //Backward compatibility, for those who has clusterId in config.xml
+        if (isBlank(deviceGroupId) && isNotBlank(clusterId)) {
+            return clusterId;
+        } else {
+            return deviceGroupId;
+        }
     }
 
-    public void setClusterId(String clusterId) {
-        this.clusterId = clusterId;
+    public void setDeviceGroupId(String deviceGroupId) {
+        this.deviceGroupId = deviceGroupId;
     }
 
     public String getTestRunner() {
@@ -494,7 +486,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             APITestRunConfig config = project.getTestRunConfig();
             config.setDeviceLanguageCode(getLanguage());
             config.setScheduler(Scheduler.valueOf(getScheduler().toUpperCase()));
-            config.setUsedDeviceGroupId(Long.parseLong(getClusterId()));
+            config.setUsedDeviceGroupId(Long.parseLong(getDeviceGroupId()));
             //Reset as in RiC we use only deviceGroups
             config.setDeviceIds(null);
             config.setHookURL(evaluateHookUrl());
@@ -741,9 +733,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
 
     @Extension
-    public static final class DescriptorImpl extends BuildStepDescriptor<Builder> implements Serializable {
-
-        public static final ListBoxModel.Option EMPTY_OPTION = new Option(EMPTY, EMPTY);
+    public static final class DescriptorImpl extends BuildStepDescriptor<Builder> implements Serializable, RunInCloudDescriptorHelper {
 
         private static final long serialVersionUID = 1L;
 
@@ -766,140 +756,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
         @Override
         public boolean isApplicable(Class<? extends AbstractProject> arg0) {
             return true;
-        }
-
-        public boolean isAuthenticated() {
-            return TestdroidApiUtil.getGlobalApiClient().isAuthenticated();
-        }
-
-        //Do not remove, is used in config.jelly
-        public boolean isPaidUser() {
-            boolean result = false;
-            if (isAuthenticated()) {
-                try {
-                    Date now = new Date();
-                    result = Arrays.stream(TestdroidApiUtil.getGlobalApiClient().getUser().getRoles()).
-                            anyMatch(r -> PAID_ROLES.contains(r.getName())
-                                    && (r.getExpireTime() == null || r.getExpireTime().after(now)));
-                } catch (APIException e) {
-                    LOGGER.log(Level.WARNING, Messages.ERROR_API());
-                }
-            }
-            return result;
-        }
-
-        public ListBoxModel doFillProjectIdItems() {
-            ListBoxModel projects = new ListBoxModel();
-            try {
-                APIUser user = TestdroidApiUtil.getGlobalApiClient().getUser();
-                final Context<APIProject> context = new Context(APIProject.class, 0, MAX_VALUE, EMPTY, EMPTY);
-                final APIListResource<APIProject> projectResource = user.getProjectsResource(context);
-                for (APIProject project : projectResource.getEntity().getData()) {
-                    projects.add(project.getName(), project.getId().toString());
-                }
-            } catch (APIException e) {
-                LOGGER.log(Level.WARNING, Messages.ERROR_API());
-            }
-            return projects;
-        }
-
-        public ListBoxModel doFillOsTypeItems() {
-            ListBoxModel osTypes = new ListBoxModel();
-            osTypes.addAll(Arrays.stream(OsType.values())
-                    .map(t -> new Option(t.getDisplayName(), t.name()))
-                    .collect(Collectors.toList()));
-            return osTypes;
-        }
-
-        public FormValidation doCheckOsType(@QueryParameter OsType value) {
-            return value == UNDEFINED ? FormValidation.error(DEFINE_OS_TYPE()) : FormValidation.ok();
-        }
-
-        public ListBoxModel doFillSchedulerItems() {
-            ListBoxModel schedulers = new ListBoxModel();
-            schedulers.add(Messages.SCHEDULER_PARALLEL(), Scheduler.PARALLEL.name());
-            schedulers.add(Messages.SCHEDULER_SERIAL(), Scheduler.SERIAL.name());
-            schedulers.add(Messages.SCHEDULER_SINGLE(), Scheduler.SINGLE.name());
-            return schedulers;
-        }
-
-        public ListBoxModel doFillClusterIdItems() {
-            ListBoxModel deviceGroups = new ListBoxModel();
-            try {
-                APIUser user = TestdroidApiUtil.getGlobalApiClient().getUser();
-                final Context<APIDeviceGroup> context = new Context(APIDeviceGroup.class, 0, MAX_VALUE, EMPTY, EMPTY);
-                context.setExtraParams(Collections.singletonMap(WITH_PUBLIC, TRUE));
-                final APIListResource<APIDeviceGroup> deviceGroupResource = user.getDeviceGroupsResource(context);
-                for (APIDeviceGroup deviceGroup : deviceGroupResource.getEntity().getData()) {
-                    deviceGroups.add(String.format("%s (%d device(s))", deviceGroup.getDisplayName(),
-                            deviceGroup.getDeviceCount()), deviceGroup.getId().toString());
-                }
-            } catch (APIException e) {
-                LOGGER.log(Level.WARNING, Messages.ERROR_API());
-            }
-            return deviceGroups;
-        }
-
-        public ListBoxModel doFillLanguageItems() {
-            ListBoxModel language = new ListBoxModel();
-            for (Locale locale : AndroidLocale.LOCALES) {
-                String langDisplay = String.format("%s (%s)", locale.getDisplayLanguage(),
-                        locale.getDisplayCountry());
-                String langCode = LocaleUtil.formatLangCode(locale);
-                language.add(langDisplay, langCode);
-            }
-            return language;
-        }
-
-        public ListBoxModel doFillTestCasesSelectItems() {
-            ListBoxModel testCases = new ListBoxModel();
-            String value;
-            for (APITestRunConfig.LimitationType limitationType : APITestRunConfig.LimitationType.values()) {
-                value = limitationType.name();
-                testCases.add(value.toLowerCase(), value);
-            }
-            return testCases;
-        }
-
-        public ListBoxModel doFillTestRunStateCheckMethodItems() {
-            ListBoxModel items = new ListBoxModel();
-            for (TestRunStateCheckMethod method : TestRunStateCheckMethod.values()) {
-                items.add(method.name(), method.name());
-            }
-            return items;
-        }
-
-        public ListBoxModel doFillFrameworkIdItems(@QueryParameter OsType osType) {
-            ListBoxModel frameworks = new ListBoxModel();
-            frameworks.add(EMPTY_OPTION);
-            if (osType != UNDEFINED) {
-                try {
-                    APIUser user = TestdroidApiUtil.getGlobalApiClient().getUser();
-                    final Context<APIFramework> context = new Context(APIFramework.class, 0, MAX_VALUE, EMPTY, EMPTY);
-                    context.addFilter(new StringFilterEntry(OS_TYPE, EQ, osType.name()));
-                    context.addFilter(new BooleanFilterEntry(FOR_PROJECTS, EQ, TRUE));
-                    context.addFilter(new BooleanFilterEntry(CAN_RUN_FROM_UI, EQ, TRUE));
-                    final APIListResource<APIFramework> availableFrameworksResource = user
-                            .getAvailableFrameworksResource(context);
-                    frameworks.addAll(availableFrameworksResource.getEntity().getData().stream().map(f ->
-                            new Option(f.getName(), f.getId().toString())).collect(Collectors.toList()));
-                } catch (APIException e) {
-                    LOGGER.log(Level.WARNING, Messages.ERROR_API());
-                }
-            }
-            return frameworks;
-        }
-
-        public FormValidation doCheckFrameworkId(@QueryParameter String value) {
-            return parseLong(value).isPresent() ? FormValidation.ok() : FormValidation.error(DEFINE_FRAMEWORK());
-        }
-
-        private static Optional<Long> parseLong(String value){
-            try {
-                return Optional.of(Long.parseLong(value));
-            } catch (NumberFormatException nfe) {
-                return Optional.empty();
-            }
         }
 
     }
