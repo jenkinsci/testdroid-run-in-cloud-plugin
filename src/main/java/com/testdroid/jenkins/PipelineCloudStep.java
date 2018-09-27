@@ -14,6 +14,9 @@ import org.jenkinsci.plugins.workflow.steps.StepContextParameter;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
+import static com.testdroid.jenkins.RunInCloudDescriptorHelper.*;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 /**
  * Pipeline build step for Bitbar Cloud's Jenkins plugin.
  *
@@ -55,14 +58,7 @@ public class PipelineCloudStep extends AbstractStepImpl {
     private Long frameworkId;
     private APIDevice.OsType osType;
 
-    // these variables are used to create a WaitForResultsBlock
-    private boolean waitForResults;
-    private String testRunStateCheckMethod; // API_CALL, HOOK_URL,
-    private String hookURL;
-    private String waitForResultsTimeout;
-    private String resultsPath;
-    private boolean downloadScreenshots;
-    private boolean forceFinishAfterBreak;
+    private WaitForResultsBlock waitForResultsBlock;
 
     /**
      * Constructor; defined the mandatory parameters to be passed in Pipeline.
@@ -81,7 +77,9 @@ public class PipelineCloudStep extends AbstractStepImpl {
 
     @DataBoundSetter
     public void setTestRunName(String testRunName) {
-        this.testRunName = testRunName;
+        if (isNotBlank(testRunName)) {
+            this.testRunName = testRunName;
+        }
     }
 
     @DataBoundSetter
@@ -91,62 +89,87 @@ public class PipelineCloudStep extends AbstractStepImpl {
 
     @DataBoundSetter
     public void setTestRunner(String testRunner) {
-        this.testRunner = testRunner;
+        if (isNotBlank(testRunner)) {
+            this.testRunner = testRunner;
+        }
     }
 
     @DataBoundSetter
     public void setTestPath(String testPath) {
-        this.testPath = testPath;
+        if (isNotBlank(testPath)) {
+            this.testPath = testPath;
+        }
     }
 
     @DataBoundSetter
     public void setScreenshotsDirectory(String screenshotsDirectory) {
-        this.screenshotsDirectory = screenshotsDirectory;
+        if (isNotBlank(screenshotsDirectory)) {
+            this.screenshotsDirectory = screenshotsDirectory;
+        }
     }
 
     @DataBoundSetter
     public void setKeyValuePairs(String keyValuePairs) {
-        this.keyValuePairs = keyValuePairs;
+        if (isNotBlank(withAnnotation)) {
+            this.keyValuePairs = keyValuePairs;
+        }
     }
 
     @DataBoundSetter
     public void setWithAnnotation(String withAnnotation) {
-        this.withAnnotation = withAnnotation;
+        if (isNotBlank(withAnnotation)) {
+            this.withAnnotation = withAnnotation;
+        }
     }
 
     @DataBoundSetter
     public void setWithoutAnnotation(String withoutAnnotation) {
-        this.withoutAnnotation = withoutAnnotation;
+        if (isNotBlank(withoutAnnotation)) {
+            this.withoutAnnotation = withoutAnnotation;
+        }
     }
 
     @DataBoundSetter
     public void setTestCasesSelect(String testCasesSelect) {
-        this.testCasesSelect = testCasesSelect;
+        if (isNotBlank(testCasesSelect) && !testCasesSelect.equalsIgnoreCase(DEFAULT_TEST_CASES_SELECT)) {
+            this.testCasesSelect = testCasesSelect;
+        }
     }
 
     @DataBoundSetter
     public void setTestCasesValue(String testCasesValue) {
-        this.testCasesValue = testCasesValue;
+        if (isNotBlank(testCasesValue)) {
+            this.testCasesValue = testCasesValue;
+        }
     }
 
     @DataBoundSetter
     public void setDataPath(String dataPath) {
-        this.dataPath = dataPath;
+        if (isNotBlank(dataPath)) {
+            this.dataPath = dataPath;
+        }
     }
 
     @DataBoundSetter
     public void setLanguage(String language) {
-        this.language = language;
+        if (isNotBlank(language) && !language.equals(DEFAULT_LANGUAGE)) {
+            this.language = language;
+        }
+
     }
 
     @DataBoundSetter
     public void setScheduler(String scheduler) {
-        this.scheduler = scheduler.toLowerCase();
+        if (isNotBlank(scheduler) && !scheduler.equalsIgnoreCase(DEFAULT_SCHEDULER)) {
+            this.scheduler = scheduler.toUpperCase();
+        }
     }
 
     @DataBoundSetter
     public void setTestTimeout(String testTimeout) {
-        this.testTimeout = testTimeout;
+        if (isNotBlank(testTimeout)) {
+            this.testTimeout = testTimeout;
+        }
     }
 
     @DataBoundSetter
@@ -170,41 +193,6 @@ public class PipelineCloudStep extends AbstractStepImpl {
     }
 
     @DataBoundSetter
-    public void setWaitForResults(boolean waitForResults) {
-        this.waitForResults = waitForResults;
-    }
-
-    @DataBoundSetter
-    public void setTestRunStateCheckMethod(String testRunStateCheckMethod) {
-        this.testRunStateCheckMethod = testRunStateCheckMethod;
-    }
-
-    @DataBoundSetter
-    public void setHookURL(String hookURL) {
-        this.hookURL = hookURL;
-    }
-
-    @DataBoundSetter
-    public void setWaitForResultsTimeout(String waitForResultsTimeout) {
-        this.waitForResultsTimeout = waitForResultsTimeout;
-    }
-
-    @DataBoundSetter
-    public void setResultsPath(String resultsPath) {
-        this.resultsPath = resultsPath;
-    }
-
-    @DataBoundSetter
-    public void setDownloadScreenshots(boolean downloadScreenshots) {
-        this.downloadScreenshots = downloadScreenshots;
-    }
-
-    @DataBoundSetter
-    public void setForceFinishAfterBreak(boolean forceFinishAfterBreak) {
-        this.forceFinishAfterBreak = forceFinishAfterBreak;
-    }
-
-    @DataBoundSetter
     public void setFrameworkId(Long frameworkId) {
         this.frameworkId = frameworkId;
     }
@@ -214,76 +202,84 @@ public class PipelineCloudStep extends AbstractStepImpl {
         this.osType = osType;
     }
 
+    @DataBoundSetter
+    public void setWaitForResultsBlock(WaitForResultsBlock waitForResultsBlock) {
+        this.waitForResultsBlock = waitForResultsBlock;
+    }
 
-    private String getTestRunName() {
+    public WaitForResultsBlock getWaitForResultsBlock() {
+        return waitForResultsBlock;
+    }
+
+    public String getTestRunName() {
         return testRunName;
     }
 
-    private String getAppPath() {
+    public String getAppPath() {
         return appPath;
     }
 
-    private String getTestPath() {
+    public String getTestPath() {
         return testPath;
     }
 
-    private String getProjectId() {
+    public String getProjectId() {
         return projectId;
     }
 
-    private String getDeviceGroupId() {
+    public String getDeviceGroupId() {
         return deviceGroupId;
     }
 
-    private String getTestRunner() {
+    public String getTestRunner() {
         return testRunner;
     }
 
-    private String getScreenshotsDirectory() {
+    public String getScreenshotsDirectory() {
         return screenshotsDirectory;
     }
 
-    private String getKeyValuePairs() {
+    public String getKeyValuePairs() {
         return keyValuePairs;
     }
 
-    private String getWithAnnotation() {
+    public String getWithAnnotation() {
         return withAnnotation;
     }
 
-    private String getWithoutAnnotation() {
+    public String getWithoutAnnotation() {
         return withoutAnnotation;
     }
 
-    private String getTestCasesSelect() {
-        return testCasesSelect;
+    public String getTestCasesSelect() {
+        return isNotBlank(testCasesSelect) ? testCasesSelect.toUpperCase() : DEFAULT_TEST_CASES_SELECT;
     }
 
-    private String getTestCasesValue() {
+    public String getTestCasesValue() {
         return testCasesValue;
     }
 
-    private String getDataPath() {
+    public String getDataPath() {
         return dataPath;
     }
 
-    private String getLanguage() {
-        return language;
+    public String getLanguage() {
+        return isNotBlank(language) ? language : DEFAULT_LANGUAGE;
     }
 
     public String getScheduler() {
-        return scheduler;
+        return isNotBlank(scheduler) ? scheduler.toUpperCase() : DEFAULT_SCHEDULER;
     }
 
-    private boolean isFailBuildIfThisStepFailed() {
+    public boolean isFailBuildIfThisStepFailed() {
         return failBuildIfThisStepFailed;
     }
 
-    private String getTestTimeout() {
+    public String getTestTimeout() {
         return testTimeout;
     }
 
-    private String getCredentialsId() {
+    public String getCredentialsId() {
         return credentialsId;
     }
 
@@ -295,35 +291,7 @@ public class PipelineCloudStep extends AbstractStepImpl {
         return cloudUIUrl;
     }
 
-    private boolean isWaitForResults() {
-        return waitForResults;
-    }
-
-    private String getTestRunStateCheckMethod() {
-        return testRunStateCheckMethod;
-    }
-
-    private String getHookURL() {
-        return hookURL;
-    }
-
-    private String getWaitForResultsTimeout() {
-        return waitForResultsTimeout;
-    }
-
-    private String getResultsPath() {
-        return resultsPath;
-    }
-
-    private boolean isDownloadScreenshots() {
-        return downloadScreenshots;
-    }
-
-    private boolean isForceFinishAfterBreak() {
-        return forceFinishAfterBreak;
-    }
-
-    private Long getFrameworkId() {
+    public Long getFrameworkId() {
         return this.frameworkId;
     }
 
@@ -332,7 +300,8 @@ public class PipelineCloudStep extends AbstractStepImpl {
     }
 
     @Extension
-    public static final class DescriptorImpl extends AbstractStepDescriptorImpl {
+    public static final class DescriptorImpl extends AbstractStepDescriptorImpl implements RunInCloudDescriptorHelper {
+
         public DescriptorImpl() {
             super(CloudStepExecution.class);
         }
@@ -348,7 +317,6 @@ public class PipelineCloudStep extends AbstractStepImpl {
         }
     }
 
-
     public static final class CloudStepExecution extends AbstractSynchronousNonBlockingStepExecution<Boolean> {
 
         private static final long serialVersionUID = 1;
@@ -363,25 +331,13 @@ public class PipelineCloudStep extends AbstractStepImpl {
         private transient Launcher launcher;
 
         @StepContextParameter
-        private transient Run<?,?> run;
+        private transient Run<?, ?> run;
 
         @StepContextParameter
         private transient FilePath workspace;
 
         @Override
-        protected Boolean run() throws Exception {
-            WaitForResultsBlock waitForResultsBlock = null;
-            if (step.isWaitForResults()) {
-                waitForResultsBlock = new WaitForResultsBlock(
-                        step.getTestRunStateCheckMethod(),
-                        step.getHookURL(),
-                        step.getWaitForResultsTimeout(),
-                        step.getResultsPath(),
-                        step.isDownloadScreenshots(),
-                        step.isForceFinishAfterBreak()
-                );
-            }
-
+        protected Boolean run() {
             RunInCloudBuilder builder = new RunInCloudBuilder(
                     step.getProjectId(),
                     step.getAppPath(),
@@ -399,7 +355,7 @@ public class PipelineCloudStep extends AbstractStepImpl {
                     step.getTestCasesSelect(),
                     step.getTestCasesValue(),
                     step.isFailBuildIfThisStepFailed(),
-                    waitForResultsBlock,
+                    step.getWaitForResultsBlock(),
                     step.getTestTimeout(),
                     step.getCredentialsId(),
                     step.getCloudUrl(),

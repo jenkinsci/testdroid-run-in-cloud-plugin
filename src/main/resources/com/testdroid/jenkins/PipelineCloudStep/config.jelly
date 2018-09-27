@@ -1,0 +1,4 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler">
+    <st:include class="com.testdroid.jenkins.RunInCloudBuilder" page="config.jelly" />
+</j:jelly>
