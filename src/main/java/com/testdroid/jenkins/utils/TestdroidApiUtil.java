@@ -11,12 +11,9 @@ import org.apache.http.HttpHost;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 @Extension
 public class TestdroidApiUtil {
-
-    private static final Logger LOGGER = Logger.getLogger(TestdroidApiUtil.class.getName());
 
     private static final List<String> PAID_ROLES = new ArrayList<>();
     static {
