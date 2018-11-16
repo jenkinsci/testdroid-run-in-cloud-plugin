@@ -110,7 +110,7 @@ public class PipelineCloudStep extends AbstractStepImpl {
 
     @DataBoundSetter
     public void setKeyValuePairs(String keyValuePairs) {
-        if (isNotBlank(withAnnotation)) {
+        if (isNotBlank(keyValuePairs)) {
             this.keyValuePairs = keyValuePairs;
         }
     }
