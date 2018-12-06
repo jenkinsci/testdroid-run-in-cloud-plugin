@@ -2,51 +2,53 @@ package com.testdroid.jenkins.scheduler;
 
 import com.testdroid.api.APIException;
 import com.testdroid.api.model.APITestRun;
-import com.testdroid.api.model.APIUser;
 import com.testdroid.jenkins.Messages;
+import hudson.model.TaskListener;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class APIDrivenTestFinishCheckScheduler implements TestRunFinishCheckScheduler {
-
-    private static final Logger LOGGER = Logger.getLogger(APIDrivenTestFinishCheckScheduler.class.getName());
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     private ScheduledFuture<?> taskHandle;
 
-    public void schedule(final Object object, APIUser user, final Long projectId, final Long testRunId) {
+    private final TaskListener listener;
+
+    public APIDrivenTestFinishCheckScheduler(TaskListener listener) {
+        this.listener = listener;
+    }
+
+    public void schedule(final Object object, APITestRun apiTestRun) {
         final Runnable beeper = () -> {
-            LOGGER.info(Messages.CHECK_FOR_TESTRUN_STATE(testRunId));
-            if (checkResult(user, projectId, testRunId)) {
+            listener.getLogger().println(Messages.CHECK_FOR_TESTRUN_STATE(apiTestRun.getId()));
+            if (checkResult(apiTestRun)) {
                 synchronized (object) {
                     object.notify();
                 }
             }
         };
-        taskHandle = scheduler.scheduleAtFixedRate(beeper, 60, 60, TimeUnit.SECONDS);
+        taskHandle = scheduler.scheduleAtFixedRate(beeper, 60, 45, TimeUnit.SECONDS);
     }
 
-    public void cancel(final Long projectId, final Long testRunId) {
+    public void cancel(final APITestRun apiTestRun) {
         if (taskHandle != null) {
             taskHandle.cancel(true);
         }
     }
 
-    private boolean checkResult(APIUser user, final Long projectId, final Long testRunId) {
+    private boolean checkResult(APITestRun apiTestRun) {
         boolean result = false;
         try {
-            APITestRun testRun = user.getProject(projectId).getTestRun(testRunId);
-            if (testRun.getState() == APITestRun.State.FINISHED) {
+            apiTestRun.refresh();
+            if (apiTestRun.getState() == APITestRun.State.FINISHED) {
                 result = true;
             }
         } catch (APIException exc) {
-            LOGGER.log(Level.SEVERE, Messages.API_GET_TESTRUN_ERROR(testRunId), exc);
+            listener.getLogger().println(Messages.API_GET_TESTRUN_ERROR(apiTestRun.getId(), exc.getStackTrace()));
             result = true;
         }
         return result;
