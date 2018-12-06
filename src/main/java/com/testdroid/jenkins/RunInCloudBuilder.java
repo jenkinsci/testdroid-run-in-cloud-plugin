@@ -620,18 +620,18 @@ public class RunInCloudBuilder extends AbstractBuilder {
         if (isWaitForResults()) {
             boolean isDownloadOk = false;
             TestRunFinishCheckScheduler scheduler = TestRunFinishCheckSchedulerFactory.createTestRunFinishScheduler(
-                    waitForResultsBlock.getTestRunStateCheckMethod()
+                    waitForResultsBlock.getTestRunStateCheckMethod(), listener
             );
 
             try {
                 boolean testRunToAbort = false;
                 listener.getLogger().println("Waiting for results...");
-                scheduler.schedule(this, user, project.getId(), testRun.getId());
+                scheduler.schedule(this, testRun);
                 try {
                     synchronized (this) {
                         wait(waitForResultsBlock.getWaitForResultsTimeout() * 1000);
                     }
-                    scheduler.cancel(project.getId(), testRun.getId());
+                    scheduler.cancel(testRun);
                     testRun.refresh();
                     if (testRun.getState() == APITestRun.State.FINISHED) {
                         isDownloadOk = launcher.getChannel().call(
@@ -670,7 +670,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
                         String.format("%s: %s", Messages.ERROR_CONNECTION(), e.getLocalizedMessage()));
                 LOGGER.log(Level.WARNING, Messages.ERROR_CONNECTION(), e);
             } finally {
-                scheduler.cancel(project.getId(), testRun.getId());
+                scheduler.cancel(testRun);
             }
             return isDownloadOk;
         } else {

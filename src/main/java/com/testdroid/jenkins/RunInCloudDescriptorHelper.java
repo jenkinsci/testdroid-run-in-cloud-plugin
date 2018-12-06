@@ -19,9 +19,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static com.testdroid.api.dto.MappingKey.*;
 import static com.testdroid.api.dto.Operand.EQ;
 import static com.testdroid.api.model.APIDevice.OsType.UNDEFINED;
-import static com.testdroid.dao.repository.dto.MappingKey.*;
 import static com.testdroid.jenkins.Messages.DEFINE_FRAMEWORK;
 import static com.testdroid.jenkins.Messages.DEFINE_OS_TYPE;
 import static java.lang.Boolean.TRUE;

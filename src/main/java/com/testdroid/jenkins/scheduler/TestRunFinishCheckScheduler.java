@@ -1,11 +1,11 @@
 package com.testdroid.jenkins.scheduler;
 
-import com.testdroid.api.model.APIUser;
+import com.testdroid.api.model.APITestRun;
 
 public interface TestRunFinishCheckScheduler {
 
-    void schedule(final Object object, APIUser user, final Long projectId, final Long testRunId);
+    void schedule(final Object object, final APITestRun apiTestRun);
 
-    void cancel(final Long projectId, final Long testRunId);
+    void cancel(final APITestRun apiTestRun);
 
 }
