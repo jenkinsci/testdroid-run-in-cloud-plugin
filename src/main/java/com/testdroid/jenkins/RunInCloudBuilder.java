@@ -496,6 +496,11 @@ public class RunInCloudBuilder extends AbstractBuilder {
             config.setWithAnnotation(withAnnotationFinal);
             config.setFrameworkId(Optional.ofNullable(frameworkId).orElse(config.getFrameworkId()));
             config.setOsType(Optional.ofNullable(osType).orElse(config.getOsType()));
+            //clear files, otherwise use case fail:
+            // 1. userA share project userB
+            // 2. userB run project
+            // 3  userA run project - fail(userA is not able to run project again, lack of permission to userB files)
+            config.setFiles(null);
 
             // default test timeout is 10 minutes
             config.setTimeout(Long.parseLong(DEFAULT_TEST_TIMEOUT));
