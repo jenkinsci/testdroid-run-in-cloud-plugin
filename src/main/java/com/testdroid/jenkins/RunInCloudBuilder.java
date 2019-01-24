@@ -630,11 +630,13 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
             try {
                 boolean testRunToAbort = false;
-                listener.getLogger().println("Waiting for results...");
+                Integer ricTimeout = waitForResultsBlock.getWaitForResultsTimeout();
+                listener.getLogger()
+                        .println(ricTimeout > 0 ? WAITING_SEC_FOR_THE_RESULTS(ricTimeout) : WAITING_FOR_THE_RESULTS());
                 scheduler.schedule(this, testRun);
                 try {
                     synchronized (this) {
-                        wait(waitForResultsBlock.getWaitForResultsTimeout() * 1000);
+                        wait(ricTimeout * 1000);
                     }
                     scheduler.cancel(testRun);
                     testRun.refresh();
