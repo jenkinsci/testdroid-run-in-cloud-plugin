@@ -12,11 +12,11 @@
             <f:entry field="projectId" title="${%Project}">
                 <f:select/>
             </f:entry>
-            <f:entry field="osType" title="${%OS type}">
-                <f:select default="UNDEFINED"/>
+            <f:entry field="osType" title="${%OS type}" >
+                <f:select default="UNDEFINED" checkMethod="post"/>
             </f:entry>
-            <f:entry field="frameworkId" title="${%Framework}">
-                <f:select/>
+            <f:entry field="frameworkId" title="${%Framework}" >
+                <f:select checkMethod="post"/>
             </f:entry>
             <f:entry field="testRunNameField" title="${%Test run name}">
                 <f:textbox name="testRunName" value="${instance.testRunName}"/>
