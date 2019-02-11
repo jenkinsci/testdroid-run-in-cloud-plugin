@@ -13,6 +13,7 @@ import com.testdroid.jenkins.utils.TestdroidApiUtil;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.verb.POST;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -91,6 +92,7 @@ public interface RunInCloudDescriptorHelper {
         return osTypes;
     }
 
+    @POST
     default FormValidation doCheckOsType(@QueryParameter APIDevice.OsType value) {
         return value == UNDEFINED ? FormValidation.error(DEFINE_OS_TYPE()) : FormValidation.ok();
     }
@@ -170,6 +172,7 @@ public interface RunInCloudDescriptorHelper {
         return frameworks;
     }
 
+    @POST
     default FormValidation doCheckFrameworkId(@QueryParameter String value) {
         return parseLong(value).isPresent() ? FormValidation.ok() : FormValidation.error(DEFINE_FRAMEWORK());
     }

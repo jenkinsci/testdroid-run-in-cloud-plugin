@@ -13,6 +13,7 @@ import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.verb.POST;
 
 import java.util.Objects;
 import java.util.logging.Level;
@@ -100,12 +101,13 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
             return true;
         }
 
+        @POST
         public FormValidation doAuthorize(
                 @QueryParameter String email, @QueryParameter String password, @QueryParameter String cloudUrl,
                 @QueryParameter boolean noCheckCertificate,
                 @QueryParameter boolean isProxy, @QueryParameter String proxyHost, @QueryParameter Integer proxyPort,
                 @QueryParameter String proxyUser, @QueryParameter String proxyPassword) {
-
+            Jenkins.getInstance().checkPermission(Jenkins.ADMINISTER);
             this.email = email;
             this.password = password;
             this.cloudUrl = cloudUrl;
