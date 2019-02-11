@@ -21,10 +21,11 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -38,8 +39,7 @@ import java.util.stream.Collectors;
 import static com.testdroid.api.model.APIDevice.OsType;
 import static com.testdroid.api.model.APIDevice.OsType.UNDEFINED;
 import static com.testdroid.jenkins.Messages.*;
-import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.*;
 
 public class RunInCloudBuilder extends AbstractBuilder {
 
@@ -228,7 +228,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
 
     public String getTestCasesSelect() {
-        if (StringUtils.isBlank(testCasesSelect)) {
+        if (isBlank(testCasesSelect)) {
             return APITestRunConfig.LimitationType.PACKAGE.name();
         }
 
@@ -256,7 +256,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
 
     public String getLanguage() {
-        if (StringUtils.isBlank(language)) {
+        if (isBlank(language)) {
             language = LocaleUtil.formatLangCode(Locale.US);
         }
         // handle old versions' configs with wrongly formatted language codes
@@ -271,7 +271,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
 
     public String getScheduler() {
-        if (StringUtils.isBlank(scheduler)) {
+        if (isBlank(scheduler)) {
             scheduler = Scheduler.PARALLEL.name();
         }
         return scheduler;
@@ -282,7 +282,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
 
     public String getTestTimeout() {
-        if (StringUtils.isBlank(testTimeout)) {
+        if (isBlank(testTimeout)) {
             return DEFAULT_TEST_TIMEOUT;
         }
         return testTimeout;
@@ -325,20 +325,11 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
 
     public boolean isFullTest() {
-        return StringUtils.isNotBlank(testPath);
+        return isNotBlank(testPath);
     }
 
     public boolean isDataFile() {
-        return StringUtils.isNotBlank(dataPath);
-    }
-
-    private boolean verifyParameters(TaskListener listener) {
-        boolean result = true;
-        if (StringUtils.isBlank(projectId)) {
-            listener.getLogger().println(EMPTY_PROJECT() + "\n");
-            result = false;
-        }
-        return result;
+        return isNotBlank(dataPath);
     }
 
     public boolean isWaitForResults() {
@@ -367,15 +358,14 @@ public class RunInCloudBuilder extends AbstractBuilder {
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private String evaluateHookUrl() {
         return isWaitForResults() ?
-                StringUtils.isNotBlank(waitForResultsBlock.getHookURL()) ? waitForResultsBlock.getHookURL()
-                        : String.format("%s%s", Jenkins.getInstance().getRootUrl(), POST_HOOK_URL) :
-                null;
+                isNotBlank(waitForResultsBlock.getHookURL()) ? waitForResultsBlock.getHookURL()
+                        : String.format("%s%s", Jenkins.getInstance().getRootUrl(), POST_HOOK_URL) : null;
     }
 
     private String evaluateResultsPath(FilePath workspace) {
         if (isWaitForResults()) {
             String resultsPath = waitForResultsBlock.getResultsPath();
-            if (StringUtils.isNotBlank(resultsPath)) {
+            if (isNotBlank(resultsPath)) {
                 try {
                     return getAbsolutePath(workspace, resultsPath);
                 } catch (Exception exception) {
@@ -429,7 +419,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         TestdroidCloudSettings.DescriptorImpl cloudSettings = new TestdroidCloudSettings.DescriptorImpl();
 
         // override default cloud settings if credentials/cloud URL specified on build level
-        if (StringUtils.isNotBlank(getCredentialsId())) {
+        if (isNotBlank(getCredentialsId())) {
             StandardUsernamePasswordCredentials credentials = CredentialsProvider.findCredentialById(
                     getCredentialsId(), StandardUsernamePasswordCredentials.class,
                     build,
@@ -442,16 +432,16 @@ public class RunInCloudBuilder extends AbstractBuilder {
                         credentials.getUsername(),
                         credentials.getPassword().getPlainText()
                 );
-                if (StringUtils.isNotBlank(getCloudUrl())) {
+                if (isNotBlank(getCloudUrl())) {
                     cloudSettings.setCloudUrl(getCloudUrl());
-                    if( StringUtils.isNotBlank(getCloudUIUrl())) {
+                    if (isNotBlank(getCloudUIUrl())) {
                         cloudSettings.setNewCloudUrl(getCloudUIUrl());
                     }
                 }
             } else {
                 listener.getLogger().println(String.format(Messages.COULDNT_FIND_CREDENTIALS(), getCredentialsId()));
             }
-        } else if (StringUtils.isNotBlank(this.cloudUrl)) {
+        } else if (isNotBlank(this.cloudUrl)) {
             // cloud URL always goes 1-to-1 with credentials, so it can't be used if credentials aren't specified..!
             listener.getLogger().println(String.format(Messages.CLOUD_URL_SET_BUT_NO_CREDENTIALS(), cloudUrl,
                     cloudSettings.getCloudUrl()));
@@ -470,23 +460,26 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 return false;
             }
 
-            if (!verifyParameters(listener)) {
-                return false;
-            }
-
             APIUser user = api.getUser();
             String cloudVersion = api.getCloudVersion();
 
-            final APIProject project = user.getProject(Long.parseLong(getProjectId().trim()));
-            if (project == null) {
-                listener.getLogger().println(Messages.CHECK_PROJECT_NAME());
-                return false;
+            APITestRunConfig config = new APITestRunConfig();
+            if (isNotBlank(getProjectId())) {
+                Optional<Long> optionalProjectId = parseLong("projectId", getProjectId().trim(), listener);
+                if (optionalProjectId.isPresent()) {
+                    config.setProjectId(optionalProjectId.get());
+                    config = user.validateTestRunConfig(config);
+                }
             }
 
-            APITestRunConfig config = project.getTestRunConfig();
             config.setDeviceLanguageCode(getLanguage());
             config.setScheduler(Scheduler.valueOf(getScheduler().toUpperCase()));
-            config.setUsedDeviceGroupId(Long.parseLong(getDeviceGroupId()));
+            config.setDeviceGroupId(parseLong("deviceGroupId", getDeviceGroupId().trim(), listener).orElseGet(
+                    () -> {
+                        listener.error("Set deviceGroupId to null");
+                        return null;
+                    }
+            ));
             //Reset as in RiC we use only deviceGroups
             config.setDeviceIds(null);
             config.setHookURL(evaluateHookUrl());
@@ -505,13 +498,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             // default test timeout is 10 minutes
             config.setTimeout(Long.parseLong(DEFAULT_TEST_TIMEOUT));
             if (ApiClientAdapter.isPaidUser(user)) {
-                try {
-                    long runTimeout = Long.parseLong(getTestTimeout());
-                    config.setTimeout(runTimeout);
-                } catch (NumberFormatException e) {
-                    listener.getLogger().println(TEST_TIMEOUT_NOT_NUMERIC_VALUE(getTestTimeout()));
-                    LOGGER.log(Level.WARNING, "NumberFormatException when parsing timeout.", e);
-                }
+                parseLong("testTimeout", getTestTimeout(), listener).ifPresent(config::setTimeout);
             } else {
                 listener.getLogger().println(String.format(Messages.FREE_USERS_MAX_10_MINS(), user.getEmail()));
             }
@@ -521,7 +508,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
             config = user.validateTestRunConfig(config);
 
-            printTestJob(project, config, cloudSettings, cloudVersion, listener);
             getDescriptor().save();
 
             Long testFileId;
@@ -530,7 +516,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
             List<APIFileConfig> files = new ArrayList<>();
 
-            if (StringUtils.isNotBlank(getAppPath())) {
+            if (isNotBlank(getAppPath())) {
                 final FilePath appFile = new FilePath(launcher.getChannel(), getAbsolutePath(workspace, appPathFinal));
                 listener.getLogger().println(String.format(Messages.UPLOADING_NEW_APPLICATION_S(), appPathFinal));
                 appFileId = appFile.act(new MachineIndependentFileUploader(cloudSettings, listener));
@@ -569,18 +555,20 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
             // run project with proper name set in jenkins if it's set
             String finalTestRunName = applyMacro(build, listener, getTestRunName());
-            if (StringUtils.isBlank(finalTestRunName) || finalTestRunName.trim().startsWith("$")) {
+            if (isBlank(finalTestRunName) || finalTestRunName.trim().startsWith("$")) {
                 finalTestRunName = null;
             }
 
             config.setFiles(files);
             config.setTestRunName(finalTestRunName);
-            config = user.validateTestRunConfig(config);
+
+            printTestJob(config, cloudSettings, cloudVersion, listener);
+
             // start the test run itself
             APITestRun testRun = user.startTestRun(config);
 
             // add the Bitbar Cloud link to the left-hand-side menu in Jenkins
-            BuildBadgeAction cloudLinkAction = new CloudLink(cloudSettings.resolveCloudUiUrl(), project.getId(),
+            BuildBadgeAction cloudLinkAction = new CloudLink(cloudSettings.resolveCloudUiUrl(), testRun.getProjectId(),
                     testRun.getId(), cloudVersion);
             build.addAction(cloudLinkAction);
             RunInCloudEnvInject variable = new RunInCloudEnvInject("CLOUD_LINK", cloudLinkAction.getUrlName());
@@ -593,7 +581,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             RunInCloudBuilder.semaphore.release();
             releaseDone = true;
 
-            return waitForResults(user, project, testRun, workspace, launcher, listener, cloudSettings);
+            return waitForResults(testRun, workspace, launcher, listener, cloudSettings);
 
         } catch (APIException e) {
             listener.getLogger().println(String.format("%s: %s", Messages.ERROR_API(), e.getMessage()));
@@ -604,9 +592,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
         } catch (InterruptedException e) {
             listener.getLogger().println(String.format("%s: %s", Messages.ERROR_TESTDROID(), e.getLocalizedMessage()));
             LOGGER.log(Level.WARNING, Messages.ERROR_TESTDROID(), e);
-        } catch (NumberFormatException e) {
-            listener.getLogger().println(Messages.NO_DEVICE_GROUP_CHOSEN());
-            LOGGER.log(Level.WARNING, Messages.NO_DEVICE_GROUP_CHOSEN());
         } finally {
             if (!releaseDone) {
                 RunInCloudBuilder.semaphore.release();
@@ -616,12 +601,10 @@ public class RunInCloudBuilder extends AbstractBuilder {
         return false;
     }
 
-    @SuppressFBWarnings(value="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
+    @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private boolean waitForResults(
-            final APIUser user, final APIProject project, final APITestRun testRun,
-            FilePath workspace, Launcher launcher, TaskListener listener,
+            final APITestRun testRun, FilePath workspace, Launcher launcher, TaskListener listener,
             TestdroidCloudSettings.DescriptorImpl cloudSettings) {
-
         if (isWaitForResults()) {
             boolean isDownloadOk = false;
             TestRunFinishCheckScheduler scheduler = TestRunFinishCheckSchedulerFactory.createTestRunFinishScheduler(
@@ -643,7 +626,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
                     if (testRun.getState() == APITestRun.State.FINISHED) {
                         isDownloadOk = launcher.getChannel().call(
                                 new MachineIndependentResultsDownloader(
-                                        cloudSettings, listener, project.getId(), testRun.getId(),
+                                        cloudSettings, listener, testRun.getProjectId(), testRun.getId(),
                                         evaluateResultsPath(workspace), waitForResultsBlock.isDownloadScreenshots()));
 
                         if (!isDownloadOk) {
@@ -686,7 +669,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
 
     private void setLimitations(Run<?, ?> build, final TaskListener listener, APITestRunConfig config) {
-        if (StringUtils.isNotBlank(getTestCasesValue())) {
+        if (isNotBlank(getTestCasesValue())) {
             config.setLimitationType(APITestRunConfig.LimitationType.valueOf(getTestCasesSelect().toUpperCase()));
             config.setLimitationValue(applyMacro(build, listener, getTestCasesValue()));
         } else {
@@ -707,31 +690,42 @@ public class RunInCloudBuilder extends AbstractBuilder {
         config.setTestRunParameters(apiTestRunParameters);
     }
 
-    private void printTestJob(APIProject project, APITestRunConfig config,
-            TestdroidCloudSettings.DescriptorImpl cloudSettings, String cloudVersion, TaskListener listener) {
-        listener.getLogger().println(Messages.TEST_RUN_CONFIGURATION());
-        listener.getLogger().println(String.format("%s: %s (version %s)", Messages.CLOUD_URL(),
-                cloudSettings.getCloudUrl(), cloudVersion));
-        listener.getLogger().println(String.format("%s: %s", Messages.USER_EMAIL(), cloudSettings.getEmail()));
-        listener.getLogger().println(String.format("%s: %s", Messages.PROJECT(), project.getName()));
+    private void printTestJob(
+            APITestRunConfig config, TestdroidCloudSettings.DescriptorImpl cloudSettings, String cloudVersion,
+            TaskListener listener) {
+        listener.getLogger().println(TEST_RUN_CONFIGURATION());
+        listener.getLogger().println(CLOUD_INFO(cloudSettings.getCloudUrl(), cloudVersion));
+        listener.getLogger().println(USER_EMAIL_VALUE(cloudSettings.getEmail()));
+        listener.getLogger().println(PROJECT_INFO(config.getProjectName(), config.getProjectId()));
+        listener.getLogger().println(DEVICE_GROUP_INFO(config.getUsedDeviceGroupName(), config.getDeviceGroupId()));
         listener.getLogger().println(OS_TYPE_VALUE(config.getOsType()));
-        listener.getLogger().println(FRAMEWORK_ID_VALUE(config.getFrameworkId()));
-        listener.getLogger().println(String.format("%s: %s", Messages.LOCALE(), config.getDeviceLanguageCode()));
-        listener.getLogger().println(String.format("%s: %s", Messages.SCHEDULER(), config.getScheduler()));
-        listener.getLogger().println(String.format("%s: %s", Messages.TIMEOUT(), config.getTimeout()));
+        listener.getLogger().println(FRAMEWORK_INFO(config.getFrameworkId()));
+        listener.getLogger().println(LOCALE_VALUE(config.getDeviceLanguageCode()));
+        listener.getLogger().println(SCHEDULER_VALUE(config.getScheduler()));
+        listener.getLogger().println(TIMEOUT_VALUE(config.getTimeout()));
     }
 
     private String getAbsolutePath(FilePath workspace, String path) throws IOException, InterruptedException {
-        if (StringUtils.isBlank(path)) {
-            return StringUtils.EMPTY;
+        if (isBlank(path)) {
+            return EMPTY;
         }
-        String trimmed = StringUtils.trim(path);
+        String trimmed = trim(path);
         if (trimmed.startsWith(File.separator)) { // absolute
             return trimmed;
         } else {
             URI workspaceURI = workspace.toURI();
             return workspaceURI.getPath() + trimmed;
         }
+    }
+
+    private Optional<Long> parseLong(String name, String strValue, TaskListener listener) {
+        Optional<Long> result = Optional.empty();
+        try {
+            result = Optional.of(Long.parseLong(strValue.trim()));
+        } catch (NumberFormatException exc) {
+            listener.error("Can't parse %s = %s", name, strValue);
+        }
+        return result;
     }
 
     @Override
@@ -750,6 +744,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         }
 
         @Override
+        @Nonnull
         public String getDisplayName() {
             return Messages.TESTDROID_RUN_TESTS_IN_CLOUD();
         }

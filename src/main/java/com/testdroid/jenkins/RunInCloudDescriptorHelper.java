@@ -24,6 +24,7 @@ import static com.testdroid.api.dto.Operand.EQ;
 import static com.testdroid.api.model.APIDevice.OsType.UNDEFINED;
 import static com.testdroid.jenkins.Messages.DEFINE_FRAMEWORK;
 import static com.testdroid.jenkins.Messages.DEFINE_OS_TYPE;
+import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.lang.Integer.MAX_VALUE;
 import static java.util.Arrays.asList;
@@ -67,9 +68,11 @@ public interface RunInCloudDescriptorHelper {
 
     default ListBoxModel doFillProjectIdItems() {
         ListBoxModel projects = new ListBoxModel();
+        projects.add(EMPTY_OPTION);
         try {
             APIUser user = TestdroidApiUtil.getGlobalApiClient().getUser();
             final Context<APIProject> context = new Context(APIProject.class, 0, MAX_VALUE, EMPTY, EMPTY);
+            context.addFilter(new BooleanFilterEntry(READ_ONLY, EQ, FALSE));
             final APIListResource<APIProject> projectResource = user.getProjectsResource(context);
             for (APIProject project : projectResource.getEntity().getData()) {
                 projects.add(project.getName(), project.getId().toString());
