@@ -3,26 +3,15 @@ package com.testdroid.jenkins.utils;
 import com.testdroid.api.APIClient;
 import com.testdroid.api.APIException;
 import com.testdroid.api.model.APICloudInfo;
-import com.testdroid.api.model.APIRole;
 import com.testdroid.api.model.APIUser;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ApiClientAdapter {
 
     private static final Logger LOGGER = Logger.getLogger(ApiClientAdapter.class.getName());
-
-    private static final List<String> PAID_ROLES = new ArrayList<>();
-    static {
-        PAID_ROLES.add("PRIORITY_SILVER");
-        PAID_ROLES.add("PRIORITY_GOLD");
-        PAID_ROLES.add("PRIORITY_PLATINUM");
-        PAID_ROLES.add("PAID_RUN");
-    }
 
     private APIClient apiClient;
 
@@ -71,15 +60,6 @@ public class ApiClientAdapter {
      */
     public static boolean isPaidUser(APIUser user) {
         if (user == null) return false;
-
-        Date now = new Date();
-        for (APIRole role : user.getRoles()) {
-            if (PAID_ROLES.contains(role.getName())
-                    && (role.getExpireTime() == null || role.getExpireTime().after(now))) {
-                return true;
-            }
-        }
-
-        return false;
+        return Arrays.stream(user.getRoles()).anyMatch(r -> r.getName().startsWith("PRIORITY"));
     }
 }
