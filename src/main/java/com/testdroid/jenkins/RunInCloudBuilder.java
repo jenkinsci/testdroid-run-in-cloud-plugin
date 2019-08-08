@@ -47,8 +47,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     private static final String POST_HOOK_URL = "/plugin/testdroid-run-in-cloud/api/json/cloud-webhook";
 
-    private static final String DEFAULT_TEST_TIMEOUT = "600"; // 10 minutes
-
     private static final Semaphore semaphore = new Semaphore(1);
 
     private String appPath;
@@ -282,9 +280,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
 
     public String getTestTimeout() {
-        if (isBlank(testTimeout)) {
-            return DEFAULT_TEST_TIMEOUT;
-        }
         return testTimeout;
     }
 
@@ -495,12 +490,10 @@ public class RunInCloudBuilder extends AbstractBuilder {
             // 3  userA run project - fail(userA is not able to run project again, lack of permission to userB files)
             config.setFiles(null);
 
-            // default test timeout is 10 minutes
-            config.setTimeout(Long.parseLong(DEFAULT_TEST_TIMEOUT));
             if (ApiClientAdapter.isPaidUser(user)) {
                 parseLong("testTimeout", getTestTimeout(), listener).ifPresent(config::setTimeout);
             } else {
-                listener.getLogger().println(String.format(Messages.FREE_USERS_MAX_10_MINS(), user.getEmail()));
+                listener.getLogger().println(String.format(FREE_USERS_CLOUD_TIMEOUT(), user.getEmail()));
             }
 
             setLimitations(build, listener, config);

@@ -9,19 +9,8 @@ import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHost;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Extension
 public class TestdroidApiUtil {
-
-    private static final List<String> PAID_ROLES = new ArrayList<>();
-    static {
-        PAID_ROLES.add("PRIORITY_SILVER");
-        PAID_ROLES.add("PRIORITY_GOLD");
-        PAID_ROLES.add("PRIORITY_PLATINUM");
-        PAID_ROLES.add("PAID_RUN");
-    }
 
     private ApiClientAdapter apiClientAdapter;
 

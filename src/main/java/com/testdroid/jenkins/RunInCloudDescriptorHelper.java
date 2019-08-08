@@ -8,6 +8,7 @@ import com.testdroid.api.filter.StringFilterEntry;
 import com.testdroid.api.model.*;
 import com.testdroid.jenkins.model.TestRunStateCheckMethod;
 import com.testdroid.jenkins.utils.AndroidLocale;
+import com.testdroid.jenkins.utils.ApiClientAdapter;
 import com.testdroid.jenkins.utils.LocaleUtil;
 import com.testdroid.jenkins.utils.TestdroidApiUtil;
 import hudson.util.FormValidation;
@@ -15,7 +16,10 @@ import hudson.util.ListBoxModel;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.verb.POST;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Locale;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -28,16 +32,12 @@ import static com.testdroid.jenkins.Messages.DEFINE_OS_TYPE;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.lang.Integer.MAX_VALUE;
-import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableList;
 import static java.util.Locale.US;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 public interface RunInCloudDescriptorHelper {
 
     Logger LOGGER = Logger.getLogger(RunInCloudDescriptorHelper.class.getSimpleName());
-
-    List<String> PAID_ROLES = unmodifiableList(asList("PRIORITY_SILVER", "PRIORITY_GOLD", "PRIORITY_PLATINUM"));
 
     String DEFAULT_SCHEDULER = APITestRunConfig.Scheduler.PARALLEL.name();
 
@@ -56,10 +56,7 @@ public interface RunInCloudDescriptorHelper {
         boolean result = false;
         if (isAuthenticated()) {
             try {
-                Date now = new Date();
-                result = Arrays.stream(TestdroidApiUtil.getGlobalApiClient().getUser().getRoles()).
-                        anyMatch(r -> PAID_ROLES.contains(r.getName())
-                                && (r.getExpireTime() == null || r.getExpireTime().after(now)));
+                result = ApiClientAdapter.isPaidUser(TestdroidApiUtil.getGlobalApiClient().getUser());
             } catch (APIException e) {
                 LOGGER.log(Level.WARNING, Messages.ERROR_API());
             }
@@ -72,7 +69,7 @@ public interface RunInCloudDescriptorHelper {
         projects.add(EMPTY_OPTION);
         try {
             APIUser user = TestdroidApiUtil.getGlobalApiClient().getUser();
-            final Context<APIProject> context = new Context(APIProject.class, 0, MAX_VALUE, EMPTY, EMPTY);
+            final Context<APIProject> context = new Context<>(APIProject.class, 0, MAX_VALUE, EMPTY, EMPTY);
             context.addFilter(new BooleanFilterEntry(READ_ONLY, EQ, FALSE));
             final APIListResource<APIProject> projectResource = user.getProjectsResource(context);
             for (APIProject project : projectResource.getEntity().getData()) {
@@ -109,7 +106,7 @@ public interface RunInCloudDescriptorHelper {
         ListBoxModel deviceGroups = new ListBoxModel();
         try {
             APIUser user = TestdroidApiUtil.getGlobalApiClient().getUser();
-            final Context<APIDeviceGroup> context = new Context(APIDeviceGroup.class, 0, MAX_VALUE, EMPTY, EMPTY);
+            final Context<APIDeviceGroup> context = new Context<>(APIDeviceGroup.class, 0, MAX_VALUE, EMPTY, EMPTY);
             context.setExtraParams(Collections.singletonMap(WITH_PUBLIC, TRUE));
             final APIListResource<APIDeviceGroup> deviceGroupResource = user.getDeviceGroupsResource(context);
             for (APIDeviceGroup deviceGroup : deviceGroupResource.getEntity().getData()) {
@@ -157,7 +154,7 @@ public interface RunInCloudDescriptorHelper {
         if (osType != UNDEFINED) {
             try {
                 APIUser user = TestdroidApiUtil.getGlobalApiClient().getUser();
-                final Context<APIFramework> context = new Context(APIFramework.class, 0, MAX_VALUE, EMPTY, EMPTY);
+                final Context<APIFramework> context = new Context<>(APIFramework.class, 0, MAX_VALUE, EMPTY, EMPTY);
                 context.addFilter(new StringFilterEntry(OS_TYPE, EQ, osType.name()));
                 context.addFilter(new BooleanFilterEntry(FOR_PROJECTS, EQ, TRUE));
                 context.addFilter(new BooleanFilterEntry(CAN_RUN_FROM_UI, EQ, TRUE));
