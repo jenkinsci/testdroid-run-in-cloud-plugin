@@ -18,7 +18,6 @@ import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.verb.POST;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -108,7 +107,9 @@ public interface RunInCloudDescriptorHelper {
         try {
             APIUser user = TestdroidApiUtil.getGlobalApiClient().getUser();
             final Context<APIDeviceGroup> context = new Context<>(APIDeviceGroup.class, 0, MAX_VALUE, EMPTY, EMPTY);
-            context.setExtraParams(new HashSetValuedHashMap<>(Collections.singletonMap(WITH_PUBLIC, TRUE)));
+            HashSetValuedHashMap<String, Object> extraParams = new HashSetValuedHashMap<>();
+            extraParams.put(WITH_PUBLIC, TRUE);
+            context.setExtraParams(extraParams);
             final APIListResource<APIDeviceGroup> deviceGroupResource = user.getDeviceGroupsResource(context);
             for (APIDeviceGroup deviceGroup : deviceGroupResource.getEntity().getData()) {
                 deviceGroups.add(String.format("%s (%d device(s))", deviceGroup.getDisplayName(),
