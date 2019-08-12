@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 import static com.testdroid.api.model.APIDevice.OsType;
 import static com.testdroid.api.model.APIDevice.OsType.UNDEFINED;
 import static com.testdroid.jenkins.Messages.*;
+import static java.lang.Boolean.TRUE;
 import static org.apache.commons.lang3.StringUtils.*;
 
 public class RunInCloudBuilder extends AbstractBuilder {
@@ -460,7 +461,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
             APITestRunConfig config = new APITestRunConfig();
             if (isNotBlank(getProjectId())) {
-                Optional<Long> optionalProjectId = parseLong("projectId", getProjectId().trim(), listener);
+                Optional<Long> optionalProjectId = parseLong("projectId", getProjectId(), TRUE, listener);
                 if (optionalProjectId.isPresent()) {
                     config.setProjectId(optionalProjectId.get());
                     config = user.validateTestRunConfig(config);
@@ -469,7 +470,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
             config.setDeviceLanguageCode(getLanguage());
             config.setScheduler(Scheduler.valueOf(getScheduler().toUpperCase()));
-            config.setDeviceGroupId(parseLong("deviceGroupId", getDeviceGroupId().trim(), listener).orElseGet(
+            config.setDeviceGroupId(parseLong("deviceGroupId", getDeviceGroupId(), TRUE, listener).orElseGet(
                     () -> {
                         listener.error("Set deviceGroupId to null");
                         return null;
@@ -491,7 +492,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
             config.setFiles(null);
 
             if (ApiClientAdapter.isPaidUser(user)) {
-                parseLong("testTimeout", getTestTimeout(), listener).ifPresent(config::setTimeout);
+                parseLong("testTimeout", getTestTimeout(), isNotEmpty(getTestTimeout()), listener)
+                        .ifPresent(config::setTimeout);
             } else {
                 listener.getLogger().println(String.format(FREE_USERS_CLOUD_TIMEOUT(), user.getEmail()));
             }
@@ -711,12 +713,14 @@ public class RunInCloudBuilder extends AbstractBuilder {
         }
     }
 
-    private Optional<Long> parseLong(String name, String strValue, TaskListener listener) {
+    private Optional<Long> parseLong(String name, String strValue, Boolean showError, TaskListener listener) {
         Optional<Long> result = Optional.empty();
         try {
-            result = Optional.of(Long.parseLong(strValue.trim()));
+            result = Optional.of(Long.parseLong(trim(strValue)));
         } catch (NumberFormatException exc) {
-            listener.error("Can't parse %s = %s", name, strValue);
+            if (showError) {
+                listener.error("Can't parse %s = %s", name, strValue);
+            }
         }
         return result;
     }

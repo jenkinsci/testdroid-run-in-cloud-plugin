@@ -13,6 +13,7 @@ import com.testdroid.jenkins.utils.LocaleUtil;
 import com.testdroid.jenkins.utils.TestdroidApiUtil;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.verb.POST;
 
@@ -107,7 +108,7 @@ public interface RunInCloudDescriptorHelper {
         try {
             APIUser user = TestdroidApiUtil.getGlobalApiClient().getUser();
             final Context<APIDeviceGroup> context = new Context<>(APIDeviceGroup.class, 0, MAX_VALUE, EMPTY, EMPTY);
-            context.setExtraParams(Collections.singletonMap(WITH_PUBLIC, TRUE));
+            context.setExtraParams(new HashSetValuedHashMap<>(Collections.singletonMap(WITH_PUBLIC, TRUE)));
             final APIListResource<APIDeviceGroup> deviceGroupResource = user.getDeviceGroupsResource(context);
             for (APIDeviceGroup deviceGroup : deviceGroupResource.getEntity().getData()) {
                 deviceGroups.add(String.format("%s (%d device(s))", deviceGroup.getDisplayName(),

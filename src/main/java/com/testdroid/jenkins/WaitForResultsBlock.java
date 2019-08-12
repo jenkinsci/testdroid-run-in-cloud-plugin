@@ -8,6 +8,7 @@ import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
+import static com.testdroid.jenkins.model.TestRunStateCheckMethod.HOOK_URL;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class WaitForResultsBlock implements Describable<WaitForResultsBlock> {
@@ -78,7 +79,7 @@ public class WaitForResultsBlock implements Describable<WaitForResultsBlock> {
     }
 
     public TestRunStateCheckMethod getTestRunStateCheckMethod() {
-        return testRunStateCheckMethod != null ? testRunStateCheckMethod : TestRunStateCheckMethod.HOOK_URL;
+        return testRunStateCheckMethod;
     }
 
     @DataBoundSetter
@@ -97,6 +98,8 @@ public class WaitForResultsBlock implements Describable<WaitForResultsBlock> {
 
     @Extension
     public static final class DescriptorImpl extends Descriptor<WaitForResultsBlock> {
+
+        public static final TestRunStateCheckMethod DEFAULT_TEST_RUN_STATE_CHECK_METHOD = HOOK_URL;
 
         public DescriptorImpl() {
             super(WaitForResultsBlock.class);
