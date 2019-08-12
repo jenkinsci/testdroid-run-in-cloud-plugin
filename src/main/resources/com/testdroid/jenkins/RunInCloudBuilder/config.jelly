@@ -76,10 +76,9 @@
             <f:optionalBlock name="waitForResultsBlock"
                              title="${%Wait for test to finish in Bitbar Cloud and download results}"
                              checked="${instance.waitForResultsBlock != null}">
-                <f:entry name="testRunStateCheckMethod" title="${%Check test run status method}"
-                         field="testRunStateCheckMethod">
-                    <f:select name="testRunStateCheckMethod"
-                              value="${instance.waitForResultsBlock.testRunStateCheckMethod}" default="HOOK_URL"/>
+                <f:entry title="${%Check test run status method}" field="testRunStateCheckMethod">
+                    <f:select default="${descriptor.DEFAULT_TEST_RUN_STATE_CHECK_METHOD}"
+                    value="${instance.waitForResultsBlock.testRunStateCheckMethod}"/>
                 </f:entry>
 
                 <f:entry field="hookUrlField" title="${%Hook URL}">
