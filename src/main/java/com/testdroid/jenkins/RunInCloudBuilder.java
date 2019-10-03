@@ -410,6 +410,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         String withAnnotationFinal = applyMacro(build, listener, withAnnotation);
         String testRunnerFinal = applyMacro(build, listener, testRunner);
         String withoutAnnotationFinal = applyMacro(build, listener, withoutAnnotation);
+        final String testTimeoutFinal = applyMacro(build, listener, testTimeout);
 
         // cloudSettings will load the global settings in constructor..!
         TestdroidCloudSettings.DescriptorImpl cloudSettings = new TestdroidCloudSettings.DescriptorImpl();
@@ -492,7 +493,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             config.setFiles(null);
 
             if (ApiClientAdapter.isPaidUser(user)) {
-                parseLong("testTimeout", getTestTimeout(), isNotEmpty(getTestTimeout()), listener)
+                parseLong("testTimeout", testTimeoutFinal, isNotEmpty(testTimeoutFinal), listener)
                         .ifPresent(config::setTimeout);
             } else {
                 listener.getLogger().println(String.format(FREE_USERS_CLOUD_TIMEOUT(), user.getEmail()));
