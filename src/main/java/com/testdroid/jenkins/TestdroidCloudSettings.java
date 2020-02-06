@@ -25,7 +25,7 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
 
     @Override
     public Descriptor<TestdroidCloudSettings> getDescriptor() {
-        return Jenkins.getActiveInstance().getDescriptorByType(DescriptorImpl.class);
+        return Jenkins.get().getDescriptorByType(DescriptorImpl.class);
     }
 
     @Extension

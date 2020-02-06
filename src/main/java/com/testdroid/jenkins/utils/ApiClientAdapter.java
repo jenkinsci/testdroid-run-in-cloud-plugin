@@ -30,7 +30,7 @@ public class ApiClientAdapter {
         return null;
     }
 
-    public APIUser getUser() throws APIException {
+    public APIUser getUser() {
         APIUser user = null;
         try {
             user = apiClient.me();
@@ -47,12 +47,7 @@ public class ApiClientAdapter {
     }
 
     public boolean isAuthenticated() {
-        try {
-            return getUser() != null;
-        } catch (APIException e) {
-            LOGGER.log(Level.WARNING, "isAuthenticated: Error when getting user.", e);
-        }
-        return false;
+        return getUser() != null;
     }
 
     /**
@@ -60,6 +55,6 @@ public class ApiClientAdapter {
      */
     public static boolean isPaidUser(APIUser user) {
         if (user == null) return false;
-        return Arrays.stream(user.getRoles()).anyMatch(r -> r.getName().startsWith("PRIORITY"));
+        return user.getRoles().stream().anyMatch(r -> r.getName().startsWith("PRIORITY"));
     }
 }

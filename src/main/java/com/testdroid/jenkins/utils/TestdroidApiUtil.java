@@ -15,7 +15,7 @@ public class TestdroidApiUtil {
     private ApiClientAdapter apiClientAdapter;
 
     public static TestdroidApiUtil getInstance() {
-        return Jenkins.getActiveInstance().getExtensionList(TestdroidApiUtil.class).stream().findFirst().get();
+        return Jenkins.get().getExtensionList(TestdroidApiUtil.class).stream().findFirst().get();
     }
 
     public static ApiClientAdapter getGlobalApiClient() {

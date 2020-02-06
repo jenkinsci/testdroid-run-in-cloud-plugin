@@ -3,8 +3,7 @@ package com.testdroid.jenkins;
 import com.testdroid.api.APIException;
 import com.testdroid.api.APIListResource;
 import com.testdroid.api.dto.Context;
-import com.testdroid.api.filter.BooleanFilterEntry;
-import com.testdroid.api.filter.StringFilterEntry;
+import com.testdroid.api.filter.FilterEntry;
 import com.testdroid.api.model.*;
 import com.testdroid.jenkins.model.TestRunStateCheckMethod;
 import com.testdroid.jenkins.utils.AndroidLocale;
@@ -26,6 +25,8 @@ import java.util.stream.Collectors;
 
 import static com.testdroid.api.dto.MappingKey.*;
 import static com.testdroid.api.dto.Operand.EQ;
+import static com.testdroid.api.filter.FilterEntry.falseFilterEntry;
+import static com.testdroid.api.filter.FilterEntry.trueFilterEntry;
 import static com.testdroid.api.model.APIDevice.OsType.UNDEFINED;
 import static com.testdroid.jenkins.Messages.DEFINE_FRAMEWORK;
 import static com.testdroid.jenkins.Messages.DEFINE_OS_TYPE;
@@ -53,15 +54,7 @@ public interface RunInCloudDescriptorHelper {
 
     //Do not remove, is used in config.jelly
     default boolean isPaidUser() {
-        boolean result = false;
-        if (isAuthenticated()) {
-            try {
-                result = ApiClientAdapter.isPaidUser(TestdroidApiUtil.getGlobalApiClient().getUser());
-            } catch (APIException e) {
-                LOGGER.log(Level.WARNING, Messages.ERROR_API());
-            }
-        }
-        return result;
+        return isAuthenticated() && ApiClientAdapter.isPaidUser(TestdroidApiUtil.getGlobalApiClient().getUser());
     }
 
     default ListBoxModel doFillProjectIdItems() {
@@ -70,7 +63,7 @@ public interface RunInCloudDescriptorHelper {
         try {
             APIUser user = TestdroidApiUtil.getGlobalApiClient().getUser();
             final Context<APIProject> context = new Context<>(APIProject.class, 0, MAX_VALUE, EMPTY, EMPTY);
-            context.addFilter(new BooleanFilterEntry(READ_ONLY, EQ, FALSE));
+            context.addFilter(falseFilterEntry(READ_ONLY));
             final APIListResource<APIProject> projectResource = user.getProjectsResource(context);
             for (APIProject project : projectResource.getEntity().getData()) {
                 projects.add(project.getName(), project.getId().toString());
@@ -157,9 +150,9 @@ public interface RunInCloudDescriptorHelper {
             try {
                 APIUser user = TestdroidApiUtil.getGlobalApiClient().getUser();
                 final Context<APIFramework> context = new Context<>(APIFramework.class, 0, MAX_VALUE, EMPTY, EMPTY);
-                context.addFilter(new StringFilterEntry(OS_TYPE, EQ, osType.name()));
-                context.addFilter(new BooleanFilterEntry(FOR_PROJECTS, EQ, TRUE));
-                context.addFilter(new BooleanFilterEntry(CAN_RUN_FROM_UI, EQ, TRUE));
+                context.addFilter(new FilterEntry(OS_TYPE, EQ, osType.name()));
+                context.addFilter(trueFilterEntry(FOR_PROJECTS));
+                context.addFilter(trueFilterEntry(CAN_RUN_FROM_UI));
                 final APIListResource<APIFramework> availableFrameworksResource = user
                         .getAvailableFrameworksResource(context);
                 frameworks.addAll(availableFrameworksResource.getEntity().getData().stream().map(f ->

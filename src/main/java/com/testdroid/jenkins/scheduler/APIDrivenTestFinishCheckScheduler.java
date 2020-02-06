@@ -24,9 +24,11 @@ public class APIDrivenTestFinishCheckScheduler implements TestRunFinishCheckSche
 
     public void schedule(final Object object, APITestRun apiTestRun) {
         final Runnable beeper = () -> {
-            if (checkResult(apiTestRun)) {
-                synchronized (object) {
-                    object.notify();
+            synchronized (object) {
+                if (checkResult(apiTestRun)) {
+                    {
+                        object.notify();
+                    }
                 }
             }
         };
@@ -44,7 +46,7 @@ public class APIDrivenTestFinishCheckScheduler implements TestRunFinishCheckSche
         try {
             listener.getLogger().println(Messages.CHECK_FOR_TESTRUN_STATE(apiTestRun.getId()));
             apiTestRun.refresh();
-            listener.getLogger().println(Messages.TESTRUN_STATE(apiTestRun.getId(), apiTestRun.getState()));
+            listener.getLogger().println(Messages.TEST_RUN_STATE(apiTestRun.getId(), apiTestRun.getState()));
             if (apiTestRun.getState() == APITestRun.State.FINISHED) {
                 result = true;
             }
