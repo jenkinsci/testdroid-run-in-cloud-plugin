@@ -558,21 +558,15 @@ public class RunInCloudBuilder extends AbstractBuilder {
             config.setFiles(files);
             config.setTestRunName(finalTestRunName);
 
-            printTestJob(config, cloudSettings, cloudVersion, listener);
-
+            printTestRunConfig(config, cloudSettings, cloudVersion, listener);
             // start the test run itself
             APITestRun testRun = user.startTestRun(config);
-
+            printTestRun(testRun, listener);
             // add the Bitbar Cloud link to the left-hand-side menu in Jenkins
-            BuildBadgeAction cloudLinkAction = new CloudLink(cloudSettings.resolveCloudUiUrl(), testRun.getProjectId(),
-                    testRun.getId(), cloudVersion);
+            BuildBadgeAction cloudLinkAction = new CloudLink(testRun.getUiLink());
             build.addAction(cloudLinkAction);
             RunInCloudEnvInject variable = new RunInCloudEnvInject("CLOUD_LINK", cloudLinkAction.getUrlName());
             build.addAction(variable);
-
-            listener.getLogger().println(String.format("Started new Bitbar Cloud run at: %s (id: %s)",
-                    cloudLinkAction.getUrlName(),
-                    testRun.getId()));
 
             RunInCloudBuilder.semaphore.release();
             releaseDone = true;
@@ -686,19 +680,23 @@ public class RunInCloudBuilder extends AbstractBuilder {
         config.setTestRunParameters(apiTestRunParameters);
     }
 
-    private void printTestJob(
+    private void printTestRunConfig(
             APITestRunConfig config, TestdroidCloudSettings.DescriptorImpl cloudSettings, String cloudVersion,
             TaskListener listener) {
         listener.getLogger().println(TEST_RUN_CONFIGURATION());
         listener.getLogger().println(CLOUD_INFO(cloudSettings.getCloudUrl(), cloudVersion));
         listener.getLogger().println(USER_EMAIL_VALUE(cloudSettings.getEmail()));
-        listener.getLogger().println(PROJECT_INFO(config.getProjectName(), config.getProjectId()));
         listener.getLogger().println(DEVICE_GROUP_INFO(config.getUsedDeviceGroupName(), config.getDeviceGroupId()));
         listener.getLogger().println(OS_TYPE_VALUE(config.getOsType()));
         listener.getLogger().println(FRAMEWORK_INFO(config.getFrameworkId()));
         listener.getLogger().println(LOCALE_VALUE(config.getDeviceLanguageCode()));
         listener.getLogger().println(SCHEDULER_VALUE(config.getScheduler()));
         listener.getLogger().println(TIMEOUT_VALUE(config.getTimeout()));
+    }
+
+    private void printTestRun(APITestRun testRun, TaskListener listener){
+        listener.getLogger().println(TEST_RUN_INFO(testRun.getUiLink(), testRun.getId()));
+        listener.getLogger().println(PROJECT_INFO(testRun.getProjectName(), testRun.getProjectId()));
     }
 
     private String getAbsolutePath(FilePath workspace, String path) throws IOException, InterruptedException {
