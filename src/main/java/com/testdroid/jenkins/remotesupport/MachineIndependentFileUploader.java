@@ -4,6 +4,7 @@ import com.testdroid.api.model.APIUser;
 import com.testdroid.jenkins.Messages;
 import com.testdroid.jenkins.TestdroidCloudSettings;
 import com.testdroid.jenkins.utils.TestdroidApiUtil;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.FilePath;
 import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
@@ -41,7 +42,8 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
                     listener.getLogger().println(Messages.ERROR_FILE_NOT_FOUND(file.getAbsolutePath()));
                 }
             } catch (Exception ex) {
-                listener.getLogger().println(Messages.UPLOADING_FILE_ERROR(file.getAbsolutePath(), ex.getStackTrace()));
+                listener.getLogger().println(Messages.UPLOADING_FILE_ERROR(file.getAbsolutePath(), ex));
+                ex.printStackTrace(listener.getLogger());
             }
         return result;
     }

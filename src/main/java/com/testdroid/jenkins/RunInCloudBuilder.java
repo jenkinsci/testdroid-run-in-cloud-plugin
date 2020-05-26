@@ -512,9 +512,10 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
             List<APIFileConfig> files = new ArrayList<>();
 
-            if (isNotBlank(getAppPath())) {
-                final FilePath appFile = new FilePath(launcher.getChannel(), getAbsolutePath(workspace, appPathFinal));
-                listener.getLogger().println(String.format(Messages.UPLOADING_NEW_APPLICATION_S(), appPathFinal));
+            if (isNotBlank(appPathFinal)) {
+                String absolutePath = getAbsolutePath(workspace, appPathFinal);
+                final FilePath appFile = new FilePath(launcher.getChannel(), absolutePath);
+                listener.getLogger().println(String.format(Messages.UPLOADING_NEW_APPLICATION_S(), absolutePath));
                 appFileId = appFile.act(new MachineIndependentFileUploader(cloudSettings, listener));
                 if (appFileId == null) {
                     return false;
@@ -526,8 +527,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
             }
 
             if (isFullTest()) {
-                FilePath testFile = new FilePath(launcher.getChannel(), getAbsolutePath(workspace, testPathFinal));
-                listener.getLogger().println(String.format(Messages.UPLOADING_NEW_INSTRUMENTATION_S(), testPathFinal));
+                String absolutePath = getAbsolutePath(workspace, testPathFinal);
+                FilePath testFile = new FilePath(launcher.getChannel(), absolutePath);
+                listener.getLogger().println(String.format(Messages.UPLOADING_NEW_INSTRUMENTATION_S(), absolutePath));
                 testFileId = testFile.act(new MachineIndependentFileUploader(cloudSettings, listener));
                 if (testFileId == null) {
                     return false;
@@ -537,8 +539,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
             }
 
             if (isDataFile()) {
-                FilePath dataFile = new FilePath(launcher.getChannel(), getAbsolutePath(workspace, dataPathFinal));
-                listener.getLogger().println(String.format(Messages.UPLOADING_DATA_FILE_S(), dataPathFinal));
+                String absolutePath = getAbsolutePath(workspace, dataPathFinal);
+                FilePath dataFile = new FilePath(launcher.getChannel(), absolutePath);
+                listener.getLogger().println(String.format(Messages.UPLOADING_DATA_FILE_S(), absolutePath));
                 dataFileId = dataFile.act(new MachineIndependentFileUploader(cloudSettings, listener));
                 if (dataFileId == null) {
                     return false;

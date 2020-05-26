@@ -51,7 +51,8 @@ public class APIDrivenTestFinishCheckScheduler implements TestRunFinishCheckSche
                 result = true;
             }
         } catch (APIException exc) {
-            listener.getLogger().println(Messages.API_GET_TESTRUN_ERROR(apiTestRun.getId(), exc.getStackTrace()));
+            listener.getLogger().println(Messages.API_GET_TESTRUN_ERROR(apiTestRun.getId(), exc));
+            exc.printStackTrace(listener.getLogger());
             result = true;
         }
         return result;
