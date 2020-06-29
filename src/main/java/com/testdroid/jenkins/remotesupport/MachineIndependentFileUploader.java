@@ -1,10 +1,10 @@
 package com.testdroid.jenkins.remotesupport;
 
 import com.testdroid.api.model.APIUser;
+import com.testdroid.api.model.APIUserFile;
 import com.testdroid.jenkins.Messages;
 import com.testdroid.jenkins.TestdroidCloudSettings;
 import com.testdroid.jenkins.utils.TestdroidApiUtil;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.FilePath;
 import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
@@ -15,7 +15,8 @@ import java.io.File;
 /**
  * Utility for uploading files to the cloud before a run starts
  */
-public class MachineIndependentFileUploader extends MachineIndependentTask implements FilePath.FileCallable<Long> {
+public class MachineIndependentFileUploader extends MachineIndependentTask
+        implements FilePath.FileCallable<APIUserFile> {
 
     private TaskListener listener;
 
@@ -32,19 +33,18 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
     }
 
     @Override
-    public Long invoke(File file, VirtualChannel vc) {
-        Long result = null;
-            try {
-                APIUser user = TestdroidApiUtil.createNewApiClient(this).getUser();
-                if (file.exists()) {
-                    result = user.uploadFile(file).getId();
-                } else {
-                    listener.getLogger().println(Messages.ERROR_FILE_NOT_FOUND(file.getAbsolutePath()));
-                }
-            } catch (Exception ex) {
-                listener.getLogger().println(Messages.UPLOADING_FILE_ERROR(file.getAbsolutePath(), ex));
-                ex.printStackTrace(listener.getLogger());
+    public APIUserFile invoke(File file, VirtualChannel vc) {
+        try {
+            APIUser user = TestdroidApiUtil.createNewApiClient(this).getUser();
+            if (file.exists()) {
+                return user.uploadFile(file);
+            } else {
+                listener.getLogger().println(Messages.ERROR_FILE_NOT_FOUND(file.getAbsolutePath()));
             }
-        return result;
+        } catch (Exception ex) {
+            listener.getLogger().println(Messages.UPLOADING_FILE_ERROR(file.getAbsolutePath(), ex));
+            ex.printStackTrace(listener.getLogger());
+        }
+        return null;
     }
 }

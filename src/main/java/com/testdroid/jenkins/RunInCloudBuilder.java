@@ -81,6 +81,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     private String testRunner;
 
+    private String virusScanTimeout;
+
     private WaitForResultsBlock waitForResultsBlock;
 
     private String withAnnotation;
@@ -113,7 +115,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             String projectId, String appPath, String testPath, String dataPath, String testRunName, String scheduler,
             String testRunner, String deviceGroupId, String language, String screenshotsDirectory,
             String keyValuePairs, String withAnnotation, String withoutAnnotation, String testCasesSelect,
-            String testCasesValue, Boolean failBuildIfThisStepFailed,
+            String testCasesValue, Boolean failBuildIfThisStepFailed, String virusScanTimeout,
             WaitForResultsBlock waitForResultsBlock, String testTimeout, String credentialsId, String cloudUrl,
             String cloudUIUrl, Long frameworkId, APIDevice.OsType osType) {
         this.projectId = projectId;
@@ -132,6 +134,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         this.deviceGroupId = deviceGroupId;
         this.language = language;
         this.failBuildIfThisStepFailed = failBuildIfThisStepFailed;
+        this.virusScanTimeout = virusScanTimeout;
         this.testTimeout = testTimeout;
         this.credentialsId = credentialsId;
         this.cloudUrl = cloudUrl;
@@ -304,6 +307,14 @@ public class RunInCloudBuilder extends AbstractBuilder {
         this.cloudUrl = cloudUrl;
     }
 
+    public String getVirusScanTimeout() {
+        return virusScanTimeout;
+    }
+
+    public void setVirusScanTimeout(String virusScanTimeout) {
+        this.virusScanTimeout = virusScanTimeout;
+    }
+
     public WaitForResultsBlock getWaitForResultsBlock() {
         return waitForResultsBlock;
     }
@@ -379,14 +390,16 @@ public class RunInCloudBuilder extends AbstractBuilder {
      * Perform build step, as required by AbstractBuilder
      */
     @Override
-    public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) {
+    public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener)
+            throws InterruptedException, IOException {
         return completeRun(build, build.getWorkspace(), launcher, listener);
     }
 
     /**
      * Wrapper around runTest to be used elsewhere, and sensibly log steps of the build procedure
      */
-    public boolean completeRun(Run<?, ?> build, FilePath workspace, Launcher launcher, final TaskListener listener) {
+    public boolean completeRun(Run<?, ?> build, FilePath workspace, Launcher launcher, final TaskListener listener)
+            throws InterruptedException, IOException {
         listener.getLogger().println(Messages.RUN_TEST_IN_CLOUD_STARTED());
 
         boolean result = runTest(build, workspace, launcher, listener);
@@ -402,7 +415,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
     /**
      * Actually run tests against Bitbar Cloud, and perhaps wait for results
      */
-    private boolean runTest(Run<?, ?> build, FilePath workspace, Launcher launcher, final TaskListener listener) {
+    private boolean runTest(Run<?, ?> build, FilePath workspace, Launcher launcher, final TaskListener listener)
+            throws InterruptedException, IOException {
         // rewrite paths to take variables into consideration
         String appPathFinal = applyMacro(build, listener, appPath);
         String testPathFinal = applyMacro(build, listener, testPath);
@@ -411,6 +425,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         String testRunnerFinal = applyMacro(build, listener, testRunner);
         String withoutAnnotationFinal = applyMacro(build, listener, withoutAnnotation);
         final String testTimeoutFinal = applyMacro(build, listener, testTimeout);
+        String virusScanTimeoutFinal = applyMacro(build, listener, virusScanTimeout);
 
         // cloudSettings will load the global settings in constructor..!
         TestdroidCloudSettings.DescriptorImpl cloudSettings = new TestdroidCloudSettings.DescriptorImpl();
@@ -506,9 +521,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
             getDescriptor().save();
 
-            Long testFileId;
-            Long dataFileId;
-            Long appFileId;
+            APIUserFile apiAppFile = null;
+            APIUserFile apiTestFile = null;
+            APIUserFile apiDataFile = null;
 
             List<APIFileConfig> files = new ArrayList<>();
 
@@ -516,11 +531,11 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 String absolutePath = getAbsolutePath(workspace, appPathFinal);
                 final FilePath appFile = new FilePath(launcher.getChannel(), absolutePath);
                 listener.getLogger().println(String.format(Messages.UPLOADING_NEW_APPLICATION_S(), absolutePath));
-                appFileId = appFile.act(new MachineIndependentFileUploader(cloudSettings, listener));
-                if (appFileId == null) {
+                apiAppFile = appFile.act(new MachineIndependentFileUploader(cloudSettings, listener));
+                if (apiAppFile == null) {
                     return false;
                 } else {
-                    files.add(new APIFileConfig(appFileId, APIFileConfig.Action.INSTALL));
+                    files.add(new APIFileConfig(apiAppFile.getId(), APIFileConfig.Action.INSTALL));
                 }
             } else {
                 listener.getLogger().println("App path was blank. Using latest app in project.");
@@ -530,11 +545,11 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 String absolutePath = getAbsolutePath(workspace, testPathFinal);
                 FilePath testFile = new FilePath(launcher.getChannel(), absolutePath);
                 listener.getLogger().println(String.format(Messages.UPLOADING_NEW_INSTRUMENTATION_S(), absolutePath));
-                testFileId = testFile.act(new MachineIndependentFileUploader(cloudSettings, listener));
-                if (testFileId == null) {
+                apiTestFile = testFile.act(new MachineIndependentFileUploader(cloudSettings, listener));
+                if (apiTestFile == null) {
                     return false;
                 } else {
-                    files.add(new APIFileConfig(testFileId, APIFileConfig.Action.RUN_TEST));
+                    files.add(new APIFileConfig(apiTestFile.getId(), APIFileConfig.Action.RUN_TEST));
                 }
             }
 
@@ -542,14 +557,16 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 String absolutePath = getAbsolutePath(workspace, dataPathFinal);
                 FilePath dataFile = new FilePath(launcher.getChannel(), absolutePath);
                 listener.getLogger().println(String.format(Messages.UPLOADING_DATA_FILE_S(), absolutePath));
-                dataFileId = dataFile.act(new MachineIndependentFileUploader(cloudSettings, listener));
-                if (dataFileId == null) {
+                apiDataFile = dataFile.act(new MachineIndependentFileUploader(cloudSettings, listener));
+                if (apiDataFile == null) {
                     return false;
                 } else {
-                    files.add(new APIFileConfig(dataFileId, APIFileConfig.Action.COPY_TO_DEVICE));
+                    files.add(new APIFileConfig(apiDataFile.getId(), APIFileConfig.Action.COPY_TO_DEVICE));
                 }
             }
 
+            listener.getLogger().println(Messages.WAITING_FOR_VIRUS_SCAN());
+            waitForVirusScan(virusScanTimeoutFinal, apiAppFile, apiTestFile, apiDataFile);
             listener.getLogger().println(Messages.RUNNING_TESTS());
 
             // run project with proper name set in jenkins if it's set
@@ -582,9 +599,11 @@ public class RunInCloudBuilder extends AbstractBuilder {
         } catch (IOException e) {
             listener.getLogger().println(String.format("%s: %s", Messages.ERROR_CONNECTION(), e.getLocalizedMessage()));
             LOGGER.log(Level.WARNING, Messages.ERROR_CONNECTION(), e);
+            throw e;
         } catch (InterruptedException e) {
             listener.getLogger().println(String.format("%s: %s", Messages.ERROR_TESTDROID(), e.getLocalizedMessage()));
             LOGGER.log(Level.WARNING, Messages.ERROR_TESTDROID(), e);
+            throw e;
         } finally {
             if (!releaseDone) {
                 RunInCloudBuilder.semaphore.release();
@@ -592,6 +611,14 @@ public class RunInCloudBuilder extends AbstractBuilder {
         }
 
         return false;
+    }
+
+    private void waitForVirusScan(String virusScanTimeout, APIUserFile... files)
+            throws APIException, InterruptedException {
+        long timeout = StringUtils.isBlank(virusScanTimeout) ?
+                APIUserFile.VIRUS_SCAN_TIMEOUT_DEFAULT :
+                Long.parseLong(virusScanTimeout);
+        APIUserFile.waitForVirusScans(timeout, files);
     }
 
     @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")

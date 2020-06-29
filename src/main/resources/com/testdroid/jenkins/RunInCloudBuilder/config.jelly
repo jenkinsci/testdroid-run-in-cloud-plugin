@@ -73,6 +73,10 @@
                 <f:textbox name="keyValuePairs" value="${instance.keyValuePairs}"
                            placeholder="For instance: key1:value1;key2:value2"/>
             </f:entry>
+            <f:entry field="virusScanTimeoutField" title="${%Virus scan timeout}">
+                <f:textbox name="virusScanTimeout" value="${instance.virusScanTimeout}"
+                           placeholder="Timeout for virus scanning of uploaded files in ms"/>
+            </f:entry>
             <f:optionalBlock name="waitForResultsBlock"
                              title="${%Wait for test to finish in Bitbar Cloud and download results}"
                              checked="${instance.waitForResultsBlock != null}">

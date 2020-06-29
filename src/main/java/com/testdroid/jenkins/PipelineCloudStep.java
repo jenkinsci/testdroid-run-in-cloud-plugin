@@ -14,6 +14,8 @@ import org.jenkinsci.plugins.workflow.steps.StepContextParameter;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
+import java.io.IOException;
+
 import static com.testdroid.jenkins.RunInCloudDescriptorHelper.*;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -49,6 +51,7 @@ public class PipelineCloudStep extends AbstractStepImpl {
     private String testCasesValue;
     private String testRunName;
     private String testRunner;
+    private String virusScanTimeout;
     private String withAnnotation;
     private String withoutAnnotation;
     private String testTimeout;
@@ -207,6 +210,15 @@ public class PipelineCloudStep extends AbstractStepImpl {
         this.waitForResultsBlock = waitForResultsBlock;
     }
 
+    @DataBoundSetter
+    public void setVirusScanTimeout(String virusScanTimeout) {
+        this.virusScanTimeout = virusScanTimeout;
+    }
+
+    public String getVirusScanTimeout() {
+        return virusScanTimeout;
+    }
+
     public WaitForResultsBlock getWaitForResultsBlock() {
         return waitForResultsBlock;
     }
@@ -337,7 +349,7 @@ public class PipelineCloudStep extends AbstractStepImpl {
         private transient FilePath workspace;
 
         @Override
-        protected Boolean run() {
+        protected Boolean run() throws IOException, InterruptedException {
             RunInCloudBuilder builder = new RunInCloudBuilder(
                     step.getProjectId(),
                     step.getAppPath(),
@@ -355,6 +367,7 @@ public class PipelineCloudStep extends AbstractStepImpl {
                     step.getTestCasesSelect(),
                     step.getTestCasesValue(),
                     step.isFailBuildIfThisStepFailed(),
+                    step.getVirusScanTimeout(),
                     step.getWaitForResultsBlock(),
                     step.getTestTimeout(),
                     step.getCredentialsId(),
