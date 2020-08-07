@@ -44,7 +44,7 @@
                         <f:textbox name="proxyUser" value="${descriptor.getProxyUser()}"/>
                     </f:entry>
                     <f:entry field="proxyPasswordField" title="${%Proxy password}">
-                        <f:textbox name="proxyPassword" value="${descriptor.getProxyPassword()}"/>
+                        <f:password name="proxyPassword" value="${descriptor.getProxyPassword()}"/>
                     </f:entry>
                 </f:optionalBlock>
             </f:block>
