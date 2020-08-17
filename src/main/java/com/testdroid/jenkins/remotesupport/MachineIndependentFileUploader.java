@@ -1,7 +1,6 @@
 package com.testdroid.jenkins.remotesupport;
 
 import com.testdroid.api.model.APIUser;
-import com.testdroid.api.model.APIUserFile;
 import com.testdroid.jenkins.Messages;
 import com.testdroid.jenkins.TestdroidCloudSettings;
 import com.testdroid.jenkins.utils.TestdroidApiUtil;
@@ -15,8 +14,7 @@ import java.io.File;
 /**
  * Utility for uploading files to the cloud before a run starts
  */
-public class MachineIndependentFileUploader extends MachineIndependentTask
-        implements FilePath.FileCallable<APIUserFile> {
+public class MachineIndependentFileUploader extends MachineIndependentTask implements FilePath.FileCallable<Long> {
 
     private TaskListener listener;
 
@@ -33,11 +31,12 @@ public class MachineIndependentFileUploader extends MachineIndependentTask
     }
 
     @Override
-    public APIUserFile invoke(File file, VirtualChannel vc) {
+    public Long invoke(File file, VirtualChannel vc) {
+        Long result = null;
         try {
             APIUser user = TestdroidApiUtil.createNewApiClient(this).getUser();
             if (file.exists()) {
-                return user.uploadFile(file);
+                result = user.uploadFile(file).getId();
             } else {
                 listener.getLogger().println(Messages.ERROR_FILE_NOT_FOUND(file.getAbsolutePath()));
             }
@@ -45,6 +44,6 @@ public class MachineIndependentFileUploader extends MachineIndependentTask
             listener.getLogger().println(Messages.UPLOADING_FILE_ERROR(file.getAbsolutePath(), ex));
             ex.printStackTrace(listener.getLogger());
         }
-        return null;
+        return result;
     }
 }
