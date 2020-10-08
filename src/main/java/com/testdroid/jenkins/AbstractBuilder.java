@@ -27,10 +27,14 @@ public class AbstractBuilder extends Builder {
                 envVars.putAll(((AbstractBuild) build).getBuildVariables());
                 return Util.replaceMacro(macro, envVars);
             } catch (IOException | InterruptedException e) {
-                LOGGER.log(Level.SEVERE, "Failed to apply macro " + macro, e);
+                LOGGER.log(Level.SEVERE, "Failed to apply macro " + safe(macro), e);
             }
         }
 
         return macro;
+    }
+
+    private static String safe(String value){
+        return value.replaceAll("[\\n\\r]", "_");
     }
 }
