@@ -1,0 +1,63 @@
+properties(
+        [
+                buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '50', numToKeepStr: '50')),
+                disableConcurrentBuilds(),
+                pipelineTriggers([pollSCM("@hourly")]),
+        ]
+)
+
+node('docker && linux') {
+    try {
+        stage('checkout') {
+            git branch: 'master', url: 'https://github.com/jenkinsci/testdroid-run-in-cloud-plugin.git'
+        }
+        stage('build') {
+            build("master-${env.BUILD_ID}", "veracode-scan")
+        }
+        stage('static analyse') {
+            staticAnalyse()
+        }
+    } finally {
+        stage('notification') {
+            notification()
+        }
+    }
+}
+
+def build(uniquePrefix, profile) {
+    wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'XTerm']) {
+        def containerName = uniquePrefix + profile + '-mvn'
+        sh("""
+                docker run -i --rm --name $containerName \
+                -v \"\$(pwd)\":/usr/src/ric \
+                -v /home/testdroid/.m2:/root/.m2 \
+                -w /usr/src/ric maven:3.5-jdk-8 \
+                mvn clean package -DskipTests \
+                -Dmaven.color=true \
+        """)
+    }
+}
+
+def staticAnalyse() {
+    withCredentials([usernamePassword(credentialsId: 'veracode-api-credentials', usernameVariable: 'id', passwordVariable: 'secretKey')])
+            {
+                veracode(
+                        applicationName: 'BitbarCloud RiC',
+                        canFailJob: true,
+                        debug: true,
+                        scanName: '$buildnumber',
+                        teams: 'bitbar',
+                        uploadIncludesPattern: '**/testdroid-run-in-cloud-*.jar',
+                        vid: id,
+                        vkey: secretKey,
+                        waitForScan: true,
+                        timeout: '60'
+                )
+            }
+}
+
+def notification() {
+    def text = "Scan <${env.BUILD_URL}|${env.JOB_NAME}[${env.BUILD_NUMBER}]>\n Finished with result ${currentBuild.currentResult}"
+    colorCode = currentBuild.currentResult == 'SUCCESS' ? '#00FF00' : '#FF0000'
+    slackSend color: colorCode, teamDomain: 'smartbear', channel: "sdc-security", message: text, tokenCredentialId: 'SLACK_BACKEND_INTEGRATION_TOKEN'
+}
