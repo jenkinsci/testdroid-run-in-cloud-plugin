@@ -10,11 +10,12 @@ import hudson.util.FormValidation;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.verb.POST;
 
+import javax.annotation.Nonnull;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -80,6 +81,7 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
             this.proxyUser = task.proxyUser;
         }
 
+        @Nonnull
         @Override
         public String getDisplayName() {
             return Messages.PLUGIN_NAME();
@@ -107,7 +109,7 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
                 @QueryParameter boolean noCheckCertificate,
                 @QueryParameter boolean isProxy, @QueryParameter String proxyHost, @QueryParameter Integer proxyPort,
                 @QueryParameter String proxyUser, @QueryParameter String proxyPassword) {
-            Jenkins.getInstance().checkPermission(Jenkins.ADMINISTER);
+            Objects.requireNonNull(Jenkins.getInstanceOrNull()).checkPermission(Jenkins.ADMINISTER);
             this.email = email;
             this.password = password;
             this.cloudUrl = cloudUrl;

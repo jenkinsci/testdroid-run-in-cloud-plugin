@@ -6,7 +6,7 @@ import com.testdroid.jenkins.TestdroidCloudSettings;
 import com.testdroid.jenkins.remotesupport.MachineIndependentTask;
 import hudson.Extension;
 import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
 
 @Extension
