@@ -6,13 +6,19 @@ properties(
         ]
 )
 
+veracodeApplicationName="BitBar Cloud RiC"
+artifactPattern="**/testdroid-run-in-cloud-*.jar"
+repo='git@github.com:jenkinsci/testdroid-run-in-cloud-plugin.git'
+branch='master'
+githubCredentialsId='bitbar-dev-ssh'
+
 node('docker && linux') {
     try {
         stage('checkout') {
-            git branch: 'master', url: 'https://github.com/jenkinsci/testdroid-run-in-cloud-plugin.git'
+            git branch: branch, url: repo, credentialsId: githubCredentialsId
         }
         stage('build') {
-            build("master-${env.BUILD_ID}", "veracode-scan")
+            build("$branch-${env.BUILD_ID}", "veracode-scan")
         }
         stage('static analyse') {
             staticAnalyse()
@@ -29,9 +35,9 @@ def build(uniquePrefix, profile) {
         def containerName = uniquePrefix + profile + '-mvn'
         sh("""
                 docker run -i --rm --name $containerName \
-                -v \"\$(pwd)\":/usr/src/ric \
+                -v \"\$(pwd)\":/usr/src/app \
                 -v /home/testdroid/.m2:/root/.m2 \
-                -w /usr/src/ric maven:3.5-jdk-8 \
+                -w /usr/src/app maven:3.6.3-jdk-8 \
                 mvn clean package -DskipTests \
                 -Dmaven.color=true \
         """)
@@ -42,12 +48,12 @@ def staticAnalyse() {
     withCredentials([usernamePassword(credentialsId: 'veracode-api-credentials', usernameVariable: 'id', passwordVariable: 'secretKey')])
             {
                 veracode(
-                        applicationName: 'BitbarCloud RiC',
+                        applicationName: veracodeApplicationName,
                         canFailJob: true,
                         debug: true,
                         scanName: '$buildnumber',
                         teams: 'bitbar',
-                        uploadIncludesPattern: '**/testdroid-run-in-cloud-*.jar',
+                        uploadIncludesPattern: artifactPattern,
                         vid: id,
                         vkey: secretKey,
                         waitForScan: true,
@@ -59,5 +65,6 @@ def staticAnalyse() {
 def notification() {
     def text = "Scan <${env.BUILD_URL}|${env.JOB_NAME}[${env.BUILD_NUMBER}]>\n Finished with result ${currentBuild.currentResult}"
     colorCode = currentBuild.currentResult == 'SUCCESS' ? '#00FF00' : '#FF0000'
-    slackSend color: colorCode, teamDomain: 'smartbear', channel: "sdc-security", message: text, tokenCredentialId: 'SLACK_BACKEND_INTEGRATION_TOKEN'
+    slackSend color: colorCode, teamDomain: 'smartbear', channel: "bitbar-backend", message: text, tokenCredentialId: 'SLACK_BACKEND_INTEGRATION_TOKEN'
 }
+
