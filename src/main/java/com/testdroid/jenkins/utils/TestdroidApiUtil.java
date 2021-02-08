@@ -38,7 +38,7 @@ public class TestdroidApiUtil {
     public static ApiClientAdapter createNewApiClient(MachineIndependentTask machineIndependentTask) {
         APIClient apiClient;
 
-	    if (machineIndependentTask.password != null && !machineIndependentTask.password.isEmpty()) {
+	    if (StringUtils.isNotEmpty(machineIndependentTask.password)) {
             // If the password is set, try username and password authentication
 	        if (machineIndependentTask.isProxy) {
 	            HttpHost proxy = machineIndependentTask.proxyPort != null ?
@@ -63,7 +63,7 @@ public class TestdroidApiUtil {
 	                    machineIndependentTask.password,
 	                    machineIndependentTask.noCheckCertificate);
 	        } 
-	    } else {
+        } else {
             // Try the username as an apikey
 	        if (machineIndependentTask.isProxy) {
 	            HttpHost proxy = machineIndependentTask.proxyPort != null ?
@@ -98,7 +98,7 @@ public class TestdroidApiUtil {
         boolean dontCheckCert = settings.getNoCheckCertificate();
         APIClient apiClient;
 
-	    if (password != null && !password.isEmpty()) {
+	    if (StringUtils.isNotEmpty(password)) {
             // If the password is set, try username and password authentication
 	        if (settings.getIsProxy()) {
 	            HttpHost proxy = settings.getProxyPort() != null ?
@@ -112,7 +112,7 @@ public class TestdroidApiUtil {
 	        } else {
 	            apiClient = new DefaultAPIClient(cloudURL, email, password, dontCheckCert);
 	        }
-	    } else {
+        } else {
             // Try the username as an apikey
             if (settings.getIsProxy()) {
 	            HttpHost proxy = settings.getProxyPort() != null ?
