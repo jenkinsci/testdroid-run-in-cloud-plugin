@@ -44,3 +44,18 @@ Bitbar Cloud sends post message to the specified URL when test run is finished. 
 **Note!**  This requires your HOOK URL is reachable from Internet e.g. Jenkins instance can be reached from Bitbar Cloud.
 
 In addition to hook URL, you can set up specific folder where results and data will be stored, timeout for finalization message (timeout for results) as well as if you want to include screenshots and other graphical data from your test runs.
+
+### Release
+
+1) Make sure git `origin` points to `git@github.com:jenkinsci/testdroid-run-in-cloud-plugin.git`
+2) Maven `settings.xml` should contains
+```
+    <servers>
+        <server>
+            <id>maven.jenkins-ci.org</id>
+            <username>bitbar</username>
+            <password>*********</password>
+        </server>
+    </servers>
+```
+3) To release Perform `mvn release:prepare release:perform`
