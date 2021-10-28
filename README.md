@@ -48,7 +48,7 @@ In addition to hook URL, you can set up specific folder where results and data w
 ### Release
 
 1) Make sure git `origin` points to `git@github.com:jenkinsci/testdroid-run-in-cloud-plugin.git`
-2) Maven `settings.xml` should contains
+2) Maven `settings.xml` should contain
 ```
     <servers>
         <server>
@@ -58,4 +58,4 @@ In addition to hook URL, you can set up specific folder where results and data w
         </server>
     </servers>
 ```
-3) To release Perform `mvn release:prepare release:perform`
+3) To release execute `mvn release:prepare release:perform`
