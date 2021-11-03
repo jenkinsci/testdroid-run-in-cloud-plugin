@@ -31,7 +31,7 @@
         <jdk.version>11</jdk.version>
         <java.level>11</java.level>
     </properties>
-    <url>https://wiki.jenkins.io/display/JENKINS/Bitbar+Run+In+Cloud+Plugin</url>
+    <url>https://github.com/jenkinsci/testdroid-run-in-cloud-plugin</url>
     <scm>
         <connection>scm:git:git@github.com:jenkinsci/testdroid-run-in-cloud-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:jenkinsci/testdroid-run-in-cloud-plugin.git</developerConnection>
