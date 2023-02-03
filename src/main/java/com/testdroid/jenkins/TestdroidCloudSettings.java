@@ -1,12 +1,16 @@
 package com.testdroid.jenkins;
 
+import com.cloudbees.plugins.credentials.CredentialsNameProvider;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.testdroid.api.APIException;
 import com.testdroid.jenkins.remotesupport.MachineIndependentTask;
 import com.testdroid.jenkins.utils.TestdroidApiUtil;
 import hudson.Extension;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
+import hudson.security.ACL;
 import hudson.util.FormValidation;
+import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
@@ -16,9 +20,12 @@ import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.verb.POST;
 
 import javax.annotation.Nonnull;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 public class TestdroidCloudSettings implements Describable<TestdroidCloudSettings> {
 
@@ -36,11 +43,7 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
 
         String cloudUrl;
 
-        String newCloudUrl;
-
-        String email;
-
-        String password;
+        String credentialsId;
 
         boolean isProxy;
 
@@ -59,20 +62,13 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
             load();
         }
 
-        DescriptorImpl(String email, String password) {
-            this();
-            this.email = email;
-            this.password = password;
-        }
-
         /**
          * Recreate a CloudSettings object from a serialized task.
          * Note: this is not a full set of params, which is ok... mostly
          */
         public DescriptorImpl(MachineIndependentTask task) {
             this.cloudUrl = task.cloudUrl;
-            this.email = task.user;
-            this.password = task.password;
+            this.credentialsId = task.credentialsId;
             this.isProxy = task.isProxy;
             this.noCheckCertificate = task.noCheckCertificate;
             this.proxyHost = task.proxyHost;
@@ -89,9 +85,8 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
 
         @Override
         public void save() {
-            this.password = Secret.fromString(this.password).getEncryptedValue();
             this.proxyPassword = Secret.fromString(this.proxyPassword).getEncryptedValue();
-            TestdroidApiUtil.createGlobalApiClient(this);
+            TestdroidApiUtil.refreshApiClient(this);
             super.save();
         }
 
@@ -105,13 +100,12 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
 
         @POST
         public FormValidation doAuthorize(
-                @QueryParameter String email, @QueryParameter String password, @QueryParameter String cloudUrl,
+                @QueryParameter String credentialsId, @QueryParameter String cloudUrl,
                 @QueryParameter boolean noCheckCertificate,
                 @QueryParameter boolean isProxy, @QueryParameter String proxyHost, @QueryParameter Integer proxyPort,
                 @QueryParameter String proxyUser, @QueryParameter String proxyPassword) {
             Objects.requireNonNull(Jenkins.getInstanceOrNull()).checkPermission(Jenkins.ADMINISTER);
-            this.email = email;
-            this.password = password;
+            this.credentialsId = credentialsId;
             this.cloudUrl = cloudUrl;
             this.noCheckCertificate = noCheckCertificate;
             this.isProxy = isProxy;
@@ -125,11 +119,20 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
                 save();
                 return FormValidation.ok(Messages.AUTHORIZATION_OK());
             } catch (APIException e) {
-                this.password = null;
                 load();
                 LOGGER.log(Level.WARNING, Messages.ERROR_API());
                 return FormValidation.error(e.getLocalizedMessage());
             }
+        }
+
+        public ListBoxModel doFillCredentialsIdItems() {
+            ListBoxModel credentials = new ListBoxModel();
+            credentials.add(new ListBoxModel.Option(EMPTY, EMPTY));
+
+            CredentialsProvider
+                    .lookupCredentials(BitbarApiKey.class, Jenkins.get(), ACL.SYSTEM, Collections.emptyList())
+                    .forEach(c -> credentials.add(CredentialsNameProvider.name(c), c.getId()));
+            return credentials;
         }
 
         @Override
@@ -144,9 +147,7 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
             return isProxy == that.isProxy &&
                     noCheckCertificate == that.noCheckCertificate &&
                     Objects.equals(cloudUrl, that.cloudUrl) &&
-                    Objects.equals(newCloudUrl, that.newCloudUrl) &&
-                    Objects.equals(email, that.email) &&
-                    Objects.equals(password, that.password) &&
+                    Objects.equals(credentialsId, that.credentialsId) &&
                     Objects.equals(proxyHost, that.proxyHost) &&
                     Objects.equals(proxyPassword, that.proxyPassword) &&
                     Objects.equals(proxyPort, that.proxyPort) &&
@@ -155,41 +156,8 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
 
         @Override
         public int hashCode() {
-            return Objects
-                    .hash(cloudUrl, newCloudUrl, email, password, isProxy, noCheckCertificate, proxyHost,
+            return Objects.hash(cloudUrl, credentialsId, isProxy, noCheckCertificate, proxyHost,
                             proxyPassword, proxyPort, proxyUser);
-        }
-
-        public String getEmail() {
-            return email;
-        }
-
-
-        public void setEmail(String email) {
-            this.email = email;
-        }
-
-        /**
-         * Returns password in decrypted form
-         */
-
-        public String getPassword() {
-            return Secret.fromString(this.password).getPlainText();
-        }
-
-
-        public void setPassword(String password) {
-            this.password = password;
-        }
-
-        /**
-         * Get the cloud URL that should be used by this config.
-         */
-        public String resolveCloudUiUrl() {
-            if (StringUtils.isNotBlank(newCloudUrl)) {
-                return newCloudUrl;
-            }
-            return cloudUrl;
         }
 
         public String getCloudUrl() {
@@ -201,14 +169,6 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
 
         public void setCloudUrl(String cloudUrl) {
             this.cloudUrl = cloudUrl;
-        }
-
-        public String getNewCloudUrl() {
-            return newCloudUrl;
-        }
-
-        public void setNewCloudUrl(String newCloudUrl) {
-            this.newCloudUrl = newCloudUrl;
         }
 
 
@@ -273,5 +233,12 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
             this.proxyPassword = proxyPassword;
         }
 
+        public String getCredentialsId() {
+            return credentialsId;
+        }
+
+        public void setCredentialsId(String credentialsId) {
+            this.credentialsId = credentialsId;
+        }
     }
 }

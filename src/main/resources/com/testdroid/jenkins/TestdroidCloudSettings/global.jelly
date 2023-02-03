@@ -7,19 +7,11 @@
         <f:entry
                 field="authorize"/>
         <f:block>
-            <f:entry
-                    title="${%Email}">
-                <f:textbox name="email" value="${descriptor.getEmail()}"/>
-            </f:entry>
-            <f:entry
-                    title="${%Password}">
-                <f:password name="password" value="${descriptor.getPassword()}"/>
+            <f:entry field="credentialsId" title="${%Credentials}">
+                <f:select/>
             </f:entry>
             <f:entry field="cloud" title="${%Bitbar Cloud URL}">
                 <f:textbox name="cloudUrl" value="${descriptor.getCloudUrl()}"/>
-            </f:entry>
-            <f:entry field="cloudNewUI" title="${%Bitbar Cloud UI URL}">
-                <f:textbox name="newCloudUrl" value="${descriptor.getNewCloudUrl()}"/>
             </f:entry>
             <f:entry title="${%Accept self-signed certificates}">
                 <f:checkbox name="noCheckCertificate" checked="${descriptor.getNoCheckCertificate()}"/>
@@ -53,7 +45,7 @@
                     title="${%Authorize &amp; Save}"
                     progress="${%Authorizing...}"
                     method="authorize"
-                    with="email,password,userManagementUrl,cloudUrl,noCheckCertificate,isProxy,proxyHost,proxyPort,proxyUser,proxyPassword"/>
+                    with="credentialsId,cloudUrl,noCheckCertificate,isProxy,proxyHost,proxyPort,proxyUser,proxyPassword"/>
         </f:block>
     </f:section>
 </j:jelly>

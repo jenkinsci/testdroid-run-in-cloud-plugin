@@ -7,7 +7,6 @@ import com.testdroid.api.filter.FilterEntry;
 import com.testdroid.api.model.*;
 import com.testdroid.jenkins.model.TestRunStateCheckMethod;
 import com.testdroid.jenkins.utils.AndroidLocale;
-import com.testdroid.jenkins.utils.ApiClientAdapter;
 import com.testdroid.jenkins.utils.LocaleUtil;
 import com.testdroid.jenkins.utils.TestdroidApiUtil;
 import hudson.util.FormValidation;
@@ -30,7 +29,6 @@ import static com.testdroid.api.filter.FilterEntry.trueFilterEntry;
 import static com.testdroid.api.model.APIDevice.OsType.UNDEFINED;
 import static com.testdroid.jenkins.Messages.DEFINE_FRAMEWORK;
 import static com.testdroid.jenkins.Messages.DEFINE_OS_TYPE;
-import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.lang.Integer.MAX_VALUE;
 import static java.util.Locale.US;
@@ -50,11 +48,6 @@ public interface RunInCloudDescriptorHelper {
 
     default boolean isAuthenticated() {
         return TestdroidApiUtil.getGlobalApiClient().isAuthenticated();
-    }
-
-    //Do not remove, is used in config.jelly
-    default boolean isPaidUser() {
-        return isAuthenticated() && ApiClientAdapter.isPaidUser(TestdroidApiUtil.getGlobalApiClient().getUser());
     }
 
     default ListBoxModel doFillProjectIdItems() {
