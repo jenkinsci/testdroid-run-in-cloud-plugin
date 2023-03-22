@@ -1,12 +1,13 @@
-package com.testdroid.jenkins.utils;
+package com.testdroid.jenkins.auth;
 
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.testdroid.api.APIClient;
 import com.testdroid.api.APIKeyClient;
-import com.testdroid.jenkins.BitbarApiKey;
+import com.testdroid.api.DefaultAPIClient;
 import com.testdroid.jenkins.TestdroidCloudSettings;
 import com.testdroid.jenkins.remotesupport.MachineIndependentTask;
+import com.testdroid.jenkins.utils.ApiClientAdapter;
 import hudson.Extension;
 import hudson.security.ACL;
 import jenkins.model.Jenkins;
@@ -16,8 +17,6 @@ import org.apache.http.HttpHost;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-
-import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 @Extension
 public class TestdroidApiUtil {
@@ -52,30 +51,40 @@ public class TestdroidApiUtil {
 
     private static ApiClientAdapter createAdapter(String cloudURL, String credentialsId, Boolean skipCertCheck,
             Boolean isProxy, String proxyHost, Integer proxyPort, String proxyUser, String proxyPassword) {
-        String apiKey = getApiKey(credentialsId);
+        BitbarCredentials credentials = getCredentials(credentialsId);
         APIClient apiClient;
-        if (isProxy) {
+        if (Boolean.TRUE.equals(isProxy)) {
             HttpHost proxy = proxyPort != null
                     ? new HttpHost(proxyHost, proxyPort, "http")
                     : new HttpHost(proxyHost);
-
-            apiClient = StringUtils.isBlank(proxyUser)
-                    ? new APIKeyClient(cloudURL, apiKey, skipCertCheck)
-                    : new APIKeyClient(cloudURL, apiKey, proxy, proxyUser, proxyPassword, skipCertCheck);
+            if (StringUtils.isNotBlank(proxyUser)) {
+                apiClient = credentials.usesApiKey() ?
+                        new APIKeyClient(cloudURL, credentials.getApiKey().getPlainText(),
+                                proxy, proxyUser, proxyPassword, skipCertCheck) :
+                        new DefaultAPIClient(cloudURL, credentials.getEmail(), credentials.getPassword().getPlainText(),
+                                proxy, proxyUser, proxyPassword, skipCertCheck);
+            } else {
+                apiClient = credentials.usesApiKey() ?
+                        new APIKeyClient(cloudURL, credentials.getApiKey().getPlainText(), proxy, skipCertCheck) :
+                        new DefaultAPIClient(cloudURL, credentials.getEmail(), credentials.getPassword().getPlainText(),
+                                proxy, skipCertCheck);
+            }
         } else {
-            apiClient = new APIKeyClient(cloudURL, apiKey, skipCertCheck);
+            apiClient = credentials.usesApiKey() ?
+                    new APIKeyClient(cloudURL, credentials.getApiKey().getPlainText(), skipCertCheck) :
+                    new DefaultAPIClient(cloudURL, credentials.getEmail(), credentials.getPassword().getPlainText());
         }
         return new ApiClientAdapter(apiClient);
     }
 
-    private static String getApiKey(String credentialsId) {
+    private static BitbarCredentials getCredentials(String credentialsId) {
         if (credentialsId == null) {
-            return EMPTY;
+            return BitbarCredentials.EMPTY;
         }
-        List<BitbarApiKey> credentialsList = CredentialsProvider.lookupCredentials(
-                BitbarApiKey.class, Jenkins.get(), ACL.SYSTEM, Collections.emptyList());
+        List<IBitbarCredentials> credentialsList = CredentialsProvider.lookupCredentials(
+                IBitbarCredentials.class, Jenkins.get(), ACL.SYSTEM, Collections.emptyList());
         return Optional.ofNullable(
                 CredentialsMatchers.firstOrNull(credentialsList, CredentialsMatchers.withId(credentialsId)))
-                .map(c -> c.getApiKey().getPlainText()).orElse(EMPTY);
+                .map(IBitbarCredentials::getCredentials).orElse(BitbarCredentials.EMPTY);
     }
 }

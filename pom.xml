@@ -9,7 +9,7 @@
 
     <groupId>testdroid</groupId>
     <artifactId>testdroid-run-in-cloud</artifactId>
-    <version>3.13-SNAPSHOT</version>
+    <version>3.16-SNAPSHOT</version>
     <packaging>hpi</packaging>
     <name>Bitbar Run-in-Cloud Plugin</name>
 
@@ -27,7 +27,7 @@
         <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
         <guava.version>31.1-jre</guava.version>
         <intranet.repo>http://nexus/content/repositories</intranet.repo>
-        <testdroid.api.version>3.13</testdroid.api.version>
+        <testdroid.api.version>3.16</testdroid.api.version>
         <jdk.version>11</jdk.version>
         <java.level>11</java.level>
     </properties>

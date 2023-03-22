@@ -4,13 +4,14 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.testdroid.api.APIException;
 import com.testdroid.api.model.*;
 import com.testdroid.api.model.APITestRunConfig.Scheduler;
+import com.testdroid.jenkins.auth.IBitbarCredentials;
+import com.testdroid.jenkins.auth.TestdroidApiUtil;
 import com.testdroid.jenkins.remotesupport.MachineIndependentFileUploader;
 import com.testdroid.jenkins.remotesupport.MachineIndependentResultsDownloader;
 import com.testdroid.jenkins.scheduler.TestRunFinishCheckScheduler;
 import com.testdroid.jenkins.scheduler.TestRunFinishCheckSchedulerFactory;
 import com.testdroid.jenkins.utils.ApiClientAdapter;
 import com.testdroid.jenkins.utils.LocaleUtil;
-import com.testdroid.jenkins.utils.TestdroidApiUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.FilePath;
@@ -423,8 +424,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
         // override default cloud settings if credentials/cloud URL specified on build level
         if (isNotBlank(getCredentialsId())) {
-            BitbarApiKey credentials = CredentialsProvider.findCredentialById(
-                    getCredentialsId(), BitbarApiKey.class, build, Collections.emptyList());
+            IBitbarCredentials credentials = CredentialsProvider.findCredentialById(
+                    getCredentialsId(), IBitbarCredentials.class, build, Collections.emptyList());
 
             if (credentials != null) {
                 listener.getLogger().println(Messages.BUILD_STEP_USING_CREDENTIALS());

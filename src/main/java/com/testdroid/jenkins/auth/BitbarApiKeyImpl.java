@@ -1,7 +1,8 @@
-package com.testdroid.jenkins;
+package com.testdroid.jenkins.auth;
 
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
+import com.testdroid.jenkins.Messages;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.util.Secret;
@@ -20,6 +21,11 @@ public final class BitbarApiKeyImpl extends BaseStandardCredentials implements B
     @Override
     public Secret getApiKey() {
         return apiKey;
+    }
+
+    @Override
+    public BitbarCredentials getCredentials() {
+        return new BitbarCredentials(apiKey);
     }
 
     @Extension

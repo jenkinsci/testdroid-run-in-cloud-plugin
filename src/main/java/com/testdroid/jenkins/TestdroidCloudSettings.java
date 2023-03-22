@@ -3,8 +3,9 @@ package com.testdroid.jenkins;
 import com.cloudbees.plugins.credentials.CredentialsNameProvider;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.testdroid.api.APIException;
+import com.testdroid.jenkins.auth.IBitbarCredentials;
+import com.testdroid.jenkins.auth.TestdroidApiUtil;
 import com.testdroid.jenkins.remotesupport.MachineIndependentTask;
-import com.testdroid.jenkins.utils.TestdroidApiUtil;
 import hudson.Extension;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
@@ -130,7 +131,7 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
             credentials.add(new ListBoxModel.Option(EMPTY, EMPTY));
 
             CredentialsProvider
-                    .lookupCredentials(BitbarApiKey.class, Jenkins.get(), ACL.SYSTEM, Collections.emptyList())
+                    .lookupCredentials(IBitbarCredentials.class, Jenkins.get(), ACL.SYSTEM, Collections.emptyList())
                     .forEach(c -> credentials.add(CredentialsNameProvider.name(c), c.getId()));
             return credentials;
         }
