@@ -3,13 +3,13 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>3.56</version>
+        <version>4.47</version>
         <relativePath />
     </parent>
 
     <groupId>testdroid</groupId>
     <artifactId>testdroid-run-in-cloud</artifactId>
-    <version>2.135.0-SNAPSHOT</version>
+    <version>3.16-SNAPSHOT</version>
     <packaging>hpi</packaging>
     <name>Bitbar Run-in-Cloud Plugin</name>
 
@@ -25,11 +25,11 @@
         <maven-release-plugin.version>2.5.3</maven-release-plugin.version>
         <maven-javadoc-plugin.version>3.0.0</maven-javadoc-plugin.version>
         <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
-        <guava.version>31.0.1-jre</guava.version>
+        <guava.version>31.1-jre</guava.version>
         <intranet.repo>http://nexus/content/repositories</intranet.repo>
-        <testdroid.api.version>2.134.1</testdroid.api.version>
-        <jdk.version>1.8</jdk.version>
-        <java.level>8</java.level>
+        <testdroid.api.version>3.16</testdroid.api.version>
+        <jdk.version>11</jdk.version>
+        <java.level>11</java.level>
     </properties>
     <url>https://wiki.jenkins.io/display/JENKINS/Bitbar+Run+In+Cloud+Plugin</url>
     <scm>
@@ -93,7 +93,8 @@
                 <configuration>
                     <!-- we dont want google guava from hudson/jenkins core! -->
                     <maskClasses>com.google.common.</maskClasses>
-                    <minimumJavaVersion>1.8</minimumJavaVersion>
+                    <disabledTestInjection>true</disabledTestInjection>
+                    <minimumJavaVersion>11</minimumJavaVersion>
                 </configuration>
             </plugin>
             <plugin>
@@ -152,9 +153,9 @@
             <artifactId>commons-collections4</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpcore</artifactId>
-            <version>4.4.14</version>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.11.0</version>
         </dependency>
     </dependencies>
     <dependencyManagement>

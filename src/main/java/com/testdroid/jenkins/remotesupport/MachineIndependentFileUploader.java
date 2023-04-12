@@ -3,7 +3,7 @@ package com.testdroid.jenkins.remotesupport;
 import com.testdroid.api.model.APIUser;
 import com.testdroid.jenkins.Messages;
 import com.testdroid.jenkins.TestdroidCloudSettings;
-import com.testdroid.jenkins.utils.TestdroidApiUtil;
+import com.testdroid.jenkins.auth.TestdroidApiUtil;
 import hudson.FilePath;
 import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;

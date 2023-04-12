@@ -23,7 +23,12 @@ Once you have Jenkins properly installed, download the Bitbar Run-in-Cloud Plugi
 
 Click **Advanced -> Upload Plugin** to install recently downloaded Bitbar Run-in-Cloud Plugin. After you've installed this plugin, restart Jenkins and get back to start the configuration of this plugin. The plugin adds a new build step that can be used in any Jenkins job to launch builds in Bitbar Cloud and/or Bitbar Private Cloud.
 
-Click **Manage Jenkins -> Configure System** (on top of that list) and you'll find a Bitbar Cloud section where you can enter your login credentials (email and password) and then press **Authorize** button to validate your account details and access.
+Setup your global API key credentials using Jenkins Credentials Plugin. You can do that by clicking 
+**Manage Jenkins -> Manage Credentials -> Jenkins(store) -> Global credentials -> Add Credentials**.
+
+Click **Manage Jenkins -> Configure System** (on top of that list) and you'll find a Bitbar Cloud section where you can 
+choose created credentials and/or change BitBar environment address.
+Press **Authorize** button to validate your account details and access.
 
 ### Run-in-Cloud - Build Step(s) for Android and iOS
 

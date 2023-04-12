@@ -57,7 +57,6 @@ public class PipelineCloudStep extends AbstractStepImpl {
     private String testTimeout;
     private String credentialsId;
     private String cloudUrl;
-    private String cloudUIUrl;
     private Long frameworkId;
     private APIDevice.OsType osType;
 
@@ -186,11 +185,6 @@ public class PipelineCloudStep extends AbstractStepImpl {
     }
 
     @DataBoundSetter
-    public void setCloudUIUrl(String cloudUIUrl) {
-        this.cloudUIUrl = cloudUIUrl;
-    }
-
-    @DataBoundSetter
     public void setFailBuildIfThisStepFailed(boolean failBuildIfThisStepFailed) {
         this.failBuildIfThisStepFailed = failBuildIfThisStepFailed;
     }
@@ -299,10 +293,6 @@ public class PipelineCloudStep extends AbstractStepImpl {
         return cloudUrl;
     }
 
-    public String getCloudUIUrl() {
-        return cloudUIUrl;
-    }
-
     public Long getFrameworkId() {
         return this.frameworkId;
     }
@@ -372,7 +362,6 @@ public class PipelineCloudStep extends AbstractStepImpl {
                     step.getTestTimeout(),
                     step.getCredentialsId(),
                     step.getCloudUrl(),
-                    step.getCloudUIUrl(),
                     step.getFrameworkId(),
                     step.getOsType()
             );

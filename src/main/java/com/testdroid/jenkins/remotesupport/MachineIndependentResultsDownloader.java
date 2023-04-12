@@ -8,7 +8,7 @@ import com.testdroid.api.model.APIScreenshot;
 import com.testdroid.api.model.APITestRun;
 import com.testdroid.jenkins.Messages;
 import com.testdroid.jenkins.TestdroidCloudSettings;
-import com.testdroid.jenkins.utils.TestdroidApiUtil;
+import com.testdroid.jenkins.auth.TestdroidApiUtil;
 import hudson.model.TaskListener;
 import hudson.remoting.Callable;
 import org.apache.commons.io.FileUtils;

@@ -18,11 +18,11 @@ public class MachineIndependentTask implements Serializable {
 
     public String cloudUrl;
 
+    public String credentialsId;
+
     public boolean isProxy;
 
     public boolean noCheckCertificate;
-
-    public String password;
 
     public String proxyHost;
 
@@ -32,11 +32,8 @@ public class MachineIndependentTask implements Serializable {
 
     public String proxyUser;
 
-    public String user;
-
     public MachineIndependentTask(TestdroidCloudSettings.DescriptorImpl settings) {
-        this.user = settings.getEmail();
-        this.password = settings.getPassword();
+        this.credentialsId = settings.getCredentialsId();
         this.noCheckCertificate = settings.getNoCheckCertificate();
         this.cloudUrl = settings.getCloudUrl();
         this.isProxy = settings.getIsProxy();
