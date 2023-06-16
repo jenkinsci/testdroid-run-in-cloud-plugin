@@ -5,7 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class BitbarCredentials {
 
-    public static BitbarCredentials EMPTY = new BitbarCredentials();
+    public static final BitbarCredentials EMPTY = new BitbarCredentials();
 
     private Secret apiKey;
 
