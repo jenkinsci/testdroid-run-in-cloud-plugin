@@ -5,7 +5,6 @@ import com.testdroid.api.APIException;
 import com.testdroid.api.model.APICloudInfo;
 import com.testdroid.api.model.APIUser;
 
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -13,9 +12,9 @@ public class ApiClientAdapter {
 
     private static final Logger LOGGER = Logger.getLogger(ApiClientAdapter.class.getName());
 
-    private APIClient apiClient;
+    private final APIClient apiClient;
 
-    public ApiClientAdapter(APIClient apiClient){
+    public ApiClientAdapter(APIClient apiClient) {
         this.apiClient = apiClient;
     }
 
@@ -54,7 +53,9 @@ public class ApiClientAdapter {
      * Static methods for managing instances of this class.
      */
     public static boolean isPaidUser(APIUser user) {
-        if (user == null) return false;
+        if (user == null) {
+            return false;
+        }
         return user.getRoles().stream().anyMatch(r -> r.getName().startsWith("PRIORITY"));
     }
 }
