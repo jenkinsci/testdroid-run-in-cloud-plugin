@@ -28,6 +28,9 @@
             <f:entry field="application" title="${%Application}">
                 <f:textbox name="appPath" value="${instance.appPath}"/>
             </f:entry>
+            <f:entry field="biometricInstrumentation" title="${%Biometric instrumentation}">
+                <f:checkbox name="biometricInstrumentation" value="${instance.biometricInstrumentation}"/>
+            </f:entry>
             <f:entry field="instrumentation" title="${%Test}">
                 <f:textbox name="testPath" value="${instance.testPath}" placeholder="Leave empty to use AppCrawler"/>
             </f:entry>
@@ -35,7 +38,7 @@
                 <f:textbox name="dataPath" value="${instance.dataPath}"
                            placeholder="Use this field to upload additional data needed for test. The file must be in ZIP format."/>
             </f:entry>
-            <f:entry title="${%Scheduling}" field="scheduler">
+            <f:entry field="scheduler" title="${%Scheduling}">
                 <f:select default="PARALLEL"/>
             </f:entry>
             <f:entry field="deviceGroupId" title="${%Device group}">

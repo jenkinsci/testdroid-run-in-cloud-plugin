@@ -1,11 +1,11 @@
 package com.testdroid.jenkins.auth;
 
 import hudson.util.Secret;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.ObjectUtils;
 
 public class BitbarCredentials {
 
-    public static BitbarCredentials EMPTY = new BitbarCredentials();
+    public static final BitbarCredentials EMPTY = new BitbarCredentials();
 
     private Secret apiKey;
 
@@ -27,7 +27,7 @@ public class BitbarCredentials {
     }
 
     public boolean usesApiKey() {
-        return apiKey != null && StringUtils.isNotBlank(apiKey.getPlainText());
+        return apiKey != null;
     }
 
     public Secret getApiKey() {
@@ -40,5 +40,9 @@ public class BitbarCredentials {
 
     public Secret getPassword() {
         return password;
+    }
+
+    public boolean isEmpty() {
+        return ObjectUtils.allNull(apiKey, email, password);
     }
 }

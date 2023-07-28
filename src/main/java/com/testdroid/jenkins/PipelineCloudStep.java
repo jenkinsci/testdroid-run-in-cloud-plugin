@@ -62,10 +62,12 @@ public class PipelineCloudStep extends AbstractStepImpl {
 
     private WaitForResultsBlock waitForResultsBlock;
 
+    private boolean biometricInstrumentation;
+
     /**
      * Constructor; defined the mandatory parameters to be passed in Pipeline.
      *
-     * @param projectId Bitbar Cloud project Id
+     * @param projectId     Bitbar Cloud project Id
      * @param deviceGroupId Bitbar Cloud device group Id
      */
     @DataBoundConstructor
@@ -209,6 +211,11 @@ public class PipelineCloudStep extends AbstractStepImpl {
         this.virusScanTimeout = virusScanTimeout;
     }
 
+    @DataBoundSetter
+    public void setBiometricInstrumentation(boolean biometricInstrumentation) {
+        this.biometricInstrumentation = biometricInstrumentation;
+    }
+
     public String getVirusScanTimeout() {
         return virusScanTimeout;
     }
@@ -301,6 +308,10 @@ public class PipelineCloudStep extends AbstractStepImpl {
         return osType;
     }
 
+    public boolean isBiometricInstrumentation() {
+        return biometricInstrumentation;
+    }
+
     @Extension
     public static final class DescriptorImpl extends AbstractStepDescriptorImpl implements RunInCloudDescriptorHelper {
 
@@ -363,7 +374,8 @@ public class PipelineCloudStep extends AbstractStepImpl {
                     step.getCredentialsId(),
                     step.getCloudUrl(),
                     step.getFrameworkId(),
-                    step.getOsType()
+                    step.getOsType(),
+                    step.isBiometricInstrumentation()
             );
 
             return builder.completeRun(run, workspace, launcher, listener);

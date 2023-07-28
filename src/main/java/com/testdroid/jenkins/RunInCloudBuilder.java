@@ -99,6 +99,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     private String withoutAnnotation;
 
+    private boolean biometricInstrumentation;
+
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
     public RunInCloudBuilder(
@@ -107,7 +109,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             String keyValuePairs, String withAnnotation, String withoutAnnotation, String testCasesSelect,
             String testCasesValue, Boolean failBuildIfThisStepFailed, String virusScanTimeout,
             WaitForResultsBlock waitForResultsBlock, String testTimeout, String credentialsId, String cloudUrl,
-            Long frameworkId, APIDevice.OsType osType) {
+            Long frameworkId, APIDevice.OsType osType, Boolean biometricInstrumentation) {
         this.projectId = projectId;
         this.appPath = appPath;
         this.dataPath = dataPath;
@@ -131,6 +133,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         this.frameworkId = frameworkId;
         this.osType = osType;
         this.waitForResultsBlock = waitForResultsBlock;
+        this.biometricInstrumentation = biometricInstrumentation;
     }
 
     //<editor-fold desc="Getters/Setters">
@@ -352,6 +355,14 @@ public class RunInCloudBuilder extends AbstractBuilder {
     public void setOsType(OsType osType) {
         this.osType = osType;
     }
+
+    public boolean isBiometricInstrumentation() {
+        return biometricInstrumentation;
+    }
+
+    public void setBiometricInstrumentation(boolean biometricInstrumentation) {
+        this.biometricInstrumentation = biometricInstrumentation;
+    }
     //</editor-fold>
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
@@ -479,6 +490,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             config.setDeviceIds(null);
             config.setHookURL(evaluateHookUrl());
             config.setScreenshotDir(getScreenshotsDirectory());
+            config.setBiometricInstrumentation(isBiometricInstrumentation());
             config.setInstrumentationRunner(testRunnerFinal);
             config.setWithoutAnnotation(withoutAnnotationFinal);
             config.setWithAnnotation(withAnnotationFinal);
