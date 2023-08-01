@@ -15,9 +15,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-/**
- * @author Artur Ćwikliński <artur.cwiklinski@smartbear.com>
- */
 public final class BitbarCredentialsUtils {
 
     private BitbarCredentialsUtils() {
