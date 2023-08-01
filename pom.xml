@@ -23,7 +23,7 @@
 
     <properties>
         <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
-        <guava.version>31.1-jre</guava.version>
+        <guava.version>32.0.0-jre</guava.version>
         <intranet.repo>http://nexus/content/repositories</intranet.repo>
         <testdroid.api.version>3.16</testdroid.api.version>
         <jdk.version>11</jdk.version>
