@@ -24,7 +24,7 @@
     <properties>
         <intranet.repo>http://nexus/content/repositories</intranet.repo>
         <testdroid.api.version>3.16</testdroid.api.version>
-        <jenkins.version>2.387.3</jenkins.version>
+        <jenkins.version>2.361.4</jenkins.version>
     </properties>
     <url>https://github.com/jenkinsci/testdroid-run-in-cloud-plugin</url>
     <scm>
@@ -91,6 +91,28 @@
     </build>
 
     <dependencies>
+        <!-- Jenkins plugins that provide libraries needed by testdroid-api -->
+        <dependency>
+            <groupId>org.jenkins-ci.plugins</groupId>
+            <artifactId>apache-httpcomponents-client-4-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jenkins-ci.plugins</groupId>
+            <artifactId>jackson2-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jenkins.plugins</groupId>
+            <artifactId>jaxb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jenkins.plugins</groupId>
+            <artifactId>commons-lang3-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jenkins.plugins</groupId>
+            <artifactId>commons-text-api</artifactId>
+        </dependency>
+        <!-- End of Jenkins plugins that provide libraries needed by testdroid-api -->
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>credentials</artifactId>
@@ -104,6 +126,28 @@
             <groupId>com.testdroid</groupId>
             <artifactId>testdroid-api</artifactId>
             <version>${testdroid.api.version}</version>
+            <exclusions>
+              <!-- apache-httpcomponents-client-4-api plugin provides this -->
+              <exclusion>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+              </exclusion>
+              <!-- apache-httpcomponents-client-4-api plugin provides this -->
+              <exclusion>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpcore</artifactId>
+              </exclusion>
+              <!-- jackson2-api plugin provides this -->
+              <exclusion>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+              </exclusion>
+              <!-- jackson2-api plugin provides this -->
+              <exclusion>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+              </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -119,8 +163,8 @@
         <dependencies>
             <dependency>
                 <groupId>io.jenkins.tools.bom</groupId>
-                <artifactId>bom-2.387.x</artifactId>
-                <version>2329.v078520e55c19</version>
+                <artifactId>bom-2.361.x</artifactId>
+                <version>2102.v854b_fec19c92</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
