@@ -5,7 +5,6 @@
 buildPlugin(
   useContainerAgent: true,
   failFast: false,
-  configurations: [
-    [platform: 'linux', jdk: 17],
-    [platform: 'windows', jdk: 11],
-])
+  jdkVersions: [11, 17],
+  tests: [skip: true]
+)

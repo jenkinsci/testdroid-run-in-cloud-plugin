@@ -6,6 +6,7 @@ import com.testdroid.api.APIException;
 import com.testdroid.jenkins.auth.IBitbarCredentials;
 import com.testdroid.jenkins.auth.TestdroidApiUtil;
 import com.testdroid.jenkins.remotesupport.MachineIndependentTask;
+import com.testdroid.jenkins.utils.BitbarCredentialsUtils;
 import hudson.Extension;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
@@ -21,6 +22,9 @@ import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.verb.POST;
 
 import javax.annotation.Nonnull;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -116,13 +120,15 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
             this.proxyPassword = proxyPassword;
 
             try {
+                validateForm(this);
                 TestdroidApiUtil.createApiClient(this).tryValidateConfig();
                 save();
                 return FormValidation.ok(Messages.AUTHORIZATION_OK());
-            } catch (APIException e) {
+            } catch (APIException | IllegalStateException e) {
                 load();
-                LOGGER.log(Level.WARNING, Messages.ERROR_API());
-                return FormValidation.error(e.getLocalizedMessage());
+                String message = e.getLocalizedMessage();
+                LOGGER.log(Level.WARNING, message);
+                return FormValidation.error(message);
             }
         }
 
@@ -134,6 +140,18 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
                     .lookupCredentials(IBitbarCredentials.class, Jenkins.get(), ACL.SYSTEM, Collections.emptyList())
                     .forEach(c -> credentials.add(CredentialsNameProvider.name(c), c.getId()));
             return credentials;
+        }
+
+        private void validateForm(DescriptorImpl settings) throws IllegalStateException {
+            if (BitbarCredentialsUtils.getBitbarCredentials(settings.credentialsId).isEmpty()) {
+                throw new IllegalStateException(Messages.NO_SELECTED_CREDENTIALS());
+            }
+
+            try {
+                new URL(settings.cloudUrl).toURI();
+            } catch (MalformedURLException | URISyntaxException e) {
+                throw new IllegalStateException(Messages.MALFORMED_URL());
+            }
         }
 
         @Override
