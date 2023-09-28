@@ -22,14 +22,11 @@
     </developers>
 
     <properties>
-        <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
-        <guava.version>31.1-jre</guava.version>
         <intranet.repo>http://nexus/content/repositories</intranet.repo>
         <testdroid.api.version>3.16</testdroid.api.version>
-        <jdk.version>11</jdk.version>
-        <java.level>11</java.level>
+        <jenkins.version>2.361.4</jenkins.version>
     </properties>
-    <url>https://plugins.jenkins.io/testdroid-run-in-cloud/</url>
+    <url>https://github.com/jenkinsci/testdroid-run-in-cloud-plugin</url>
     <scm>
         <connection>scm:git:git@github.com:jenkinsci/testdroid-run-in-cloud-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:jenkinsci/testdroid-run-in-cloud-plugin.git</developerConnection>
@@ -86,59 +83,71 @@
         <finalName>${project.artifactId}-${project.version}</finalName>
         <plugins>
             <plugin>
-                <groupId>org.jenkins-ci.tools</groupId>
-                <artifactId>maven-hpi-plugin</artifactId>
-                <configuration>
-                    <!-- we dont want google guava from hudson/jenkins core! -->
-                    <maskClasses>com.google.common.</maskClasses>
-                    <disabledTestInjection>true</disabledTestInjection>
-                    <minimumJavaVersion>11</minimumJavaVersion>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <version>1.3</version>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven-compiler-plugin.version}</version>
-                <configuration>
-                    <source>${jdk.version}</source>
-                    <target>${jdk.version}</target>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <configuration>
-                    <additionalJOption>-Xdoclint:none</additionalJOption>
-                </configuration>
             </plugin>
         </plugins>
     </build>
 
     <dependencies>
+        <!-- Jenkins plugins that provide libraries needed by testdroid-api -->
         <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
+            <groupId>org.jenkins-ci.plugins</groupId>
+            <artifactId>apache-httpcomponents-client-4-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
+            <artifactId>jackson2-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jenkins.plugins</groupId>
+            <artifactId>jaxb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jenkins.plugins</groupId>
+            <artifactId>commons-lang3-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jenkins.plugins</groupId>
+            <artifactId>commons-text-api</artifactId>
+        </dependency>
+        <!-- End of Jenkins plugins that provide libraries needed by testdroid-api -->
+        <dependency>
+            <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>credentials</artifactId>
-            <version>2.1.16</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins.workflow</groupId>
             <artifactId>workflow-step-api</artifactId>
-            <version>1.10</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>com.testdroid</groupId>
             <artifactId>testdroid-api</artifactId>
             <version>${testdroid.api.version}</version>
+            <exclusions>
+              <!-- apache-httpcomponents-client-4-api plugin provides this -->
+              <exclusion>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+              </exclusion>
+              <!-- apache-httpcomponents-client-4-api plugin provides this -->
+              <exclusion>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpcore</artifactId>
+              </exclusion>
+              <!-- jackson2-api plugin provides this -->
+              <exclusion>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+              </exclusion>
+              <!-- jackson2-api plugin provides this -->
+              <exclusion>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+              </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -147,15 +156,17 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.11.0</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.google.guava</groupId>
-                <artifactId>guava</artifactId>
-                <version>${guava.version}</version>
+                <groupId>io.jenkins.tools.bom</groupId>
+                <artifactId>bom-2.361.x</artifactId>
+                <version>2102.v854b_fec19c92</version>
+                <scope>import</scope>
+                <type>pom</type>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -165,7 +176,6 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>1.7.30</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

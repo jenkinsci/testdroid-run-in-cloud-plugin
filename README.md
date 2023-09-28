@@ -5,6 +5,12 @@
 
 # Bitbar Run-in-Cloud Plugin
 
+The Bitbar Run-in-Cloud plugin enables easy integration between Jenkins and [Bitbar testing](https://bitbar.com/).
+
+## [User Guide](https://support.smartbear.com/bitbar/docs/integrations/jenkins/index.html)
+
+For further documentation please refer to [Bitbar Testing help](https://support.smartbear.com/bitbar/docs/integrations/jenkins/index.html). 
+
 ## About plugin
 
 Bitbar Run-in-Cloud (RiC) is a Jenkins plugin to launch your Bitbar test runs directly from a Jenkins job.
