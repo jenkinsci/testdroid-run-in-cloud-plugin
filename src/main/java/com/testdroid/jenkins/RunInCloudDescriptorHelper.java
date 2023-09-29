@@ -20,7 +20,6 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static com.testdroid.api.dto.MappingKey.*;
 import static com.testdroid.api.dto.Operand.EQ;
@@ -32,6 +31,7 @@ import static com.testdroid.jenkins.Messages.DEFINE_OS_TYPE;
 import static java.lang.Boolean.TRUE;
 import static java.lang.Integer.MAX_VALUE;
 import static java.util.Locale.US;
+import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 public interface RunInCloudDescriptorHelper {
@@ -71,7 +71,7 @@ public interface RunInCloudDescriptorHelper {
         ListBoxModel osTypes = new ListBoxModel();
         osTypes.addAll(Arrays.stream(APIDevice.OsType.values())
                 .map(t -> new ListBoxModel.Option(t.getDisplayName(), t.name()))
-                .collect(Collectors.toList()));
+                .collect(toList()));
         return osTypes;
     }
 
@@ -148,8 +148,9 @@ public interface RunInCloudDescriptorHelper {
                 context.addFilter(trueFilterEntry(CAN_RUN_FROM_UI));
                 final APIListResource<APIFramework> availableFrameworksResource = user
                         .getAvailableFrameworksResource(context);
-                frameworks.addAll(availableFrameworksResource.getEntity().getData().stream().map(f ->
-                        new ListBoxModel.Option(f.getName(), f.getId().toString())).collect(Collectors.toList()));
+                frameworks.addAll(availableFrameworksResource.getEntity().getData().stream()
+                        .filter(f -> !APIFramework.Type.CLIENT_SIDE.name().equalsIgnoreCase(f.getType()))
+                        .map(f -> new ListBoxModel.Option(f.getName(), f.getId().toString())).collect(toList()));
             } catch (APIException e) {
                 LOGGER.log(Level.WARNING, Messages.ERROR_API());
             }
