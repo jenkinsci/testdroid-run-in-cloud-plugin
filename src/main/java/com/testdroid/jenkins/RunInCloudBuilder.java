@@ -462,7 +462,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
             ApiClientAdapter api = TestdroidApiUtil.createApiClient(cloudSettings);
             if (!api.isAuthenticated()) {
-                listener.getLogger().println("Couldn't connect to the cloud!");
+                listener.getLogger().println("Couldn't connect to the cloud, please check your credentials!");
                 return false;
             }
 

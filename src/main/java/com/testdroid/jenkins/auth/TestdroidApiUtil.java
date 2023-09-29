@@ -2,7 +2,6 @@ package com.testdroid.jenkins.auth;
 
 import com.testdroid.api.APIClient;
 import com.testdroid.api.APIKeyClient;
-import com.testdroid.api.DefaultAPIClient;
 import com.testdroid.jenkins.TestdroidCloudSettings;
 import com.testdroid.jenkins.remotesupport.MachineIndependentTask;
 import com.testdroid.jenkins.utils.ApiClientAdapter;
@@ -55,21 +54,13 @@ public class TestdroidApiUtil {
                     ? new HttpHost(proxyHost, proxyPort, "http")
                     : new HttpHost(proxyHost);
             if (StringUtils.isNotBlank(proxyUser)) {
-                apiClient = credentials.usesApiKey() ?
-                        new APIKeyClient(cloudURL, getSecretText(credentials.getApiKey()),
-                                proxy, proxyUser, proxyPassword, skipCertCheck) :
-                        new DefaultAPIClient(cloudURL, credentials.getEmail(), getSecretText(credentials.getPassword()),
-                                proxy, proxyUser, proxyPassword, skipCertCheck);
+                apiClient = new APIKeyClient(cloudURL, getSecretText(credentials.getApiKey()), proxy, proxyUser,
+                        proxyPassword, skipCertCheck);
             } else {
-                apiClient = credentials.usesApiKey() ?
-                        new APIKeyClient(cloudURL, getSecretText(credentials.getApiKey()), proxy, skipCertCheck) :
-                        new DefaultAPIClient(cloudURL, credentials.getEmail(), getSecretText(credentials.getPassword()),
-                                proxy, skipCertCheck);
+                apiClient = new APIKeyClient(cloudURL, getSecretText(credentials.getApiKey()), proxy, skipCertCheck);
             }
         } else {
-            apiClient = credentials.usesApiKey() ?
-                    new APIKeyClient(cloudURL, getSecretText(credentials.getApiKey()), skipCertCheck) :
-                    new DefaultAPIClient(cloudURL, credentials.getEmail(), getSecretText(credentials.getPassword()));
+            apiClient = new APIKeyClient(cloudURL, getSecretText(credentials.getApiKey()), skipCertCheck);
         }
         return new ApiClientAdapter(apiClient);
     }
