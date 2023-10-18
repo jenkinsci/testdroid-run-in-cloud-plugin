@@ -121,7 +121,7 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
 
             try {
                 validateForm(this);
-                TestdroidApiUtil.createApiClient(this).tryValidateConfig();
+                TestdroidApiUtil.createApiClientAdapter(this).tryValidateConfig();
                 save();
                 return FormValidation.ok(Messages.AUTHORIZATION_OK());
             } catch (APIException | IllegalStateException e) {
