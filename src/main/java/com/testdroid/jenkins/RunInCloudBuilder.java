@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 import static com.testdroid.api.model.APIDevice.OsType;
 import static com.testdroid.api.model.APIDevice.OsType.UNDEFINED;
 import static com.testdroid.jenkins.Messages.*;
+import static com.testdroid.jenkins.utils.BitbarCredentialsUtils.createBitbarCredentialsWrapperSnapshot;
 import static java.lang.Boolean.TRUE;
 import static org.apache.commons.lang3.StringUtils.*;
 
@@ -460,7 +461,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             // so that a different job can't overwrite project settings just after the first one set it
             RunInCloudBuilder.semaphore.acquire();
 
-            ApiClientAdapter api = TestdroidApiUtil.createApiClient(cloudSettings);
+            ApiClientAdapter api = TestdroidApiUtil.createApiClientAdapter(cloudSettings);
             if (!api.isAuthenticated()) {
                 listener.getLogger().println("Couldn't connect to the cloud, please check your credentials!");
                 return false;
@@ -527,7 +528,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 String absolutePath = getAbsolutePath(workspace, appPathFinal);
                 final FilePath appFile = new FilePath(launcher.getChannel(), absolutePath);
                 listener.getLogger().printf((Messages.UPLOADING_NEW_APPLICATION_S()) + "%n", absolutePath);
-                appFileId = appFile.act(new MachineIndependentFileUploader(cloudSettings, listener));
+                IBitbarCredentials credentials = createBitbarCredentialsWrapperSnapshot(cloudSettings.getCredentialsId());
+                appFileId = appFile.act(new MachineIndependentFileUploader(cloudSettings, listener, credentials));
                 apiAppFile = user.getFile(appFileId);
                 if (apiAppFile == null) {
                     return false;
@@ -543,7 +545,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 String absolutePath = getAbsolutePath(workspace, testPathFinal);
                 FilePath testFile = new FilePath(launcher.getChannel(), absolutePath);
                 listener.getLogger().printf((Messages.UPLOADING_NEW_INSTRUMENTATION_S()) + "%n", absolutePath);
-                testFileId = testFile.act(new MachineIndependentFileUploader(cloudSettings, listener));
+                IBitbarCredentials credentials = createBitbarCredentialsWrapperSnapshot(cloudSettings.getCredentialsId());
+                testFileId = testFile.act(new MachineIndependentFileUploader(cloudSettings, listener, credentials));
                 apiTestFile = user.getFile(testFileId);
                 if (apiTestFile == null) {
                     return false;
@@ -557,7 +560,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 String absolutePath = getAbsolutePath(workspace, dataPathFinal);
                 FilePath dataFile = new FilePath(launcher.getChannel(), absolutePath);
                 listener.getLogger().printf((Messages.UPLOADING_DATA_FILE_S()) + "%n", absolutePath);
-                dataFileId = dataFile.act(new MachineIndependentFileUploader(cloudSettings, listener));
+                IBitbarCredentials credentials = createBitbarCredentialsWrapperSnapshot(cloudSettings.getCredentialsId());
+                dataFileId = dataFile.act(new MachineIndependentFileUploader(cloudSettings, listener, credentials));
                 apiDataFile = user.getFile(dataFileId);
                 if (apiDataFile == null) {
                     return false;
@@ -645,10 +649,12 @@ public class RunInCloudBuilder extends AbstractBuilder {
                     scheduler.cancel(testRun);
                     testRun.refresh();
                     if (testRun.getState() == APITestRun.State.FINISHED) {
+                        IBitbarCredentials credentials = createBitbarCredentialsWrapperSnapshot(cloudSettings.getCredentialsId());
                         isDownloadOk = Objects.requireNonNull(launcher.getChannel()).call(
                                 new MachineIndependentResultsDownloader(
                                         cloudSettings, listener, testRun.getProjectId(), testRun.getId(),
-                                        evaluateResultsPath(workspace), waitForResultsBlock.isDownloadScreenshots()));
+                                        evaluateResultsPath(workspace), waitForResultsBlock.isDownloadScreenshots(),
+                                        credentials));
 
                         if (!isDownloadOk) {
                             listener.getLogger().println(Messages.DOWNLOAD_RESULTS_FAILED());
@@ -723,7 +729,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         listener.getLogger().println(TIMEOUT_VALUE(config.getTimeout()));
     }
 
-    private void printTestRun(APITestRun testRun, TaskListener listener){
+    private void printTestRun(APITestRun testRun, TaskListener listener) {
         listener.getLogger().println(TEST_RUN_INFO(testRun.getUiLink(), testRun.getId()));
         listener.getLogger().println(PROJECT_INFO(testRun.getProjectName(), testRun.getProjectId()));
     }

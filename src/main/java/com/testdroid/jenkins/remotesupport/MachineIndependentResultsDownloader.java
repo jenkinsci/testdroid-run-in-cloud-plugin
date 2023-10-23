@@ -8,7 +8,7 @@ import com.testdroid.api.model.APIScreenshot;
 import com.testdroid.api.model.APITestRun;
 import com.testdroid.jenkins.Messages;
 import com.testdroid.jenkins.TestdroidCloudSettings;
-import com.testdroid.jenkins.auth.TestdroidApiUtil;
+import com.testdroid.jenkins.auth.IBitbarCredentials;
 import hudson.model.TaskListener;
 import hudson.remoting.Callable;
 import org.apache.commons.io.FileUtils;
@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.testdroid.jenkins.auth.TestdroidApiUtil.createApiClientAdapter;
 import static java.lang.Integer.MAX_VALUE;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
@@ -43,10 +44,10 @@ public class MachineIndependentResultsDownloader extends MachineIndependentTask
 
     private long testRunId;
 
-    public MachineIndependentResultsDownloader(TestdroidCloudSettings.DescriptorImpl settings, TaskListener listener,
-            long projectId, long testRunId,
-            String resultsPath, boolean downloadScreenshots) {
-        super(settings);
+    public MachineIndependentResultsDownloader(
+            TestdroidCloudSettings.DescriptorImpl settings, TaskListener listener, long projectId, long testRunId,
+            String resultsPath, boolean downloadScreenshots, IBitbarCredentials credentials) {
+        super(settings, credentials);
         this.projectId = projectId;
         this.testRunId = testRunId;
         this.resultsPath = resultsPath;
@@ -63,8 +64,7 @@ public class MachineIndependentResultsDownloader extends MachineIndependentTask
 
     @Override
     public Boolean call() throws APIException {
-        APITestRun testRun = TestdroidApiUtil.createNewApiClient(this).getUser().getProject(projectId).getTestRun
-                (testRunId);
+        APITestRun testRun = createApiClientAdapter(this).getUser().getProject(projectId).getTestRun(testRunId);
 
         boolean success = false; //if we are able to download results from at least one device then whole method
         // should return true, false only when results was not available at all, other case just warn in logs

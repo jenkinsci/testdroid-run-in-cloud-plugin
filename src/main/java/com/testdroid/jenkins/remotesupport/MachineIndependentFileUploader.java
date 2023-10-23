@@ -3,6 +3,7 @@ package com.testdroid.jenkins.remotesupport;
 import com.testdroid.api.model.APIUser;
 import com.testdroid.jenkins.Messages;
 import com.testdroid.jenkins.TestdroidCloudSettings;
+import com.testdroid.jenkins.auth.IBitbarCredentials;
 import com.testdroid.jenkins.auth.TestdroidApiUtil;
 import hudson.FilePath;
 import hudson.model.TaskListener;
@@ -18,8 +19,9 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
 
     private TaskListener listener;
 
-    public MachineIndependentFileUploader(TestdroidCloudSettings.DescriptorImpl settings, TaskListener listener) {
-        super(settings);
+    public MachineIndependentFileUploader(
+            TestdroidCloudSettings.DescriptorImpl settings, TaskListener listener, IBitbarCredentials credentials) {
+        super(settings, credentials);
         this.listener = listener;
     }
 
@@ -34,7 +36,7 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
     public Long invoke(File file, VirtualChannel vc) {
         Long result = null;
         try {
-            APIUser user = TestdroidApiUtil.createNewApiClient(this).getUser();
+            APIUser user = TestdroidApiUtil.createApiClientAdapter(this).getUser();
             if (file.exists()) {
                 result = user.uploadFile(file).getId();
             } else {
