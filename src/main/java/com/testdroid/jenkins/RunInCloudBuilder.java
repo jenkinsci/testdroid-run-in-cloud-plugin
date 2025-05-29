@@ -12,7 +12,6 @@ import com.testdroid.jenkins.scheduler.TestRunFinishCheckScheduler;
 import com.testdroid.jenkins.scheduler.TestRunFinishCheckSchedulerFactory;
 import com.testdroid.jenkins.utils.ApiClientAdapter;
 import com.testdroid.jenkins.utils.LocaleUtil;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -92,8 +91,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     private String testTimeout;
 
-    private String virusScanTimeout;
-
     private WaitForResultsBlock waitForResultsBlock;
 
     private String withAnnotation;
@@ -106,11 +103,11 @@ public class RunInCloudBuilder extends AbstractBuilder {
     @DataBoundConstructor
     public RunInCloudBuilder(
             String projectId, String appPath, String testPath, String dataPath, String testRunName, String scheduler,
-            String testRunner, String deviceGroupId, String language, String screenshotsDirectory,
-            String keyValuePairs, String withAnnotation, String withoutAnnotation, String testCasesSelect,
-            String testCasesValue, Boolean failBuildIfThisStepFailed, String virusScanTimeout,
-            WaitForResultsBlock waitForResultsBlock, String testTimeout, String credentialsId, String cloudUrl,
-            Long frameworkId, APIDevice.OsType osType, Boolean biometricInstrumentation) {
+            String testRunner, String deviceGroupId, String language, String screenshotsDirectory, String keyValuePairs,
+            String withAnnotation, String withoutAnnotation, String testCasesSelect, String testCasesValue,
+            Boolean failBuildIfThisStepFailed, WaitForResultsBlock waitForResultsBlock, String testTimeout,
+            String credentialsId, String cloudUrl, Long frameworkId, APIDevice.OsType osType,
+            Boolean biometricInstrumentation) {
         this.projectId = projectId;
         this.appPath = appPath;
         this.dataPath = dataPath;
@@ -127,7 +124,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
         this.deviceGroupId = deviceGroupId;
         this.language = language;
         this.failBuildIfThisStepFailed = failBuildIfThisStepFailed;
-        this.virusScanTimeout = virusScanTimeout;
         this.testTimeout = testTimeout;
         this.credentialsId = credentialsId;
         this.cloudUrl = cloudUrl;
@@ -302,14 +298,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
         this.cloudUrl = cloudUrl;
     }
 
-    public String getVirusScanTimeout() {
-        return virusScanTimeout;
-    }
-
-    public void setVirusScanTimeout(String virusScanTimeout) {
-        this.virusScanTimeout = virusScanTimeout;
-    }
-
     public WaitForResultsBlock getWaitForResultsBlock() {
         return waitForResultsBlock;
     }
@@ -366,7 +354,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
     //</editor-fold>
 
-    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private String evaluateHookUrl() {
         return isWaitForResults() ?
                 isNotBlank(waitForResultsBlock.getHookURL()) ? waitForResultsBlock.getHookURL()
@@ -429,7 +416,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
         String testRunnerFinal = applyMacro(build, listener, testRunner);
         String withoutAnnotationFinal = applyMacro(build, listener, withoutAnnotation);
         final String testTimeoutFinal = applyMacro(build, listener, testTimeout);
-        String virusScanTimeoutFinal = applyMacro(build, listener, virusScanTimeout);
 
         // cloudSettings will load the global settings in constructor..!
         TestdroidCloudSettings.DescriptorImpl cloudSettings = new TestdroidCloudSettings.DescriptorImpl();
@@ -528,7 +514,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 String absolutePath = getAbsolutePath(workspace, appPathFinal);
                 final FilePath appFile = new FilePath(launcher.getChannel(), absolutePath);
                 listener.getLogger().printf((Messages.UPLOADING_NEW_APPLICATION_S()) + "%n", absolutePath);
-                IBitbarCredentials credentials = createBitbarCredentialsWrapperSnapshot(cloudSettings.getCredentialsId());
+                IBitbarCredentials credentials =
+                        createBitbarCredentialsWrapperSnapshot(cloudSettings.getCredentialsId());
                 appFileId = appFile.act(new MachineIndependentFileUploader(cloudSettings, listener, credentials));
                 apiAppFile = user.getFile(appFileId);
                 if (apiAppFile == null) {
@@ -545,7 +532,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 String absolutePath = getAbsolutePath(workspace, testPathFinal);
                 FilePath testFile = new FilePath(launcher.getChannel(), absolutePath);
                 listener.getLogger().printf((Messages.UPLOADING_NEW_INSTRUMENTATION_S()) + "%n", absolutePath);
-                IBitbarCredentials credentials = createBitbarCredentialsWrapperSnapshot(cloudSettings.getCredentialsId());
+                IBitbarCredentials credentials =
+                        createBitbarCredentialsWrapperSnapshot(cloudSettings.getCredentialsId());
                 testFileId = testFile.act(new MachineIndependentFileUploader(cloudSettings, listener, credentials));
                 apiTestFile = user.getFile(testFileId);
                 if (apiTestFile == null) {
@@ -560,7 +548,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 String absolutePath = getAbsolutePath(workspace, dataPathFinal);
                 FilePath dataFile = new FilePath(launcher.getChannel(), absolutePath);
                 listener.getLogger().printf((Messages.UPLOADING_DATA_FILE_S()) + "%n", absolutePath);
-                IBitbarCredentials credentials = createBitbarCredentialsWrapperSnapshot(cloudSettings.getCredentialsId());
+                IBitbarCredentials credentials =
+                        createBitbarCredentialsWrapperSnapshot(cloudSettings.getCredentialsId());
                 dataFileId = dataFile.act(new MachineIndependentFileUploader(cloudSettings, listener, credentials));
                 apiDataFile = user.getFile(dataFileId);
                 if (apiDataFile == null) {
@@ -570,8 +559,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 }
             }
 
-            listener.getLogger().println(Messages.WAITING_FOR_VIRUS_SCAN());
-            waitForVirusScan(virusScanTimeoutFinal, apiAppFile, apiTestFile, apiDataFile);
             listener.getLogger().println(Messages.RUNNING_TESTS());
 
             // run project with proper name set in jenkins if it's set
@@ -618,15 +605,6 @@ public class RunInCloudBuilder extends AbstractBuilder {
         return false;
     }
 
-    private void waitForVirusScan(String virusScanTimeout, APIUserFile... files)
-            throws APIException, InterruptedException {
-        long timeout = StringUtils.isBlank(virusScanTimeout) ?
-                APIUserFile.VIRUS_SCAN_TIMEOUT_DEFAULT :
-                Long.parseLong(virusScanTimeout);
-        APIUserFile.waitForVirusScans(timeout, files);
-    }
-
-    @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private boolean waitForResults(
             final APITestRun testRun, FilePath workspace, Launcher launcher, TaskListener listener,
             TestdroidCloudSettings.DescriptorImpl cloudSettings) {
@@ -649,7 +627,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
                     scheduler.cancel(testRun);
                     testRun.refresh();
                     if (testRun.getState() == APITestRun.State.FINISHED) {
-                        IBitbarCredentials credentials = createBitbarCredentialsWrapperSnapshot(cloudSettings.getCredentialsId());
+                        IBitbarCredentials credentials =
+                                createBitbarCredentialsWrapperSnapshot(cloudSettings.getCredentialsId());
                         isDownloadOk = Objects.requireNonNull(launcher.getChannel()).call(
                                 new MachineIndependentResultsDownloader(
                                         cloudSettings, listener, testRun.getProjectId(), testRun.getId(),
@@ -765,7 +744,8 @@ public class RunInCloudBuilder extends AbstractBuilder {
     }
 
     @Extension
-    public static final class DescriptorImpl extends BuildStepDescriptor<Builder> implements Serializable, RunInCloudDescriptorHelper {
+    public static final class DescriptorImpl extends BuildStepDescriptor<Builder> implements Serializable,
+            RunInCloudDescriptorHelper {
 
         private static final long serialVersionUID = 1L;
 

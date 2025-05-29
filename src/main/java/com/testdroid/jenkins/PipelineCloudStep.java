@@ -51,7 +51,6 @@ public class PipelineCloudStep extends AbstractStepImpl {
     private String testCasesValue;
     private String testRunName;
     private String testRunner;
-    private String virusScanTimeout;
     private String withAnnotation;
     private String withoutAnnotation;
     private String testTimeout;
@@ -207,17 +206,8 @@ public class PipelineCloudStep extends AbstractStepImpl {
     }
 
     @DataBoundSetter
-    public void setVirusScanTimeout(String virusScanTimeout) {
-        this.virusScanTimeout = virusScanTimeout;
-    }
-
-    @DataBoundSetter
     public void setBiometricInstrumentation(boolean biometricInstrumentation) {
         this.biometricInstrumentation = biometricInstrumentation;
-    }
-
-    public String getVirusScanTimeout() {
-        return virusScanTimeout;
     }
 
     public WaitForResultsBlock getWaitForResultsBlock() {
@@ -368,7 +358,6 @@ public class PipelineCloudStep extends AbstractStepImpl {
                     step.getTestCasesSelect(),
                     step.getTestCasesValue(),
                     step.isFailBuildIfThisStepFailed(),
-                    step.getVirusScanTimeout(),
                     step.getWaitForResultsBlock(),
                     step.getTestTimeout(),
                     step.getCredentialsId(),

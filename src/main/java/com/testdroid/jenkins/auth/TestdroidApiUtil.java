@@ -8,7 +8,9 @@ import com.testdroid.jenkins.utils.ApiClientAdapter;
 import hudson.Extension;
 import hudson.util.Secret;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpHost;
+
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 
 import static com.testdroid.jenkins.utils.BitbarCredentialsUtils.getBitbarCredentials;
 
@@ -29,13 +31,15 @@ public class TestdroidApiUtil {
     }
 
     public static ApiClientAdapter createApiClientAdapter(TestdroidCloudSettings.DescriptorImpl settings) {
-        return createApiClientAdapter(settings.getCloudUrl(), settings.getCredentialsId(), settings.getNoCheckCertificate(),
+        return createApiClientAdapter(settings.getCloudUrl(), settings.getCredentialsId(),
+                settings.getNoCheckCertificate(),
                 settings.getIsProxy(), settings.getProxyHost(), settings.getProxyPort(), settings.getProxyUser(),
                 settings.getProxyPassword(), null);
     }
 
     public static ApiClientAdapter createApiClientAdapter(MachineIndependentTask mit) {
-        return createApiClientAdapter(mit.cloudUrl, mit.credentialsId, mit.noCheckCertificate, mit.isProxy, mit.proxyHost,
+        return createApiClientAdapter(mit.cloudUrl, mit.credentialsId, mit.noCheckCertificate, mit.isProxy,
+                mit.proxyHost,
                 mit.proxyPort, mit.proxyUser, mit.proxyPassword, mit.credentials);
     }
 
@@ -51,9 +55,8 @@ public class TestdroidApiUtil {
 
         APIClient apiClient;
         if (Boolean.TRUE.equals(isProxy)) {
-            HttpHost proxy = proxyPort != null
-                    ? new HttpHost(proxyHost, proxyPort, "http")
-                    : new HttpHost(proxyHost);
+            int port = proxyPort != null ? proxyPort : 80;
+            Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, port));
             if (StringUtils.isNotBlank(proxyUser)) {
                 apiClient = new APIKeyClient(cloudURL, Secret.toString(credentials.getApiKey()), proxy, proxyUser,
                         proxyPassword, skipCertCheck);
