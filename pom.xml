@@ -24,7 +24,9 @@
     <properties>
         <intranet.repo>http://nexus/content/repositories</intranet.repo>
         <testdroid.api.version>3.40.0</testdroid.api.version>
-        <jenkins.version>2.479.3</jenkins.version>
+        <!-- https://www.jenkins.io/doc/developer/plugin-development/choosing-jenkins-baseline/ -->
+        <jenkins.baseline>2.479</jenkins.baseline>
+        <jenkins.version>${jenkins.baseline}.3</jenkins.version>
     </properties>
     <url>https://github.com/jenkinsci/testdroid-run-in-cloud-plugin</url>
     <scm>
@@ -172,7 +174,7 @@
         <dependencies>
             <dependency>
                 <groupId>io.jenkins.tools.bom</groupId>
-                <artifactId>bom-2.479.x</artifactId>
+                <artifactId>bom-${jenkins.baseline}.x</artifactId>
                 <version>4136.vca_c3202a_7fd1</version>
                 <scope>import</scope>
                 <type>pom</type>
