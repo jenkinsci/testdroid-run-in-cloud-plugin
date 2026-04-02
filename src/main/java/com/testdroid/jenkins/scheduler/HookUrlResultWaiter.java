@@ -5,12 +5,13 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Plugin;
 import hudson.model.Api;
 import hudson.model.ModelObject;
-import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.StaplerResponse;
+import jakarta.servlet.http.HttpServletResponse;
+import org.kohsuke.stapler.StaplerRequest2;
+import org.kohsuke.stapler.StaplerResponse2;
 import org.kohsuke.stapler.export.ExportedBean;
+import org.kohsuke.stapler.interceptor.RequirePOST;
+import org.kohsuke.stapler.verb.POST;
 
-import javax.servlet.ServletException;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -19,7 +20,6 @@ import java.util.logging.Logger;
 /**
  * REST listener, that responds to hooks from the backend. We exploit the Jenkins instance to produce a singleton
  * listener class.
- *
  * Rationale:
  *  Extending "Plugin" gives us access to the my-jenkins-url:8080/plugin/my-special-plugin/api/json endpoint, which is
  *  why we use it here.
@@ -69,17 +69,28 @@ public class HookUrlResultWaiter extends Plugin implements ModelObject {
 
         /**
          * Process requests when Jenkins passes REST calls to this plugin's json endpoint.
-         * Note: we only listen here. We don't produce a response with useful data.
+         * Note: we only listen here. We don't produce a response with useful data, always http 200 status code.
          */
+        @POST
+        @RequirePOST
         @Override
-        public void doJson(StaplerRequest req, StaplerResponse resp) throws IOException, ServletException {
+        @SuppressWarnings("lgtm[jenkins/no-permission-check]")
+        public void doJson(StaplerRequest2 req, StaplerResponse2 resp) {
             HookUrlResultWaiter plugin = (HookUrlResultWaiter) bean;
-            LOGGER.log(Level.INFO, String.format(Messages.RECEIVED_REST_JSON(), plugin.getDisplayName()));
-            if (req.getMethod().toLowerCase().equals("post") && req.hasParameter("testRunId")) {
-                plugin.notifyWaitingObject(Long.parseLong(req.getParameter("testRunId")));
-            } else {
-                LOGGER.log(Level.INFO, String.format(Messages.REQUEST_NEEDS_TESTRUNID(), plugin.getDisplayName()));
+            String pluginDisplayName = plugin.getDisplayName();
+            if (LOGGER.isLoggable(Level.INFO)) {
+                LOGGER.log(Level.INFO, Messages.RECEIVED_REST_JSON(pluginDisplayName));
             }
+            if (req.getMethod().equalsIgnoreCase("post") && req.hasParameter("testRunId")) {
+                try {
+                    plugin.notifyWaitingObject(Long.parseLong(req.getParameter("testRunId")));
+                }  catch (NumberFormatException ignored) {
+                    // Ignore invalid testRunId parameter
+                }
+            } else if (LOGGER.isLoggable(Level.INFO)) {
+                LOGGER.log(Level.INFO, Messages.REQUEST_NEEDS_TESTRUNID(pluginDisplayName));
+            }
+            resp.setStatus(HttpServletResponse.SC_OK);
         }
     }
 }

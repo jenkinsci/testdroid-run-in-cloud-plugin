@@ -27,19 +27,18 @@ import org.kohsuke.stapler.StaplerRequest;
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static com.testdroid.api.model.APIDevice.OsType;
 import static com.testdroid.api.model.APIDevice.OsType.UNDEFINED;
 import static com.testdroid.jenkins.Messages.*;
 import static com.testdroid.jenkins.utils.BitbarCredentialsUtils.createBitbarCredentialsWrapperSnapshot;
-import static java.lang.Boolean.TRUE;
 import static org.apache.commons.lang3.StringUtils.*;
 
 public class RunInCloudBuilder extends AbstractBuilder {
@@ -67,6 +66,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
     private Long frameworkId;
 
+    @SuppressWarnings("lgtm[jenkins/plaintext-storage]")
     private String keyValuePairs;
 
     private String language;
@@ -366,7 +366,9 @@ public class RunInCloudBuilder extends AbstractBuilder {
             if (isNotBlank(resultsPath)) {
                 try {
                     return getAbsolutePath(workspace, resultsPath);
-                } catch (Exception exception) {
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } catch (Exception e) {
                     LOGGER.log(Level.WARNING, "Couldn't get absolute path for results. Using workspace...");
                 }
             }
@@ -432,12 +434,12 @@ public class RunInCloudBuilder extends AbstractBuilder {
                     cloudSettings.setCloudUrl(getCloudUrl());
                 }
             } else {
-                listener.getLogger().printf((Messages.COULDNT_FIND_CREDENTIALS()) + "%n", getCredentialsId());
+                listener.getLogger().println(Messages.COULDNT_FIND_CREDENTIALS(getCredentialsId()));
             }
         } else if (isNotBlank(this.cloudUrl)) {
-            // cloud URL always goes 1-to-1 with credentials, so it can't be used if credentials aren't specified..!
-            listener.getLogger().printf((Messages.CLOUD_URL_SET_BUT_NO_CREDENTIALS()) + "%n", cloudUrl,
-                    cloudSettings.getCloudUrl());
+            // cloud URL always goes 1-to-1 with credentials, so it can't be used if credentials aren't specified...!
+            listener.getLogger().println(Messages.CLOUD_URL_SET_BUT_NO_CREDENTIALS(cloudUrl,
+                    cloudSettings.getCloudUrl()));
         }
 
         boolean releaseDone = false;
@@ -458,7 +460,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
             APITestRunConfig config = new APITestRunConfig();
             if (isNotBlank(getProjectId())) {
-                Optional<Long> optionalProjectId = parseLong("projectId", getProjectId(), TRUE, listener);
+                Optional<Long> optionalProjectId = parseLong("projectId", getProjectId(), true, listener);
                 if (optionalProjectId.isPresent()) {
                     config.setProjectId(optionalProjectId.get());
                     config = user.validateTestRunConfig(config);
@@ -467,7 +469,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
             config.setDeviceLanguageCode(getLanguage());
             config.setScheduler(Scheduler.valueOf(getScheduler().toUpperCase()));
-            config.setDeviceGroupId(parseLong("deviceGroupId", getDeviceGroupId(), TRUE, listener).orElseGet(
+            config.setDeviceGroupId(parseLong("deviceGroupId", getDeviceGroupId(), true, listener).orElseGet(
                     () -> {
                         listener.error("Set deviceGroupId to null");
                         return null;
@@ -493,7 +495,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 parseLong("testTimeout", testTimeoutFinal, isNotEmpty(testTimeoutFinal), listener)
                         .ifPresent(config::setTimeout);
             } else {
-                listener.getLogger().printf((FREE_USERS_CLOUD_TIMEOUT()) + "%n", user.getEmail());
+                listener.getLogger().println(FREE_USERS_CLOUD_TIMEOUT(user.getEmail()));
             }
 
             setLimitations(build, listener, config);
@@ -503,21 +505,17 @@ public class RunInCloudBuilder extends AbstractBuilder {
 
             getDescriptor().save();
 
-            APIUserFile apiAppFile = null;
-            APIUserFile apiTestFile = null;
-            APIUserFile apiDataFile = null;
-
             List<APIFileConfig> files = new ArrayList<>();
 
             if (isNotBlank(appPathFinal)) {
                 Long appFileId;
                 String absolutePath = getAbsolutePath(workspace, appPathFinal);
                 final FilePath appFile = new FilePath(launcher.getChannel(), absolutePath);
-                listener.getLogger().printf((Messages.UPLOADING_NEW_APPLICATION_S()) + "%n", absolutePath);
+                listener.getLogger().println(Messages.UPLOADING_NEW_APPLICATION_S(absolutePath));
                 IBitbarCredentials credentials =
                         createBitbarCredentialsWrapperSnapshot(cloudSettings.getCredentialsId());
                 appFileId = appFile.act(new MachineIndependentFileUploader(cloudSettings, listener, credentials));
-                apiAppFile = user.getFile(appFileId);
+                APIUserFile apiAppFile = user.getFile(appFileId);
                 if (apiAppFile == null) {
                     return false;
                 } else {
@@ -531,11 +529,11 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 Long testFileId;
                 String absolutePath = getAbsolutePath(workspace, testPathFinal);
                 FilePath testFile = new FilePath(launcher.getChannel(), absolutePath);
-                listener.getLogger().printf((Messages.UPLOADING_NEW_INSTRUMENTATION_S()) + "%n", absolutePath);
+                listener.getLogger().println(Messages.UPLOADING_NEW_INSTRUMENTATION_S(absolutePath));
                 IBitbarCredentials credentials =
                         createBitbarCredentialsWrapperSnapshot(cloudSettings.getCredentialsId());
                 testFileId = testFile.act(new MachineIndependentFileUploader(cloudSettings, listener, credentials));
-                apiTestFile = user.getFile(testFileId);
+                APIUserFile apiTestFile = user.getFile(testFileId);
                 if (apiTestFile == null) {
                     return false;
                 } else {
@@ -547,11 +545,11 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 Long dataFileId;
                 String absolutePath = getAbsolutePath(workspace, dataPathFinal);
                 FilePath dataFile = new FilePath(launcher.getChannel(), absolutePath);
-                listener.getLogger().printf((Messages.UPLOADING_DATA_FILE_S()) + "%n", absolutePath);
+                listener.getLogger().println(Messages.UPLOADING_DATA_FILE_S(absolutePath));
                 IBitbarCredentials credentials =
                         createBitbarCredentialsWrapperSnapshot(cloudSettings.getCredentialsId());
                 dataFileId = dataFile.act(new MachineIndependentFileUploader(cloudSettings, listener, credentials));
-                apiDataFile = user.getFile(dataFileId);
+                APIUserFile apiDataFile = user.getFile(dataFileId);
                 if (apiDataFile == null) {
                     return false;
                 } else {
@@ -622,7 +620,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
                 scheduler.schedule(this, testRun);
                 try {
                     synchronized (this) {
-                        wait(ricTimeout * 1000);
+                        wait(ricTimeout * 1000L);
                     }
                     scheduler.cancel(testRun);
                     testRun.refresh();
@@ -641,12 +639,12 @@ public class RunInCloudBuilder extends AbstractBuilder {
                         }
                     } else {
                         testRunToAbort = true;
-                        String msg = String.format(Messages.DOWNLOAD_RESULTS_FAILED_WITH_REASON_S(),
-                                "Test run is not finished yet!");
+                        String msg = Messages.DOWNLOAD_RESULTS_FAILED_WITH_REASON_S("Test run is not finished yet!");
                         listener.getLogger().println(msg);
                         LOGGER.log(Level.WARNING, msg);
                     }
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     testRunToAbort = true;
                     listener.getLogger().println(e.getMessage());
                     LOGGER.log(Level.WARNING, e.getMessage(), e);
@@ -689,7 +687,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
             apiTestRunParameters.addAll(Arrays.stream(splitKeyValuePairs).filter(StringUtils::isNotEmpty).map(s -> {
                 String[] pair = s.split(":");
                 return pair.length == 2 ? new APITestRunParameter(pair[0], pair[1]) : null;
-            }).filter(Objects::nonNull).collect(Collectors.toList()));
+            }).filter(Objects::nonNull).toList());
         }
         config.setTestRunParameters(apiTestRunParameters);
     }
@@ -726,7 +724,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
         }
     }
 
-    private Optional<Long> parseLong(String name, String strValue, Boolean showError, TaskListener listener) {
+    private Optional<Long> parseLong(String name, String strValue, boolean showError, TaskListener listener) {
         Optional<Long> result = Optional.empty();
         try {
             result = Optional.of(Long.parseLong(trim(strValue)));
@@ -747,6 +745,7 @@ public class RunInCloudBuilder extends AbstractBuilder {
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> implements Serializable,
             RunInCloudDescriptorHelper {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         public DescriptorImpl() {

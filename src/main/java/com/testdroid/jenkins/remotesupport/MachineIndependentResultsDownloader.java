@@ -11,14 +11,12 @@ import com.testdroid.jenkins.TestdroidCloudSettings;
 import com.testdroid.jenkins.auth.IBitbarCredentials;
 import hudson.model.TaskListener;
 import hudson.remoting.Callable;
+import jenkins.security.Roles;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.jenkinsci.remoting.RoleChecker;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,15 +32,15 @@ public class MachineIndependentResultsDownloader extends MachineIndependentTask
 
     private static final Logger LOGGER = Logger.getLogger(MachineIndependentResultsDownloader.class.getName());
 
-    private boolean downloadScreenshots;
+    private final boolean downloadScreenshots;
 
-    private TaskListener listener;
+    private final TaskListener listener;
 
-    private long projectId;
+    private final long projectId;
 
-    private String resultsPath;
+    private final String resultsPath;
 
-    private long testRunId;
+    private final long testRunId;
 
     public MachineIndependentResultsDownloader(
             TestdroidCloudSettings.DescriptorImpl settings, TaskListener listener, long projectId, long testRunId,
@@ -57,9 +55,7 @@ public class MachineIndependentResultsDownloader extends MachineIndependentTask
 
     @Override
     public void checkRoles(RoleChecker checker) throws SecurityException {
-        // no specific role needed, which is somewhat dubious, but I can't think of any attack vector that involves this.
-        // it would have been simpler if the setMaximumBytecodeLevel only controlled the local setting,
-        // not the remote setting
+        checker.check(this, Roles.SLAVE);
     }
 
     @Override
@@ -71,30 +67,28 @@ public class MachineIndependentResultsDownloader extends MachineIndependentTask
 
         String deviceDisplayName;
 
-        final APIListResource<APIDeviceSession> deviceSessionsResource = testRun.getDeviceSessionsResource(new Context
-                (APIDeviceSession.class, 0, MAX_VALUE, EMPTY, EMPTY));
+        final APIListResource<APIDeviceSession> deviceSessionsResource = testRun.getDeviceSessionsResource(
+                new Context<>(APIDeviceSession.class, 0, MAX_VALUE, EMPTY, EMPTY));
         for (APIDeviceSession deviceSession : deviceSessionsResource.getEntity().getData()) {
             deviceDisplayName = deviceSession.getDevice().getDisplayName();
 
             //create directory with results for this device
-            File resultDir = new File(String
-                    .format("%s/testdroid_result-%s-%d", resultsPath.endsWith(File.pathSeparator) ? resultsPath
-                                    .substring(0, resultsPath.length() - File.pathSeparator.length()) : resultsPath,
-                            deviceDisplayName.replaceAll(" ", "_"), deviceSession.getId()));
+            String fileName = String.format("testdroid_result-%s-%d", deviceDisplayName.replace(" ", "_"),
+                    deviceSession.getId());
+            File resultDir = new File(resultsPath, fileName);
             if (deviceSession.getState() != APIDeviceSession.State.EXCLUDED) {
                 success = download(deviceSession.getOutputFiles(), resultDir, "results.zip", deviceDisplayName);
                 //optionally download screenshots
                 if (downloadScreenshots) {
                     resultDir = new File(resultDir, "screenshots");
-                    final APIListResource<APIScreenshot> screenshotsResource = deviceSession.getScreenshotsResource(new Context
-                            (APIScreenshot.class, 0, MAX_VALUE, EMPTY, EMPTY));
+                    final APIListResource<APIScreenshot> screenshotsResource = deviceSession.getScreenshotsResource(
+                            new Context<>(APIScreenshot.class, 0, MAX_VALUE, EMPTY, EMPTY));
                     for (APIScreenshot screenshot : screenshotsResource.getEntity().getData()) {
                         download(screenshot.getContent(), resultDir, screenshot.getOriginalName(), deviceDisplayName);
                     }
                 }
             } else {
-                listener.getLogger().println(String
-                        .format(Messages.NO_RESULT_FROM_DEVICE_TEST_WAS_NOT_LAUNCHED_S(), deviceDisplayName));
+                listener.getLogger().println(Messages.NO_RESULT_FROM_DEVICE_TEST_WAS_NOT_LAUNCHED_S(deviceDisplayName));
             }
         }
 
@@ -102,18 +96,22 @@ public class MachineIndependentResultsDownloader extends MachineIndependentTask
     }
 
     private boolean download(InputStream inputStream, File resultDir, String fileName, String deviceName) {
-        OutputStream outputStream = null;
         try {
             FileUtils.forceMkdir(resultDir);
-            outputStream = new FileOutputStream(new File(resultDir, fileName));
-            IOUtils.copy(inputStream, outputStream);
-            return true;
-        } catch (Exception e) {
-            String msg = String.format(Messages.ERROR_DURING_DOWNLOAD_S_FROM_S(), fileName, deviceName);
+        } catch (IOException e) {
+            String msg = Messages.COULDNT_CREATE_DIRECTORY(resultDir);
             listener.getLogger().println(msg);
             LOGGER.log(Level.WARNING, msg, e);
-        } finally {
-            IOUtils.closeQuietly(outputStream);
+            return false;
+        }
+        try (InputStream input = inputStream;
+             OutputStream outputStream = new FileOutputStream(new File(resultDir, fileName))) {
+            IOUtils.copy(input, outputStream);
+            return true;
+        } catch (IOException e) {
+            String msg = Messages.ERROR_DURING_DOWNLOAD_S_FROM_S(fileName, deviceName);
+            listener.getLogger().println(msg);
+            LOGGER.log(Level.WARNING, msg, e);
         }
         return false;
     }

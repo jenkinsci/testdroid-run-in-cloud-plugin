@@ -7,14 +7,14 @@ import hudson.model.BuildBadgeAction;
  */
 public class CloudLink implements BuildBadgeAction {
 
-    private String cloudLink;
+    private final String uiLink;
 
     public CloudLink(String uiLink) {
-        this.cloudLink = uiLink;
+        this.uiLink = uiLink;
     }
 
     public boolean hasLink() {
-        return cloudLink != null;
+        return uiLink != null;
     }
 
     @Override
@@ -29,6 +29,6 @@ public class CloudLink implements BuildBadgeAction {
 
     @Override
     public String getUrlName() {
-        return cloudLink;
+        return uiLink;
     }
 }

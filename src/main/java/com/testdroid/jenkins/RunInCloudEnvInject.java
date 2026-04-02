@@ -1,17 +1,19 @@
 package com.testdroid.jenkins;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.EnvVars;
-import hudson.model.AbstractBuild;
 import hudson.model.EnvironmentContributingAction;
+import hudson.model.Run;
 
 /**
  * Created by rogerio.c.peixoto on 4/28/16.
  */
 public class RunInCloudEnvInject implements EnvironmentContributingAction {
 
-    private String key;
+    @SuppressWarnings("lgtm[jenkins/plaintext-storage]")
+    private final String key;
 
-    private String value;
+    private final String value;
 
     public RunInCloudEnvInject(String key, String value) {
         this.key = key;
@@ -19,8 +21,8 @@ public class RunInCloudEnvInject implements EnvironmentContributingAction {
     }
 
     @Override
-    public void buildEnvVars(AbstractBuild<?, ?> abstractBuild, EnvVars envVars) {
-        if (envVars != null && key != null && value != null) {
+    public void buildEnvironment(@NonNull Run<?, ?> run, @NonNull EnvVars envVars) {
+        if (key != null && value != null) {
             envVars.put(key, value);
         }
     }
