@@ -5,18 +5,17 @@ import hudson.model.TaskListener;
 
 public class TestRunFinishCheckSchedulerFactory {
 
-    public static TestRunFinishCheckScheduler createTestRunFinishScheduler(TestRunStateCheckMethod method, TaskListener listener) {
-        TestRunFinishCheckScheduler result;
-        switch (method) {
-            case API_CALL:
-                result = new APIDrivenTestFinishCheckScheduler(listener);
-                break;
-            case HOOK_URL:
-            default:
-                result = new HookUrlDrivenTestFinishCheckScheduler(listener);
-                break;
+    private TestRunFinishCheckSchedulerFactory() {
+        throw new IllegalStateException("Utility class");
+    }
+
+    public static TestRunFinishCheckScheduler createTestRunFinishScheduler(
+            TestRunStateCheckMethod method, TaskListener listener) {
+        if (method == TestRunStateCheckMethod.API_CALL) {
+            return new APIDrivenTestFinishCheckScheduler(listener);
+        } else {
+            return new HookUrlDrivenTestFinishCheckScheduler();
         }
-        return result;
     }
 
 }

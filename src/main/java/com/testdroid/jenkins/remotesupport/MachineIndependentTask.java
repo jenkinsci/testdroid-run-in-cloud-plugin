@@ -9,8 +9,6 @@ import java.io.Serializable;
  * Testdroid Run in Cloud plugin
  * <a href="https://git@github.com/jenkinsci/testdroid-run-in-cloud">Run-In-Cloud Plugin</a>
  * <p>
- * Usage:
- * TODO
  *
  * @author info@bitbar.com
  */

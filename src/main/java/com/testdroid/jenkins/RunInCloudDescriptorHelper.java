@@ -33,7 +33,6 @@ import static com.testdroid.jenkins.Messages.DEFINE_OS_TYPE;
 import static java.lang.Boolean.TRUE;
 import static java.lang.Integer.MAX_VALUE;
 import static java.util.Locale.US;
-import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 public interface RunInCloudDescriptorHelper {
@@ -178,7 +177,7 @@ public interface RunInCloudDescriptorHelper {
                         .getAvailableFrameworksResource(context);
                 frameworks.addAll(availableFrameworksResource.getEntity().getData().stream()
                         .filter(f -> !APIFramework.Type.CLIENT_SIDE.name().equalsIgnoreCase(f.getType()))
-                        .map(f -> new ListBoxModel.Option(f.getName(), f.getId().toString())).collect(toList()));
+                        .map(f -> new ListBoxModel.Option(f.getName(), f.getId().toString())).toList());
             } catch (APIException e) {
                 LOGGER.log(Level.WARNING, Messages.ERROR_API());
             }

@@ -8,6 +8,7 @@ import com.testdroid.jenkins.auth.TestdroidApiUtil;
 import hudson.FilePath;
 import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
+import jenkins.security.Roles;
 import org.jenkinsci.remoting.RoleChecker;
 
 import java.io.File;
@@ -17,7 +18,7 @@ import java.io.File;
  */
 public class MachineIndependentFileUploader extends MachineIndependentTask implements FilePath.FileCallable<Long> {
 
-    private TaskListener listener;
+    private final TaskListener listener;
 
     public MachineIndependentFileUploader(
             TestdroidCloudSettings.DescriptorImpl settings, TaskListener listener, IBitbarCredentials credentials) {
@@ -27,9 +28,7 @@ public class MachineIndependentFileUploader extends MachineIndependentTask imple
 
     @Override
     public void checkRoles(RoleChecker checker) throws SecurityException {
-        // no specific role needed, which is somewhat dubious, but I can't think of any attack vector that involves this.
-        // it would have been simpler if the setMaximumBytecodeLevel only controlled the local setting,
-        // not the remote setting
+        checker.check(this, Roles.SLAVE);
     }
 
     @Override

@@ -4,6 +4,10 @@ import java.util.*;
 
 public class AndroidLocale {
 
+    private AndroidLocale() {
+        throw new IllegalStateException("Utility class");
+    }
+
     public static final Set<Locale> LOCALES;
 
     static {

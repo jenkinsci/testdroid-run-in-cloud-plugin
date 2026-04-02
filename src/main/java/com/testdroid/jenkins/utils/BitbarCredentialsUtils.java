@@ -9,7 +9,6 @@ import jenkins.model.Jenkins;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -44,8 +43,8 @@ public final class BitbarCredentialsUtils {
         if (Objects.isNull(credentialsId)) {
             return null;
         }
-        List<IBitbarCredentials> credentialsList = CredentialsProvider.lookupCredentials(
-                IBitbarCredentials.class, Jenkins.get(), ACL.SYSTEM, Collections.emptyList());
+        List<IBitbarCredentials> credentialsList = CredentialsProvider.lookupCredentialsInItemGroup(
+                IBitbarCredentials.class, Jenkins.get(), ACL.SYSTEM2);
         return CredentialsMatchers.firstOrNull(credentialsList, CredentialsMatchers.withId(credentialsId));
     }
 }

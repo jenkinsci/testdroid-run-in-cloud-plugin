@@ -20,11 +20,11 @@ public class AbstractBuilder extends Builder {
     public static String applyMacro(Run<?,?> build, TaskListener listener, String macro) {
         // for non-pipeline builds, we allow dynamic environment var substitution here
         // for pipeline builds, expect user to do that in Groovy
-        if (build instanceof AbstractBuild) {
+        if (build instanceof AbstractBuild abstractBuild) {
             try {
                 EnvVars envVars = new EnvVars(Computer.currentComputer().getEnvironment());
                 envVars.putAll(build.getEnvironment(listener));
-                envVars.putAll(((AbstractBuild) build).getBuildVariables());
+                envVars.putAll(abstractBuild.getBuildVariables());
                 return Util.replaceMacro(macro, envVars);
             } catch (IOException | InterruptedException e) {
                 LOGGER.log(Level.SEVERE, "Failed to apply macro " + safe(macro), e);

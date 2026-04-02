@@ -19,6 +19,7 @@ import net.sf.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 import org.kohsuke.stapler.verb.POST;
 
 import javax.annotation.Nonnull;
@@ -88,7 +89,7 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
         }
 
         @Override
-        public void save() {
+        public synchronized void save() {
             this.proxyPassword = Secret.fromString(this.proxyPassword).getEncryptedValue();
             TestdroidApiUtil.refreshApiClient(this);
             super.save();
@@ -103,12 +104,13 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
         }
 
         @POST
+        @RequirePOST
         public FormValidation doAuthorize(
                 @QueryParameter String credentialsId, @QueryParameter String cloudUrl,
                 @QueryParameter boolean noCheckCertificate,
                 @QueryParameter boolean isProxy, @QueryParameter String proxyHost, @QueryParameter Integer proxyPort,
                 @QueryParameter String proxyUser, @QueryParameter String proxyPassword) {
-            Objects.requireNonNull(Jenkins.getInstanceOrNull()).checkPermission(Jenkins.ADMINISTER);
+            Jenkins.get().checkPermission(Jenkins.ADMINISTER);
             this.credentialsId = credentialsId;
             this.cloudUrl = cloudUrl;
             this.noCheckCertificate = noCheckCertificate;
@@ -131,7 +133,10 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
             }
         }
 
+        @POST
+        @RequirePOST
         public ListBoxModel doFillCredentialsIdItems() {
+            Jenkins.get().checkPermission(Jenkins.ADMINISTER);
             ListBoxModel credentials = new ListBoxModel();
             credentials.add(new ListBoxModel.Option(EMPTY, EMPTY));
 

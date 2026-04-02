@@ -4,6 +4,7 @@ import com.testdroid.jenkins.model.TestRunStateCheckMethod;
 import hudson.Extension;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
+import jakarta.annotation.Nonnull;
 import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -18,7 +19,7 @@ public class WaitForResultsBlock implements Describable<WaitForResultsBlock> {
      */
     @SuppressWarnings("unchecked")
     public Descriptor<WaitForResultsBlock> getDescriptor() {
-        return Jenkins.getInstance().getDescriptorOrDie(getClass());
+        return Jenkins.get().getDescriptorOrDie(getClass());
     }
 
     private boolean downloadScreenshots;
@@ -106,6 +107,7 @@ public class WaitForResultsBlock implements Describable<WaitForResultsBlock> {
         }
 
         @Override
+        @Nonnull
         public String getDisplayName() {
             return "Wait for Bitbar Cloud results";
         }
