@@ -11,8 +11,10 @@ import com.testdroid.jenkins.utils.AndroidLocale;
 import com.testdroid.jenkins.utils.LocaleUtil;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import jenkins.model.Jenkins;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 import org.kohsuke.stapler.verb.POST;
 
 import java.util.Arrays;
@@ -50,7 +52,10 @@ public interface RunInCloudDescriptorHelper {
         return TestdroidApiUtil.getGlobalApiClient().isAuthenticated();
     }
 
+    @POST
+    @RequirePOST
     default ListBoxModel doFillProjectIdItems() {
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         ListBoxModel projects = new ListBoxModel();
         projects.add(EMPTY_OPTION);
         try {
@@ -67,20 +72,28 @@ public interface RunInCloudDescriptorHelper {
         return projects;
     }
 
+    @POST
+    @RequirePOST
     default ListBoxModel doFillOsTypeItems() {
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         ListBoxModel osTypes = new ListBoxModel();
         osTypes.addAll(Arrays.stream(APIDevice.OsType.values())
                 .map(t -> new ListBoxModel.Option(t.getDisplayName(), t.name()))
-                .collect(toList()));
+                .toList());
         return osTypes;
     }
 
     @POST
+    @RequirePOST
     default FormValidation doCheckOsType(@QueryParameter APIDevice.OsType value) {
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         return value == UNDEFINED ? FormValidation.error(DEFINE_OS_TYPE()) : FormValidation.ok();
     }
 
+    @POST
+    @RequirePOST
     default ListBoxModel doFillSchedulerItems() {
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         ListBoxModel schedulers = new ListBoxModel();
         schedulers.add(Messages.SCHEDULER_PARALLEL(), APITestRunConfig.Scheduler.PARALLEL.name());
         schedulers.add(Messages.SCHEDULER_SERIAL(), APITestRunConfig.Scheduler.SERIAL.name());
@@ -88,7 +101,10 @@ public interface RunInCloudDescriptorHelper {
         return schedulers;
     }
 
+    @POST
+    @RequirePOST
     default ListBoxModel doFillDeviceGroupIdItems() {
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         ListBoxModel deviceGroups = new ListBoxModel();
         try {
             APIUser user = TestdroidApiUtil.getGlobalApiClient().getUser();
@@ -107,7 +123,10 @@ public interface RunInCloudDescriptorHelper {
         return deviceGroups;
     }
 
+    @POST
+    @RequirePOST
     default ListBoxModel doFillLanguageItems() {
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         ListBoxModel language = new ListBoxModel();
         for (Locale locale : AndroidLocale.LOCALES) {
             String langDisplay = String.format("%s (%s)", locale.getDisplayLanguage(),
@@ -118,7 +137,10 @@ public interface RunInCloudDescriptorHelper {
         return language;
     }
 
+    @POST
+    @RequirePOST
     default ListBoxModel doFillTestCasesSelectItems() {
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         ListBoxModel testCases = new ListBoxModel();
         String value;
         for (APITestRunConfig.LimitationType limitationType : APITestRunConfig.LimitationType.values()) {
@@ -128,7 +150,10 @@ public interface RunInCloudDescriptorHelper {
         return testCases;
     }
 
+    @POST
+    @RequirePOST
     default ListBoxModel doFillTestRunStateCheckMethodItems() {
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         ListBoxModel items = new ListBoxModel();
         for (TestRunStateCheckMethod method : TestRunStateCheckMethod.values()) {
             items.add(method.name(), method.name());
@@ -136,7 +161,10 @@ public interface RunInCloudDescriptorHelper {
         return items;
     }
 
+    @POST
+    @RequirePOST
     default ListBoxModel doFillFrameworkIdItems(@QueryParameter APIDevice.OsType osType) {
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         ListBoxModel frameworks = new ListBoxModel();
         frameworks.add(EMPTY_OPTION);
         if (osType != UNDEFINED) {
@@ -159,7 +187,9 @@ public interface RunInCloudDescriptorHelper {
     }
 
     @POST
+    @RequirePOST
     default FormValidation doCheckFrameworkId(@QueryParameter String value) {
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         return parseLong(value).isPresent() ? FormValidation.ok() : FormValidation.error(DEFINE_FRAMEWORK());
     }
 

@@ -7,6 +7,7 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+import jakarta.annotation.Nonnull;
 import org.jenkinsci.plugins.workflow.steps.AbstractStepDescriptorImpl;
 import org.jenkinsci.plugins.workflow.steps.AbstractStepImpl;
 import org.jenkinsci.plugins.workflow.steps.AbstractSynchronousNonBlockingStepExecution;
@@ -15,6 +16,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
 import java.io.IOException;
+import java.io.Serial;
 
 import static com.testdroid.jenkins.RunInCloudDescriptorHelper.*;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -42,6 +44,7 @@ public class PipelineCloudStep extends AbstractStepImpl {
     private String dataPath;
     private String testPath;
     private boolean failBuildIfThisStepFailed;
+    @SuppressWarnings("lgtm[jenkins/plaintext-storage]")
     private String keyValuePairs;
     private String language;
     private String projectId;
@@ -315,6 +318,7 @@ public class PipelineCloudStep extends AbstractStepImpl {
         }
 
         @Override
+        @Nonnull
         public String getDisplayName() {
             return "Start a run in Bitbar Cloud";
         }
@@ -322,6 +326,7 @@ public class PipelineCloudStep extends AbstractStepImpl {
 
     public static final class CloudStepExecution extends AbstractSynchronousNonBlockingStepExecution<Boolean> {
 
+        @Serial
         private static final long serialVersionUID = 1;
 
         @Inject
