@@ -25,7 +25,6 @@ import javax.annotation.Nonnull;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,7 +33,7 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 public class TestdroidCloudSettings implements Describable<TestdroidCloudSettings> {
 
-    private static final Logger LOGGER = Logger.getLogger(DescriptorImpl.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(TestdroidCloudSettings.class.getName());
 
     @Override
     public Descriptor<TestdroidCloudSettings> getDescriptor() {
@@ -137,7 +136,7 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
             credentials.add(new ListBoxModel.Option(EMPTY, EMPTY));
 
             CredentialsProvider
-                    .lookupCredentials(IBitbarCredentials.class, Jenkins.get(), ACL.SYSTEM, Collections.emptyList())
+                    .lookupCredentialsInItemGroup(IBitbarCredentials.class, Jenkins.get(), ACL.SYSTEM2)
                     .forEach(c -> credentials.add(CredentialsNameProvider.name(c), c.getId()));
             return credentials;
         }
