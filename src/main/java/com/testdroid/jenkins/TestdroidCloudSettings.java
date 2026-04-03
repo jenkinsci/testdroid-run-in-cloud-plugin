@@ -56,7 +56,7 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
 
         String proxyHost;
 
-        String proxyPassword;
+        Secret proxyPassword;
 
         Integer proxyPort;
 
@@ -90,7 +90,6 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
 
         @Override
         public synchronized void save() {
-            this.proxyPassword = Secret.fromString(this.proxyPassword).getEncryptedValue();
             TestdroidApiUtil.refreshApiClient(this);
             super.save();
         }
@@ -109,7 +108,7 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
                 @QueryParameter String credentialsId, @QueryParameter String cloudUrl,
                 @QueryParameter boolean noCheckCertificate,
                 @QueryParameter boolean isProxy, @QueryParameter String proxyHost, @QueryParameter Integer proxyPort,
-                @QueryParameter String proxyUser, @QueryParameter String proxyPassword) {
+                @QueryParameter String proxyUser, @QueryParameter Secret proxyPassword) {
             Jenkins.get().checkPermission(Jenkins.ADMINISTER);
             this.credentialsId = credentialsId;
             this.cloudUrl = cloudUrl;
@@ -244,15 +243,12 @@ public class TestdroidCloudSettings implements Describable<TestdroidCloudSetting
             this.proxyUser = proxyUser;
         }
 
-        /**
-         * Returns proxy password in decrypted form
-         */
-        public String getProxyPassword() {
-            return Secret.fromString(this.proxyPassword).getPlainText();
+        public Secret getProxyPassword() {
+            return proxyPassword;
         }
 
 
-        public void setProxyPassword(String proxyPassword) {
+        public void setProxyPassword(Secret proxyPassword) {
             this.proxyPassword = proxyPassword;
         }
 
