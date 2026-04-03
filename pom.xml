@@ -23,7 +23,7 @@
 
     <properties>
         <intranet.repo>http://nexus/content/repositories</intranet.repo>
-        <testdroid.api.version>3.40.0</testdroid.api.version>
+        <testdroid.api.version>3.52.0</testdroid.api.version>
         <!-- https://www.jenkins.io/doc/developer/plugin-development/choosing-jenkins-baseline/ -->
         <jenkins.baseline>2.479</jenkins.baseline>
         <jenkins.version>${jenkins.baseline}.3</jenkins.version>
@@ -153,6 +153,10 @@
                 <exclusion>
                     <groupId>commons-io</groupId>
                     <artifactId>commons-io</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-text</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>com.sun.xml.bind</groupId>

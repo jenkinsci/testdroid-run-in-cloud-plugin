@@ -2,6 +2,7 @@ package com.testdroid.jenkins.remotesupport;
 
 import com.testdroid.jenkins.TestdroidCloudSettings;
 import com.testdroid.jenkins.auth.IBitbarCredentials;
+import hudson.util.Secret;
 
 import java.io.Serializable;
 
@@ -24,7 +25,7 @@ public class MachineIndependentTask implements Serializable {
 
     public String proxyHost;
 
-    public String proxyPassword;
+    public Secret proxyPassword;
 
     public Integer proxyPort;
 

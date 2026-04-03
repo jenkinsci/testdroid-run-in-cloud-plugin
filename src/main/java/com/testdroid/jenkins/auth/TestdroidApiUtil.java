@@ -39,13 +39,12 @@ public class TestdroidApiUtil {
 
     public static ApiClientAdapter createApiClientAdapter(MachineIndependentTask mit) {
         return createApiClientAdapter(mit.cloudUrl, mit.credentialsId, mit.noCheckCertificate, mit.isProxy,
-                mit.proxyHost,
-                mit.proxyPort, mit.proxyUser, mit.proxyPassword, mit.credentials);
+                mit.proxyHost, mit.proxyPort, mit.proxyUser, mit.proxyPassword, mit.credentials);
     }
 
     private static ApiClientAdapter createApiClientAdapter(
             String cloudURL, String credentialsId, Boolean skipCertCheck, Boolean isProxy, String proxyHost,
-            Integer proxyPort, String proxyUser, String proxyPassword, IBitbarCredentials credentialsWrapper) {
+            Integer proxyPort, String proxyUser, Secret proxyPassword, IBitbarCredentials credentialsWrapper) {
         BitbarCredentials credentials;
         if (credentialsWrapper == null) {
             credentials = getBitbarCredentials(credentialsId);
@@ -59,7 +58,7 @@ public class TestdroidApiUtil {
             Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, port));
             if (StringUtils.isNotBlank(proxyUser)) {
                 apiClient = new APIKeyClient(cloudURL, Secret.toString(credentials.getApiKey()), proxy, proxyUser,
-                        proxyPassword, skipCertCheck);
+                        Secret.toString(proxyPassword), skipCertCheck);
             } else {
                 apiClient = new APIKeyClient(cloudURL, Secret.toString(credentials.getApiKey()), proxy, skipCertCheck);
             }
